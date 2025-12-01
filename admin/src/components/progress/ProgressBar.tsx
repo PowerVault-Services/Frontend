@@ -1,5 +1,5 @@
 import React from "react";
-import ProgressStepIcon from "./ProgressStepIcon";
+import ProgressStepIcon from "../progress/ProgressStepIcon";
 
 interface ProgressStep {
   id: number;
@@ -37,7 +37,7 @@ export default function ProgressBar({
 
             {/* เส้นเชื่อม */}
             {index < steps.length - 1 && (
-              <div className="flex-1 h-[1px] bg-[#949494] mt-[20px]" />
+              <div className="flex-1 h-px bg-[#949494] mt-5" />
               // 20px ≈ กึ่งกลางวงกลม (สูง 40px)
             )}
           </React.Fragment>
