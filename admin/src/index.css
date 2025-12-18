@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Mitr:wght@200;300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-blue-100: #C7EDF7;
+  --color-blue-200: #A8E4F5;
+  --color-blue-300: #7DD9F4;
+  --color-blue-400: #4BCFF3;
+  --color-blue-500: #1AB6E6;
+  --color-blue-600: #0F83AF;
+  --color-blue-700: #0C6A92;
+  --color-blue-800: #084E70;
+  --color-blue-900: #06405A;
+
+  /* Green */
+  --color-green-100: #E6F5E3;
+  --color-green-200: #CDE9C9;
+  --color-green-300: #A4D79E;
+  --color-green-400: #75BC6C;
+  --color-green-500: #50A047;
+  --color-green-600: #3E8336;
+  --color-green-700: #34672E;
+  --color-green-800: #2D5328;
+  --color-green-900: #254522;
+}
+
+:root {
+  /* System Colors */
+  --system-red: #D84743;
+  --system-orange: #F28435;
+  --system-green: #28B470;
+  --system-blue: #2F7BFF;
+
+  /* Gray */
+  --gray-100: #FFFFFF;
+  --gray-200: #C4C4C4;
+  --gray-900: #000000;
+
+  /* Background */
+  --background: #E6F5E3;
+}
+
+body {
+  background-color: var(--background);
+  font-family: "Prompt", sans-serif;
+  font-weight: 400;
+  line-height: 24px; /* 150% */
+  letter-spacing: 0.16px;
+  margin: 0 auto;
+}
+
+
+aside {
+  font-family: "Mitr", sans-serif;
+  background-color: var(--white, #FFF);
+  width: 300px;
+  height: 100vh;
+}
+
+h1 {
+  font-family: "Prompt", sans-serif;
+  font-weight: 700;
+  font-size: 42px;
+  letter-spacing: -1%;
+  line-height: auto;
+}
+
+h2 {
+  font-family: "Prompt", sans-serif;
+  font-weight: 700;
+  font-size: 32px;
+  letter-spacing: -1%;
+}
+
+h3 {
+  font-family: "Prompt", sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -1%;
+}
+
+h4 {
+  font-family: "Prompt", sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -1%;
+}
+
+h5 {
+  font-family: "Prompt", sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -1%;
+}
+
+h6 {
+  font-family: "Prompt", sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -1%;
+}
+
+/* Default body text */
+/* p,
+label,
+input,
+a {
+  font-family: "Prompt", sans-serif;
+  letter-spacing: -1%;
+} */
+
+.sidebar-toggle{
+  font-family: "Mitr", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+
+
+
+
+
+
