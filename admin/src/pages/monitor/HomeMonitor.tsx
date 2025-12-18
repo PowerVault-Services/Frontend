@@ -8,6 +8,7 @@ import OverviewTab from "../../components/tabs/OverviewTab";
 // import PRTab from "../../components/tabs/PRTab";
 // import ReportTab from "../../components/tabs/ReportTab";
 
+
 interface Plant {
   id: number;
   name: string;
@@ -54,10 +55,10 @@ export default function HomeMonitor() {
       <h1 className="text-green-800 pb-9">Monitoring</h1>
 
       {/* ===== Main Layout ===== */}
-      <div className="grid grid-cols-[auto_1fr] gap-3.5 items-start">
+      <div className="grid grid-cols-[auto_1fr] gap-3.5 items-start min-h-screen">
 
         {/* ===== Sidebar ===== */}
-        <aside className="border border-green-800 rounded-lg py-6 px-[11px] bg-white">
+        <aside className="border border-green-800 rounded-lg py-6 px-[11px] bg-white h-screen max-h-screen">
           <div className="mb-3">
             <input
               type="text"
@@ -70,7 +71,7 @@ export default function HomeMonitor() {
             />
           </div>
 
-          <ul className="space-y-2 text-sm text-green-800 overflow-y-auto max-h-[70vh]">
+          <ul className="space-y-2 text-sm text-green-800 overflow-y-auto max-h-[calc(100vh-160px)]">
             {loading && <li className="text-gray-400">Loading...</li>}
             {!loading && plants.length === 0 && (
               <li className="text-gray-400">No plant found</li>
@@ -97,14 +98,14 @@ export default function HomeMonitor() {
           </div>
 
           {/* Tabs + Info Box */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between w-[1112px]">
             <TagNav
               items={homeTags}
               activeId={activeProject}
               onChange={setActiveProject}
             />
 
-            <div className="flex items-center justify-between gap-3 border border-green-400 rounded-lg text-sm bg-white w-[409px] px-6 py-0.5 whitespace-nowrap">
+            <div className="w-[1112px]flex items-center justify-between gap-3 border border-green-400 rounded-lg text-sm bg-white w-[409px] px-6 py-0.5 whitespace-nowrap">
               <span className="font-semibold text-green-700 text-[18px]">Name Alarm</span>
               <span>18 October 2025</span>
               <span>7:30 A.M.</span>
@@ -112,7 +113,7 @@ export default function HomeMonitor() {
           </div>
 
           {/* Content Box */}
-          <div className="bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px]">
+          <div className="bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px] w-[1112px]">
             {renderTabContent()}
           </div>
         </section>
