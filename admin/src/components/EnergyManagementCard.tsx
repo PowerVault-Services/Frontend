@@ -7,7 +7,7 @@ export default function EnergyManagementCard() {
   const [period, setPeriod] = useState<Period>("day");
 
   return (
-    <div className="h-[314px] w-[731px] rounded-[8px] px-[10px] py-[20px] border border-[#DEE2E6]">
+    <div className="h-[314px] w-[731px] rounded-lg px-2.5 py-5 border border-[#DEE2E6]">
       <div className="flex justify-between items-center mb-4">
         <h5 className="text-green-700 font-semibold">
           Energy Management
@@ -16,7 +16,7 @@ export default function EnergyManagementCard() {
         <div className="flex gap-2">
           <input
             type="date"
-            className="border border-green-300 rounded px-[11px] py-[4px] text-xs"
+            className="border border-green-300 rounded px-[11px] py-1 text-xs"
           />
 
           <div className="w-72 h-7 flex items-center border border-green-300 rounded text-[14px] px-1">
