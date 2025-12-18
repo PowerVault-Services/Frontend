@@ -1,4 +1,4 @@
-import React from "react";
+
 import FlowLine from "../FlowLine";
 
 import pvIcon from "../../assets/icons/pv.svg";
@@ -23,7 +23,7 @@ function EnergyNode({
   icon?: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center w-[76px] h-[76px] rounded-full border-[2px] border-[#2AC1E6] text-black">
+    <div className="flex flex-col items-center justify-center w-[76px] h-[76px] rounded-full border-2 border-[#2AC1E6] text-black">
       {icon && <img src={icon} alt="icon" className="w-[22px] h-[22px]" />}
       <div className="text-xs font-light">{value.toFixed(2)}</div>
       <div className="text-[10px]">kW</div>
@@ -38,7 +38,6 @@ export default function EnergyFlowCard({
   battery,
   load,
 }: EnergyFlowProps) {
-  const hasFlow = pv > 0 || battery > 0 || grid > 0;
 
   return (
     <div className="rounded-lg p-2 border border-[#DEE2E6] w-[314px] h-[314px] bg-white">
