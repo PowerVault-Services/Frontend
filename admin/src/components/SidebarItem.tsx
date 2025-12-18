@@ -23,8 +23,8 @@ export default function SidebarItem({
           flex items-center justify-between
           w-full h-10 px-2
           rounded-t-sm
-          border-b border-[#3E8336]
-          ${isOpen ? "bg-[#E6F5E3]" : "bg-transparent"}
+          border-b border-green-600
+          ${isOpen ? "bg-green-100" : "bg-transparent"}
         `}
       >
         <span

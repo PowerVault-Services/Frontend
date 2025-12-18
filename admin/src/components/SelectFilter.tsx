@@ -1,5 +1,3 @@
-import React from "react";
-import ArrowDown from "../../assets/icons/arrow-down.svg";
 
 interface Option {
   label: string;
@@ -25,7 +23,7 @@ export default function SelectFilter({
 }: SelectFilterProps) {
   return (
     <div className="flex flex-col gap-1 w-full relative">
-      <label className="text-[16px] font-medium text-brandGreen-900">
+      <label className="text-[16px] font-normal text-green-900">
         {label}
       </label>
 
@@ -34,18 +32,14 @@ export default function SelectFilter({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="
-          w-full h-[44px]
-          rounded-[8px]
-          border border-brandGreen-300
+          w-full h-[39px]
+          rounded-sm
+          border border-green-200
           bg-white
           px-4 pr-10
-          text-[16px]
-          text-brandGreen-500
-          appearance-none
-          focus:outline-none
-          focus:ring-1 focus:ring-brandGreen-500
-          focus:border-brandGreen-500
-          transition
+          text-[14px]
+          text-green-500
+          font-normal
         "
       >
         {/* placeholder */}
@@ -59,19 +53,6 @@ export default function SelectFilter({
           </option>
         ))}
       </select>
-
-      {/* ไอคอนลูกศรด้านขวา */}
-      <img
-        src={ArrowDown}
-        alt=""
-        className="
-          pointer-events-none
-          w-4 h-4
-          absolute
-          right-3
-          top-[32px]
-        "
-      />
     </div>
   );
 }

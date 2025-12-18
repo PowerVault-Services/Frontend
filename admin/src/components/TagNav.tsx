@@ -19,13 +19,7 @@ export default function TagNav({
   className = "",
 }: TagNavProps) {
   return (
-    <nav
-      className={`
-        w-full
-        flex flex-wrap
-        ${className}
-      `}
-    >
+    <div className={`flex ${className}`}>
       {items.map((item) => (
         <TagChip
           key={item.id}
@@ -34,6 +28,6 @@ export default function TagNav({
           onClick={() => onChange(item.id)}
         />
       ))}
-    </nav>
+    </div>
   );
 }

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import SearchBox from "./components/SearchBox";
-import Sidebar from "./components/Sidebar";
-import TextInputFilter from "./components/TextInputFilter";
-import TagNav from "./components/TagNav";
-import ProgressBar from "./components/ProgressBar";
+import SearchBox from "../components/SearchBox";
+import Sidebar from "../components/Sidebar";
+import TextInputFilter from "../components/TextInputFilter";
+import TagNav from "../components/TagNav";
+import ProgressBar from "../components/progress/ProgressBar";
 
 function App() {
   const [pvModule, setPvModule] = useState("");

@@ -8,14 +8,14 @@ import logoutIcon from "../assets/icons/Logout.svg";
 
 export default function Sidebar() {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const [activeGroup, setActiveGroup] =
     useState<"monitor" | "stock" | null>("monitor");
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    navigate("/login");
+    localStorage.removeItem("token");
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -162,6 +162,7 @@ export default function Sidebar() {
                 src={logoutIcon}
                 alt="logouticon"
                 className="w-6 h-6 object-contain"
+                onClick={() => navigate("/login")}
               />
             </button>
           </div>
@@ -192,7 +193,7 @@ export default function Sidebar() {
           เมนู
         </span>
         <div className="flex">
-          <img src={menuIcon} alt="menuIcon" className="w-6 h-6" />
+          <img src={menuIcon} alt="menuIcon" className="w-6 h-6"/>
         </div>
       </button>
     </>

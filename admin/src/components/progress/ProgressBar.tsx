@@ -38,7 +38,6 @@ export default function ProgressBar({
             {/* เส้นเชื่อม */}
             {index < steps.length - 1 && (
               <div className="flex-1 h-px bg-[#949494] mt-5" />
-              // 20px ≈ กึ่งกลางวงกลม (สูง 40px)
             )}
           </React.Fragment>
         );
