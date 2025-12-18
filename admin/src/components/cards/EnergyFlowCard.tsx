@@ -86,13 +86,13 @@ export default function EnergyFlowCard({
           {/* ===== Battery → Load (ซ้าย) =====*/}
           <FlowLine
             active={battery > 0}
-            d="M76 157 L127 157 Q151 157 151 181 L151 222"
+            d="M96 177 L127 177 Q151 177 151 201 L151 278"
           />
 
           {/* ===== Grid → Load (ขวา) =====*/}
           <FlowLine
             active={grid > 0}
-            d="M238 157 L181 157 Q171 157 171 167 L171 222"
+            d="M282 177 L251 177 Q227 177 227 201 L227 278"
           />
         </svg>
       </div>
