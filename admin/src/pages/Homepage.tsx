@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import SearchBox from "../components/SearchBox";
 import PlantStatusCard from "../components/cards/PlantStatusCard";
@@ -78,8 +77,7 @@ export default function Homepage() {
   
 
   return (
-    <MainLayout>
-      <div className="w-auto h-auto px-[50px] py-[30px]">
+      <div className="w-auto h-auto">
         {/* Top Cards */}
         <div className="bg-white grid grid-cols-1 lg:grid-cols-3 px-[50px] py-[30px] rounded-2xl justify-between">
           <PlantStatusCard />
@@ -152,6 +150,5 @@ export default function Homepage() {
           />
         </div>
       </div>
-    </MainLayout>
   );
 }

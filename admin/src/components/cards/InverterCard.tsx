@@ -11,9 +11,9 @@ interface InverterCardProps {
   inverter: Inverter;
 }
 
-/* ✅ FIX: status color map */
+/* FIX: status color map */
 const statusDotColor: Record<Inverter["status"], string> = {
-  Connect: "bg-green-500",
+  Connect: "bg-[#28B470]",
   Disconnect: "bg-red-500",
 };
 
@@ -34,7 +34,7 @@ export default function InverterCard({ inverter }: InverterCardProps) {
           {/* arc placeholder */}
           <div
             className="absolute inset-0 rounded-t-full
-                       border-t-10 border-l-10 border-r-10
+                       border-t-12 border-l-10 border-r-10
                        border-green-500"
           />
 

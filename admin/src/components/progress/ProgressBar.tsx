@@ -18,7 +18,7 @@ export default function ProgressBar({
   className = "",
 }: ProgressBarProps) {
   return (
-    <div className={`flex items-start w-full ${className}`}>
+    <div className={`flex items-start w-[760px] mx-auto ${className}`}>
       {steps.map((step, index) => {
         const stepIndex = index + 1;
 
