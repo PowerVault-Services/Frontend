@@ -7,6 +7,8 @@ import InputField from "../../components/InputField";
 import TextInputFilter from "../../components/TextInputFilter";
 import { PROJECTS, type Project } from "../../mock/project";
 
+
+
 export default function NewCleaningStep1() {
 
     const navigate = useNavigate();
@@ -36,6 +38,17 @@ export default function NewCleaningStep1() {
         setProject(selected ?? null);
     }, [projectId]);
 
+    function saveStep1Data() {
+        const payload = {
+            projectName: project?.name ?? "",
+            date,
+            time,
+            remark,
+        };
+        localStorage.setItem("cleaning_step1", JSON.stringify(payload));
+    }
+
+
     return (
         <div className="w-full">
 
@@ -53,7 +66,7 @@ export default function NewCleaningStep1() {
             </div>
 
             {/* Form */}
-            <div className="flex flex-col px-28 py-5 gap-y-[58px] bg-white rounded-2xl justify-between items-center">
+            <div className="flex flex-col h-[822px] px-28 py-5 gap-y-[58px] bg-white rounded-2xl justify-between items-center">
 
                 <ProgressBar steps={steps} currentStep={currentStep} />
 
@@ -176,14 +189,17 @@ export default function NewCleaningStep1() {
 
                 {/* Footer */}
                 <div className="flex w-full max-w-[1095px] justify-between">
-                    <button 
+                    <button
                         onClick={() => navigate("/cleaning")}
                         className="w-[195px] border border-green-600 text-green-600 px-6 py-2.5 rounded-2xl">
                         ยกเลิก
                     </button>
 
-                    <button 
-                        onClick={() => navigate("/cleaning/new/step2")}
+                    <button
+                        onClick={() => {
+                            saveStep1Data();
+                            navigate("/cleaning/new/step2");
+                        }}
                         className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl">
                         ถัดไป
                     </button>

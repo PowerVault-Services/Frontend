@@ -1,3 +1,5 @@
+import React from "react";
+
 interface ProgressStepIconProps {
   step: number;
   label: string;
@@ -26,31 +28,27 @@ export default function ProgressStepIcon({
           rounded-full
           text-xl font-medium
           focus:outline-none
-          bg-transparent
-          border
+          transition-all duration-300
           ${
             isCurrent
-              ? "border-green-800 text-green-800"
+              ? "border-2 border-green-800 text-green-800"
               : isComplete
-              ? "border-green-800 bg-green-800 text-white"
-              : "border-[#8D8D8D] text-[#A8A8A8]"
+              ? "bg-green-800 text-white border border-green-800"
+              : "border border-[#8D8D8D] text-[#A8A8A8]"
           }
         `}
       >
         {step}
       </button>
 
-      {/* label ลอยใต้ปุ่ม */}
+      {/* label ใต้ปุ่ม */}
       <span
         className={`
           absolute top-12 left-1/2 -translate-x-1/2
           whitespace-nowrap
           text-base font-normal
-          ${
-            isCurrent || isComplete
-              ? "text-black"
-              : "text-[#8D8D8D]"
-          }
+          transition-colors duration-300
+          ${isCurrent || isComplete ? "text-black" : "text-[#8D8D8D]"}
         `}
       >
         {label}
