@@ -18,13 +18,13 @@ interface Cleaning {
   status: string;
 }
 
-export default function HomeInspection() {
+export default function HomeService() {
   const [data, setData] = useState<Cleaning[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    fetch("/api/inspection")
+    fetch("/api/service")
       .then((res) => res.json())
       .then((res) => {
         setData(res);
@@ -100,11 +100,11 @@ export default function HomeInspection() {
   return (
     <div className="w-full">
         <div className="flex justify-between pb-9">
-            <h1 className="text-green-800">Inspection</h1>
-            <Link to="/inspection/new/step1">
+            <h1 className="text-green-800">Service</h1>
+            <Link to="/service/new/step1">
                 <button className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5">
                     <img src={AddIcon} alt="" />
-                    New Inspection Job
+                    New Service Job
                 </button>
             </Link>
 

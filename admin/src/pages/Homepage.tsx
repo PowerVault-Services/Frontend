@@ -1,4 +1,4 @@
-import MainLayout from "../layouts/MainLayout";
+
 import SearchBox from "../components/SearchBox";
 import PlantStatusCard from "../components/cards/PlantStatusCard";
 import AlarmCard from "../components/cards/AlarmCard";

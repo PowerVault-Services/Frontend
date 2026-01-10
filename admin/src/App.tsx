@@ -15,6 +15,12 @@ import NewCleaningStep3_02 from "./pages/cleaning/NewCleaningStep3_02";
 import NewCleaningStep4 from "./pages/cleaning/NewCleaningStep4";
 import NewCleaningStep5 from "./pages/cleaning/NewCleaningStep5";
 
+import HomeInspection from "./pages/inspection/HomeInspection";
+import NewInspectionStep1 from "./pages/inspection/NewInspectionStep1";
+import NewInspectionStep2 from "./pages/inspection/NewInspectionStep2";
+import NewInspectionStep3 from "./pages/inspection/NewInspectionStep3";
+import HomeService from "./pages/service/HomeService";
+
 function App() {
   return (
     <Routes>
@@ -47,7 +53,27 @@ function App() {
             </Route>
           </Route>
 
-        </Route>
+          {/* Inspection */}
+          <Route path="/inspection">
+            <Route index element={<Navigate to="home" replace />} />
+            <Route path="home" element={<HomeInspection />} />
+            <Route path="new">
+              <Route path="step1" element={<NewInspectionStep1 />} />
+              <Route path="step2" element={<NewInspectionStep2 />} />
+              <Route path="step3" element={<NewInspectionStep3 />} />
+            </Route>
+          </Route>
+
+          {/* Service */}
+          <Route path="/service">
+            <Route index element={<Navigate to="home" replace />} />
+            <Route path="home" element={<HomeService />} />
+              {/* <Route path="new">
+                <Route path="step1" element={<NewInspectionStep1 />} />
+                <Route path="step2" element={<NewInspectionStep2 />} />
+                <Route path="step3" element={<NewInspectionStep3 />} /> */}
+            </Route>
+          </Route>
       </Route>
     </Routes>
   );
