@@ -7,7 +7,7 @@ import ZipIcon from "../../assets/icons/ZIP File.svg";
 import AddIcon from "../../assets/icons/Add Circle.svg";
 import DataTable, { type Column } from "../../components/table/DataTable";
 
-interface Cleaning {
+interface Service {
   id: number;
   jobnumber: string;
   projectType: string;
@@ -19,7 +19,7 @@ interface Cleaning {
 }
 
 export default function HomeService() {
-  const [data, setData] = useState<Cleaning[]>([]);
+  const [data, setData] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
 
@@ -32,7 +32,7 @@ export default function HomeService() {
       });
   }, []);
 
-  const handleEdit = (row: Cleaning) => {
+  const handleEdit = (row: Service) => {
     console.log("Edit:", row);
   };
 
@@ -47,7 +47,7 @@ export default function HomeService() {
     });
   };
 
-  const columns: Column<Cleaning>[] = [
+  const columns: Column<Service>[] = [
     {
       key: "id",
       label: "",
@@ -153,7 +153,7 @@ export default function HomeService() {
       </div>
 
       <div className="pt-[25px]">
-        <DataTable<Cleaning> columns={columns} data={data} loading={loading} />
+        <DataTable<Service> columns={columns} data={data} loading={loading} />
       </div>
     </div>
   );

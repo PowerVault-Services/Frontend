@@ -94,10 +94,10 @@ export default function OperationTable({
       <table className="w-full border-separate border-spacing-0 text-[12px]">
         <thead className="font-semibold">
           <tr>
-            <th className="h-[36px] w-[62px] border-r border-[#CFCFCF] bg-[#F0F0F0]">ลำดับ</th>
-            <th className="h-[36px] w-[594px] border-r border-[#CFCFCF] bg-[#F0F0F0]">อุปกรณ์ / รายการ</th>
-            <th className="h-[36px] w-[161px] border-r border-[#CFCFCF] bg-[#F0F0F0]">การดำเนินการ</th>
-            <th className="h-[36px] w-[278px] bg-[#F0F0F0]">หมายเหตุ</th>
+            <th className="h-9 w-[62px] border-r border-[#CFCFCF] bg-[#F0F0F0]">ลำดับ</th>
+            <th className="h-9 w-[594px] border-r border-[#CFCFCF] bg-[#F0F0F0]">อุปกรณ์ / รายการ</th>
+            <th className="h-9 w-[161px] border-r border-[#CFCFCF] bg-[#F0F0F0]">การดำเนินการ</th>
+            <th className="h-9 w-[278px] bg-[#F0F0F0]">หมายเหตุ</th>
           </tr>
         </thead>
 
@@ -107,7 +107,7 @@ export default function OperationTable({
             return (
               <tr key={row.id}>
                 {/* Index */}
-                <td className="h-[36px] text-center border-t border-r border-[#D6D6D6]">
+                <td className="h-9 text-center border-t border-r border-[#D6D6D6]">
                   {displayIndex}
                 </td>
 

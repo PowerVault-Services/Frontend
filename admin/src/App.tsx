@@ -19,17 +19,28 @@ import HomeInspection from "./pages/inspection/HomeInspection";
 import NewInspectionStep1 from "./pages/inspection/NewInspectionStep1";
 import NewInspectionStep2 from "./pages/inspection/NewInspectionStep2";
 import NewInspectionStep3 from "./pages/inspection/NewInspectionStep3";
+
 import HomeService from "./pages/service/HomeService";
+import NewServiceStep1 from "./pages/service/NewServiceStep1";
+import NewServiceStep2 from "./pages/service/NewServiceStep2";
+import NewServiceStep3 from "./pages/service/NewServiceStep3";
+import NewServiceStep4 from "./pages/service/NewServiceStep4";
+import NewServiceStep5 from "./pages/service/NewServiceStep5";
+
+import HomeClientData from "./pages/clientdata/HomeClientData";
+import ClientDataDetail from "./pages/clientdata/ClientDataDetail";
 
 function App() {
   return (
     <Routes>
+
       {/* ---------- Public ---------- */}
       <Route path="/login" element={<Login />} />
 
       {/* ---------- Protected ---------- */}
       <Route element={<ProtectedRoute />}>
-        <Route element={<MainLayout children={undefined} />}>
+        <Route element={<MainLayout />}>
+
           <Route path="/" element={<Homepage />} />
 
           {/* Monitor */}
@@ -68,13 +79,21 @@ function App() {
           <Route path="/service">
             <Route index element={<Navigate to="home" replace />} />
             <Route path="home" element={<HomeService />} />
-              {/* <Route path="new">
-                <Route path="step1" element={<NewInspectionStep1 />} />
-                <Route path="step2" element={<NewInspectionStep2 />} />
-                <Route path="step3" element={<NewInspectionStep3 />} /> */}
+            <Route path="new">
+              <Route path="step1" element={<NewServiceStep1 />} />
+              <Route path="step2" element={<NewServiceStep2 />} />
+              <Route path="step3" element={<NewServiceStep3 />} />
+              <Route path="step4" element={<NewServiceStep4 />} />
+              <Route path="step5" element={<NewServiceStep5 />} />
             </Route>
           </Route>
+
+          {/* Client Data */}
+          <Route path="/client-data" element={<HomeClientData />} />
+          <Route path="/project/:id" element={<ClientDataDetail />} />
+        </Route>
       </Route>
+
     </Routes>
   );
 }
