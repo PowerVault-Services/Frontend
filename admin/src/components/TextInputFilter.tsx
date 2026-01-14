@@ -4,7 +4,7 @@ interface TextInputFilterProps {
   placeholder?: string;
   value: string;
   onChange: (value: string) => void;
-  name?: string;
+  type?: "text" | "date" | "time" | "number";
 }
 
 export default function TextInputFilter({
@@ -12,16 +12,16 @@ export default function TextInputFilter({
   placeholder = "Select",
   value,
   onChange,
-  name,
+  type = "text",
 }: TextInputFilterProps) {
   return (
     <div className="flex flex-col gap-1 w-full">
-      <label className="text-[16px] font-normal text-green-900">
+      <label className="text-[16px] font-normal text-green-800">
         {label}
       </label>
 
       <input
-        name={name}
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

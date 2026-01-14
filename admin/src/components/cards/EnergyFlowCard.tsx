@@ -1,4 +1,4 @@
-import React from "react";
+
 import FlowLine from "../FlowLine";
 
 import pvIcon from "../../assets/icons/pv.svg";
@@ -23,7 +23,7 @@ function EnergyNode({
   icon?: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center w-[76px] h-[76px] rounded-full border-[2px] border-[#2AC1E6] text-black">
+    <div className="flex flex-col items-center justify-center w-[76px] h-[76px] rounded-full border-2 border-[#2AC1E6] text-black">
       {icon && <img src={icon} alt="icon" className="w-[22px] h-[22px]" />}
       <div className="text-xs font-light">{value.toFixed(2)}</div>
       <div className="text-[10px]">kW</div>
@@ -38,7 +38,6 @@ export default function EnergyFlowCard({
   battery,
   load,
 }: EnergyFlowProps) {
-  const hasFlow = pv > 0 || battery > 0 || grid > 0;
 
   return (
     <div className="rounded-lg p-2 border border-[#DEE2E6] w-[314px] h-[314px] bg-white">
@@ -86,13 +85,13 @@ export default function EnergyFlowCard({
           {/* ===== Battery → Load (ซ้าย) =====*/}
           <FlowLine
             active={battery > 0}
-            d="M76 157 L127 157 Q151 157 151 181 L151 222"
+            d="M96 177 L127 177 Q151 177 151 201 L151 278"
           />
 
           {/* ===== Grid → Load (ขวา) =====*/}
           <FlowLine
             active={grid > 0}
-            d="M238 157 L181 157 Q171 157 171 167 L171 222"
+            d="M282 177 L251 177 Q227 177 227 201 L227 278"
           />
         </svg>
       </div>
