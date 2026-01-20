@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
+import JobLayout from "./layouts/JobLayout";
+
 import Login from "./pages/Login";
 import Homepage from "./pages/Homepage";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -29,18 +31,18 @@ import NewServiceStep5 from "./pages/service/NewServiceStep5";
 
 import HomeClientData from "./pages/clientdata/HomeClientData";
 import ClientDataDetail from "./pages/clientdata/ClientDataDetail";
+import ProjectJobPage from "./pages/clientdata/ProjectJobPage";
 
 function App() {
   return (
     <Routes>
-
       {/* ---------- Public ---------- */}
       <Route path="/login" element={<Login />} />
 
       {/* ---------- Protected ---------- */}
       <Route element={<ProtectedRoute />}>
+        {/* ---------- Main Layout ---------- */}
         <Route element={<MainLayout />}>
-
           <Route path="/" element={<Homepage />} />
 
           {/* Monitor */}
@@ -92,8 +94,12 @@ function App() {
           <Route path="/client-data" element={<HomeClientData />} />
           <Route path="/project/:id" element={<ClientDataDetail />} />
         </Route>
-      </Route>
 
+        {/* ---------- Job Layout (อยู่นอก MainLayout) ---------- */}
+        <Route path="/project/:projectId/:job" element={<JobLayout />}>
+          <Route index element={<ProjectJobPage />} />
+        </Route>
+      </Route>
     </Routes>
   );
 }

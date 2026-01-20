@@ -6,6 +6,7 @@ import TextInputFilter from "../TextInputFilter";
 import SelectFilter from "../SelectFilter";
 import DataTable, { type Column } from "../table/DataTable";
 
+
 interface PowerVaultThailand {
     id: string;
     projectnumber: string;
@@ -20,66 +21,15 @@ interface PowerVaultThailand {
 }
 
 export default function PowerVaultThailandTab() {
-
-    // const MOCK_DATA: PowerVaultThailand[] = [
-    //     {
-    //         id: 1,
-    //         projectnumber: "PV-001",
-    //         projectType: "Solar Farm",
-    //         projectName: "Bangkok Solar 1",
-    //         systemSize: 500,
-    //         startwarranty: "2023-01-01",
-    //         endwarranty: "2026-01-01",
-    //         date: "2024-12-15",
-    //         time: "10:00",
-    //         status: "Active",
-    //     },
-    //     {
-    //         id: 2,
-    //         projectnumber: "PV-002",
-    //         projectType: "Rooftop",
-    //         projectName: "Chiangmai Plant",
-    //         systemSize: 320,
-    //         startwarranty: "2023-01-01",
-    //         endwarranty: "2026-01-01",
-    //         date: "2025-01-10",
-    //         time: "14:30",
-    //         status: "Completed",
-    //     },
-    //     {
-    //         id: 3,
-    //         projectnumber: "PV-003",
-    //         projectType: "Solar Farm",
-    //         projectName: "Khonkaen Field",
-    //         systemSize: 800,
-    //         startwarranty: "2023-01-01",
-    //         endwarranty: "2026-01-01",
-    //         date: "2025-02-02",
-    //         time: "09:15",
-    //         status: "Pending",
-    //     },
-    // ];
-
     const [data, setData] = useState<PowerVaultThailand[]>([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
-    const [] = useState("all");
-
-    // useEffect(() => {
-    //     fetch("/api/service")
-    //         .then((res) => res.json())
-    //         .then((res) => {
-    //             setData(res);
-    //             setLoading(false);
-    //         });
-    // }, []);
-
     useEffect(() => {
-        const tableData = PROJECTS.map(p => ({
-            id: p.id,
-            projectnumber: p.id,
+        const tableData: PowerVaultThailand[] = PROJECTS.map((p) => ({
+            id: String(p.id),                 // ✅ FIX: cast to string
+            projectnumber: String(p.id),      // ✅ FIX: consistent type
             projectName: p.name,
             projectType: "Solar",
             systemSize: p.systemSize,
@@ -94,13 +44,11 @@ export default function PowerVaultThailandTab() {
         setLoading(false);
     }, []);
 
-
-
     const handleEdit = (row: PowerVaultThailand) => {
         console.log("Edit:", row);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = (id: string) => {
         if (!confirm("Delete this record?")) return;
 
         setData((prev) => prev.filter((r) => r.id !== id));
@@ -112,7 +60,6 @@ export default function PowerVaultThailandTab() {
     };
 
     const columns: Column<PowerVaultThailand>[] = [
-
         {
             key: "projectnumber",
             label: "Project No.",
@@ -126,12 +73,10 @@ export default function PowerVaultThailandTab() {
                 </button>
             ),
         },
-
         { key: "projectName", label: "Project Name", align: "center" },
         { key: "systemSize", label: "System Size (kWp)", align: "center" },
         { key: "endwarranty", label: "End Warranty", align: "center" },
         { key: "status", label: "Status", align: "center" },
-
         {
             key: "id",
             label: "Actions",
@@ -160,13 +105,13 @@ export default function PowerVaultThailandTab() {
         <div className="flex flex-col gap-[18px]">
             <SearchBox>
                 <div className="grid grid-cols-4 justify-between gap-2.5">
-                    <TextInputFilter label="Job No." value={""} onChange={() => { }} />
+                    <TextInputFilter label="Job No." value={""} onChange={() => {}} />
 
                     <SelectFilter
                         label="Project Type"
                         placeholder="All"
                         value={""}
-                        onChange={() => { }}
+                        onChange={() => {}}
                         options={[
                             { label: "All", value: "all" },
                             { label: "Project A", value: "project_a" },
@@ -174,17 +119,17 @@ export default function PowerVaultThailandTab() {
                         ]}
                     />
 
-                    <TextInputFilter label="Project Name" value={""} onChange={() => { }} />
-                    <TextInputFilter label="System Size (kWp)" value={""} onChange={() => { }} />
-                    <TextInputFilter label="PV Module (ea.)" value={""} onChange={() => { }} />
-                    <TextInputFilter label="Date" type="date" value={""} onChange={() => { }} />
-                    <TextInputFilter label="Time" type="time" value={""} onChange={() => { }} />
+                    <TextInputFilter label="Project Name" value={""} onChange={() => {}} />
+                    <TextInputFilter label="System Size (kWp)" value={""} onChange={() => {}} />
+                    <TextInputFilter label="PV Module (ea.)" value={""} onChange={() => {}} />
+                    <TextInputFilter label="Date" type="date" value={""} onChange={() => {}} />
+                    <TextInputFilter label="Time" type="time" value={""} onChange={() => {}} />
 
                     <SelectFilter
                         label="รับเหมา"
                         placeholder="All"
                         value={""}
-                        onChange={() => { }}
+                        onChange={() => {}}
                         options={[
                             { label: "All", value: "all" },
                             { label: "Project A", value: "project_a" },
@@ -196,7 +141,7 @@ export default function PowerVaultThailandTab() {
                         label="Status"
                         placeholder="All"
                         value={""}
-                        onChange={() => { }}
+                        onChange={() => {}}
                         options={[
                             { label: "All", value: "all" },
                             { label: "Pending", value: "pending" },
@@ -205,8 +150,13 @@ export default function PowerVaultThailandTab() {
                     />
                 </div>
             </SearchBox>
+
             <div className="pt-[25px]">
-                <DataTable<PowerVaultThailand> columns={columns} data={data} loading={loading} />
+                <DataTable<PowerVaultThailand>
+                    columns={columns}
+                    data={data}
+                    loading={loading}
+                />
             </div>
         </div>
     );
