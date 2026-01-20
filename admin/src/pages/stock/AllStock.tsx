@@ -3,6 +3,8 @@ import AddIcon from "../../assets/icons/Add Circle.svg";
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
 import DataTable, { type Column } from "../../components/table/DataTable";
+import AddProductModal from "../../components/AddProductModal";
+
 
 interface AllStock {
     productCode: number;
@@ -63,60 +65,15 @@ export default function AllStock() {
                 <DataTable<AllStock> columns={columns} data={data} loading={loading} />
             </div>
 
-            {openModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                    <div className="w-[820px] rounded-2xl bg-white px-10 py-8 shadow-xl">
-                        <h2 className="text-center text-2xl font-semibold text-green-800 mb-8">
-                            เพิ่มสินค้าใหม่
-                        </h2>
+            <AddProductModal
+                open={openModal}
+                onClose={() => setOpenModal(false)}
+                onNext={() => {
+                    // logic ขั้นต่อไป
+                    setOpenModal(false);
+                }}
+            />
 
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-                            <TextInputFilter
-                                label="รหัสสินค้า"
-                                placeholder="Select"
-                                value=""
-                                onChange={() => { }}
-                            />
-                            <TextInputFilter
-                                label="หมวดหมู่"
-                                placeholder="Select"
-                                value=""
-                                onChange={() => { }}
-                            />
-                            <TextInputFilter
-                                label="ชื่อสินค้า"
-                                placeholder="Select"
-                                value=""
-                                onChange={() => { }}
-                            />
-                            <TextInputFilter
-                                label="หน่วยนับ"
-                                placeholder="Select"
-                                value=""
-                                onChange={() => { }}
-                            />
-                        </div>
-
-                        <div className="mt-10 flex gap-6">
-                            <button
-                                onClick={() => setOpenModal(false)}
-                                className="w-1/2 rounded-full border border-green-700 py-3 text-green-700 hover:bg-green-50 transition"
-                            >
-                                ยกเลิก
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    setOpenModal(false);
-                                }}
-                                className="w-1/2 rounded-full bg-green-700 py-3 text-white hover:bg-green-800 transition"
-                            >
-                                ถัดไป
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
