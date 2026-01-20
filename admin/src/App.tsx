@@ -33,6 +33,10 @@ import HomeClientData from "./pages/clientdata/HomeClientData";
 import ClientDataDetail from "./pages/clientdata/ClientDataDetail";
 import ProjectJobPage from "./pages/clientdata/ProjectJobPage";
 
+import AllStock from "./pages/stock/AllStock";
+import StockIn from "./pages/stock/StockIn";
+import StockOut from "./pages/stock/StockOut";
+
 function App() {
   return (
     <Routes>
@@ -93,6 +97,11 @@ function App() {
           {/* Client Data */}
           <Route path="/client-data" element={<HomeClientData />} />
           <Route path="/project/:id" element={<ClientDataDetail />} />
+
+          {/* Stock*/}
+          <Route path="/stock/all" element={<AllStock />} />
+          <Route path="/stock/in" element={<StockIn />} />
+          <Route path="/stock/out" element={<StockOut />} />
         </Route>
 
         {/* ---------- Job Layout (อยู่นอก MainLayout) ---------- */}

@@ -24,7 +24,6 @@ export default function PowerVaultThailandTab() {
     const [data, setData] = useState<PowerVaultThailand[]>([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const tableData: PowerVaultThailand[] = PROJECTS.map((p) => ({
