@@ -5,6 +5,9 @@ import TagNav from "../../components/TagNav";
 
 import InformationTab from "../../components/tabs/clientdata/InformationTab";
 import WarrantyDetailTab from "../../components/tabs/clientdata/WarrantyDetailTab";
+import ForecastDetailTab from "../../components/tabs/forecast/ForecastDetailTab";
+import OtherTable from "../../components/table/OtherTable";
+
 
 export default function ProjectDetail() {
     const { id } = useParams();
@@ -28,6 +31,10 @@ export default function ProjectDetail() {
                 return <InformationTab />;
             case "Warranty Detail":
                 return <WarrantyDetailTab />;
+            case "Forecast":
+                return <ForecastDetailTab />;
+            case "Other":
+                return <OtherTable />;
             default:
                 return null;
         }

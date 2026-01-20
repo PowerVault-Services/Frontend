@@ -1,6 +1,7 @@
 import { useState } from "react";
 import TagNav from "../../../components/TagNav";
 import WarrantySupplier from "./WarrantySupplier";
+import WarrantyCustomer from "./WarrantyCustomer";
 
 const WarrantyTags = [
   { id: "Warranty with Supplier", label: "Warranty with Supplier" },
@@ -16,7 +17,7 @@ export default function WarrantyDetailTab() {
       case "Warranty with Supplier":
         return <WarrantySupplier />;
       case "Warranty for Customer":
-        return <div>Warranty for Customer</div>;
+        return <WarrantyCustomer />;
       default:
         return null;
     }
