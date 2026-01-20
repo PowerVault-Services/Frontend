@@ -22,7 +22,9 @@ export default function Sidebar() {
     <>
       {/* overlay ดรอปสีทั้งหน้าจอ ตอนที่เมนูเปิด */}
       {open && (
-        <div className="fixed inset-0 bg-black/25 z-10" />
+        <div className="fixed inset-0 bg-black/25 z-10" 
+        onClick={() => setOpen(false)}/>
+        
       )}
 
       {/* 🔹 Panel sidebar เลื่อนเข้า–ออกจอ */}
@@ -141,7 +143,7 @@ export default function Sidebar() {
                   setActiveGroup((prev) => (prev === "stock" ? null : "stock"))
                 }
               >
-                <SidebarSubItem label="Stock All" to="/stock/all" />
+                <SidebarSubItem label="All Stock" to="/stock/all" />
                 <SidebarSubItem label="Stock รับเข้า" to="/stock/in" />
                 <SidebarSubItem label="Stock จ่ายออก" to="/stock/out" />
               </SidebarItem>

@@ -112,7 +112,7 @@ export default function OperationTable({
                 </td>
 
                 {/* Item */}
-                <td className="h-[36px] px-[12px] py-[10px] border-t border-r border-[#D6D6D6]">
+                <td className="h-9 px-3 py-2.5 border-t border-r border-[#D6D6D6]">
                   <div
                     className={`flex items-center ${
                       row.level ? " text-black" : "font-normal"
@@ -124,7 +124,7 @@ export default function OperationTable({
                 </td>
 
                 {/* Done */}
-                <td className="h-[36px] text-center border-t border-r border-[#D6D6D6]">
+                <td className="h-9 text-center border-t border-r border-[#D6D6D6]">
                   {row.level !== 0 && (
                     <input
                       type="checkbox"
@@ -136,7 +136,7 @@ export default function OperationTable({
                 </td>
 
                 {/* Remark */}
-                <td className="h-[36px] px-2 border-t border-[#D6D6D6]">
+                <td className="h-9 px-2 border-t border-[#D6D6D6]">
                   {row.level !== 0 && (
                     <input
                       value={row.remark}

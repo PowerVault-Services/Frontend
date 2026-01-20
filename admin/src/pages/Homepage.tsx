@@ -1,4 +1,3 @@
-
 import SearchBox from "../components/SearchBox";
 import PlantStatusCard from "../components/cards/PlantStatusCard";
 import AlarmCard from "../components/cards/AlarmCard";

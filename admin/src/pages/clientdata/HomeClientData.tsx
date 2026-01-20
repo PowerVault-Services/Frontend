@@ -36,7 +36,6 @@ export default function HomeClientData() {
                         New Project
                     </button>
                 </Link>
-
             </div>
 
             {/* ===== Main Content ===== */}

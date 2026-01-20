@@ -3,7 +3,8 @@ export interface Column<T> {
   label: string;
   render?: (value: any, row: T) => React.ReactNode;
   align?: "left" | "center" | "right";
-}
+  width?: string;
+} 
 
 interface DataTableProps<T> {
   columns: Column<T>[];
@@ -26,9 +27,9 @@ export default function DataTable<T>({
 }: DataTableProps<T>) {
   return (
     <div className="rounded-2xl overflow-x-auto border border-[#DEE2E6]">
-      <table className="w-full border-collapse table-fixed">
+      <table className="w-full border-collapse">
         {/* ---------- Header ---------- */}
-        <thead className="bg-[#2F4F2F] text-white">
+        <thead className="bg-green-700 text-white">
           <tr>
             {columns.map((col) => (
               <th
@@ -75,6 +76,7 @@ export default function DataTable<T>({
                 {columns.map((col) => (
                   <td
                     key={String(col.key)}
+                    style={{ width: col.width }}
                     className={`
                       px-4 py-3
                       ${alignClass[col.align ?? "left"]}

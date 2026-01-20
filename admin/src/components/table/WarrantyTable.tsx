@@ -16,7 +16,7 @@ export default function WarrantyTable() {
   return (
     <div className="border border-green-800 rounded-2xl overflow-hidden">
       <table className="text-xs font-semibold border-collapse">
-        <thead className="bg-green-800 text-white h-[36px]">
+        <thead className="bg-green-800 text-white h-9">
           <tr className="border-b" style={{ borderColor: "#DEE2E6" }}>
             <th className="px-4 py-3 w-[369px] border-r" style={{ borderColor: "#DEE2E6" }}></th>
             {["Supplier Name","Product Name","จำนวน","Start Warranty","End Warranty","Warranty (Y)"].map((h) => (
