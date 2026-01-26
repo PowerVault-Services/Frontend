@@ -7,7 +7,10 @@ import Homepage from "./pages/Homepage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 import HomeMonitor from "./pages/monitor/HomeMonitor";
+import InverterDetail from "./pages/monitor/InverterDetail"
 import AlarmMonitor from "./pages/monitor/AlarmMonitor";
+import PRMonitor from "./pages/monitor/PRMonitor";
+import ReportMonitor from "./pages/monitor/ReportMonitor";
 
 import HomeCleaning from "./pages/cleaning/HomeCleaning";
 import NewCleaningStep1 from "./pages/cleaning/NewCleaningStep1";
@@ -37,6 +40,7 @@ import AllStock from "./pages/stock/AllStock";
 import StockIn from "./pages/stock/StockIn";
 import StockOut from "./pages/stock/StockOut";
 
+
 function App() {
   return (
     <Routes>
@@ -54,6 +58,12 @@ function App() {
             <Route index element={<Navigate to="home" replace />} />
             <Route path="home" element={<HomeMonitor />} />
             <Route path="alarm" element={<AlarmMonitor />} />
+            <Route
+              path="/monitor/inverter/:inverterId"
+              element={<InverterDetail />}
+            />
+            <Route path="pr" element={<PRMonitor />} />
+            <Route path="report" element={<ReportMonitor />} />
           </Route>
 
           {/* Cleaning */}

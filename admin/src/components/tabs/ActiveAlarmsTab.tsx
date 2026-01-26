@@ -2,6 +2,7 @@ import { useState } from "react";
 import SearchBox from "../SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
 import SelectFilter from "../../components/SelectFilter";
+import AlarmTable from "../table/AlarmTable";
 
 export default function ActiveAlarmsTab() {
   const [pvModule, setPvModule] = useState("");
@@ -54,6 +55,7 @@ export default function ActiveAlarmsTab() {
             />
         </div>
       </SearchBox>
+      <AlarmTable></AlarmTable>
     </div>
   );
 }

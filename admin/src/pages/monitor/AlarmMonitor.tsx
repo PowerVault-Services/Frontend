@@ -28,9 +28,9 @@ export default function AlarmMonitor() {
       <h1 className="text-green-800 pb-9">Alarm</h1>
 
       {/* ===== Main Content ===== */}
-      <section className="min-w-0">
+      <section className="w-full">
         {/* Tabs */}
-        <div className="flex items-center justify-between w-[1112px]">
+        <div className="flex items-center justify-between">
           <TagNav
             items={homeTags}
             activeId={activeProject}
@@ -39,7 +39,7 @@ export default function AlarmMonitor() {
         </div>
 
         {/* Content Box */}
-        <div className="bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px] w-[1112px]">
+        <div className="bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px]">
           {renderTabContent()}
         </div>
       </section>
