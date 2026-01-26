@@ -2,12 +2,11 @@ import { useEffect, useState } from "react";
 import HomeIcon from "../../assets/icons/home.svg";
 import TagNav from "../../components/TagNav";
 
-//tabs
+// tabs
 import OverviewTab from "../../components/tabs/OverviewTab";
 // import AlarmTab from "../../components/tabs/AlarmTab";
 // import PRTab from "../../components/tabs/PRTab";
 // import ReportTab from "../../components/tabs/ReportTab";
-
 
 interface Plant {
   id: number;
@@ -40,11 +39,11 @@ export default function HomeMonitor() {
       case "Overview":
         return <OverviewTab />;
       case "Alarm":
-        return <div>Alarm</div>
+        return <div>Alarm</div>;
       case "%PR":
-        return <div>%PR</div>
+        return <div>%PR</div>;
       case "Report":
-        return <div>Report</div>
+        return <div>Report</div>;
       default:
         return null;
     }
@@ -53,70 +52,79 @@ export default function HomeMonitor() {
   return (
     <div className="w-full">
       <h1 className="text-green-800 pb-9">Monitoring</h1>
+      <div className="w-full overflow-x-hidden">
+        {/* ===== Main Layout ===== */}
+        <div className="grid grid-cols-[280px_1fr] gap-8 items-start min-h-screen">
 
-      {/* ===== Main Layout ===== */}
-      <div className="grid grid-cols-[auto_1fr] gap-3.5 items-start min-h-screen">
-
-        {/* ===== Sidebar ===== */}
-        <aside className="border border-green-800 rounded-lg py-6 px-[11px] bg-white h-screen max-h-screen">
-          <div className="mb-3">
-            <input
-              type="text"
-              placeholder="Enter Plant Name"
-              className="
+          {/* ===== Sidebar ===== */}
+          <aside className="border border-green-800 rounded-lg py-6 px-[11px] bg-white h-screen sticky top-0">
+            <div className="mb-3">
+              <input
+                type="text"
+                placeholder="Enter Plant Name"
+                className="
                 w-full border border-green-200 rounded-lg p-[9px]
                 text-[14px] placeholder:text-green-500
                 focus:outline-none focus:ring-1 focus:ring-green-500
               "
-            />
-          </div>
-
-          <ul className="space-y-2 text-sm text-green-800 overflow-y-auto max-h-[calc(100vh-160px)]">
-            {loading && <li className="text-gray-400">Loading...</li>}
-            {!loading && plants.length === 0 && (
-              <li className="text-gray-400">No plant found</li>
-            )}
-            {plants.map((plant) => (
-              <li
-                key={plant.id}
-                className="cursor-pointer hover:text-green-600"
-              >
-                ▶ {plant.name}
-              </li>
-            ))}
-          </ul>
-        </aside>
-
-        {/* ===== Main Content ===== */}
-        <section className="min-w-0">
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-1.5">
-            <img src={HomeIcon} alt="home" className="w-4 h-4" />
-            <h5 className="text-xl font-semibold text-green-800">
-              Alinco (Thailand)
-            </h5>
-          </div>
-
-          {/* Tabs + Info Box */}
-          <div className="flex items-center justify-between w-[1112px]">
-            <TagNav
-              items={homeTags}
-              activeId={activeProject}
-              onChange={setActiveProject}
-            />
-
-            <div className="w-[1112px]flex items-center justify-between gap-3 border border-green-400 rounded-lg text-sm bg-white w-[409px] px-6 py-0.5 whitespace-nowrap">
-              <span className="font-semibold text-green-700 text-[18px]">Name Alarm</span>
-              <span>18 October 2025</span>
-              <span>7:30 A.M.</span>
+              />
             </div>
-          </div>
 
-          {/* Content Box */}
-          <div className="bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px] w-[1112px]">
-            {renderTabContent()}
-          </div>
-        </section>
+            <ul className="space-y-2 text-sm text-green-800 overflow-y-auto max-h-[calc(100vh-160px)]">
+              {loading && <li className="text-gray-400">Loading...</li>}
+              {!loading && plants.length === 0 && (
+                <li className="text-gray-400">No plant found</li>
+              )}
+              {plants.map((plant) => (
+                <li
+                  key={plant.id}
+                  className="cursor-pointer hover:text-green-600"
+                >
+                  ▶ {plant.name}
+                </li>
+              ))}
+            </ul>
+          </aside>
+
+          {/* ===== Main Content ===== */}
+          <section className="min-w-0 w-full">
+
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <div className="flex">
+                <img src={HomeIcon} alt="home" className="w-4 h-4" />
+                <h5 className="text-xl font-semibold text-green-800">
+                  Alinco (Thailand)
+                </h5>
+              </div>
+              <div className="flex items-center gap-3 border border-green-400 rounded-lg bg-white px-6 py-1
+              text-sm whitespace-nowrap">
+                <span className="font-semibold text-green-700 text-[18px]">
+                  Name Alarm
+                </span>
+                <span>18 October 2025</span>
+                <span>7:30 A.M.</span>
+              </div>
+            </div>
+
+            {/* Tabs + Name Alarm */}
+            <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+              <TagNav
+                items={homeTags}
+                activeId={activeProject}
+                onChange={setActiveProject}
+              />
+
+
+            </div>
+
+            {/* Content Box */}
+            <div className="bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px] w-full">
+              {renderTabContent()}
+            </div>
+
+          </section>
+        </div>
       </div>
     </div>
   );
