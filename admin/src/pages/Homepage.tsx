@@ -4,7 +4,8 @@ import AlarmCard from "../components/cards/AlarmCard";
 import { useEffect, useState } from "react";
 import TextInputFilter from "../components/TextInputFilter";
 import SelectFilter from "../components/SelectFilter";
-import DataTable from "../components/table/DataTable";
+import DataTable, { type Column } from "../components/table/DataTable";
+
 
 interface Plant {
   status: string;
@@ -31,11 +32,11 @@ export default function Homepage() {
       });
   }, []);
 
-  const columns = [
+  const columns: Column<Plant>[] = [
     {
       key: "status",
       label: "Status",
-      render: () => (
+      render: (_value) => (
         <span className="w-3 h-3 rounded-full bg-green-500 inline-block" />
       ),
       align: "center",
@@ -71,7 +72,7 @@ export default function Homepage() {
       key: "capacity",
       label: "Performance Ratio (%)",
     }
-  ] as const;
+  ];
 
   
 

@@ -106,7 +106,7 @@ export default function PowerVaultServiceTab() {
             ${jobBadgeClass(value)}
           `}
         >
-          {JOB_CONFIG[value].label}
+          {JOB_CONFIG[value as JobType].label}
         </span>
       ),
     },
