@@ -1,7 +1,7 @@
 import { DonutChart } from "../charts/DonutChart";
 
 import criticalIcon from "../../assets/icons/critical.svg";
-import majorIcon from "../../assets/icons/major.svg";
+import majorIcon from "../../assets/icons/Major.svg";
 import minorIcon from "../../assets/icons/minor.svg";
 import warningIcon from "../../assets/icons/warning.svg";
 
