@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
 import SelectFilter from "../../components/SelectFilter";
-import ReportViewe from './Reportview';
+import ReportViewe from './ReportView';
+
 
 const ALL_MONTHS = [
     { label: "มกราคม", value: "1" },

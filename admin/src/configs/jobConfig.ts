@@ -1,5 +1,7 @@
 import type { JobType } from "../mock/project";
 
+export type { JobType };
+
 export const JOB_CONFIG: Record<
   JobType,
   {
@@ -30,9 +32,6 @@ export const JOB_CONFIG: Record<
   },
 };
 
-/**
- * mapping สำหรับ route param (string) → JobType
- */
 export const JOB_ROUTE_MAP = {
   cleaning: "Cleaning",
   inspection: "Inspection",

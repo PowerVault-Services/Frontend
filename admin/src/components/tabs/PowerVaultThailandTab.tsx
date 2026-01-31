@@ -160,3 +160,7 @@ export default function PowerVaultThailandTab() {
         </div>
     );
 }
+
+function setSelectedRows(arg0: (prev: any) => Set<unknown>) {
+    throw new Error("Function not implemented.");
+}
