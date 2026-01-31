@@ -11,7 +11,7 @@ const MOCK_REPORTS = [
 export default function ReportViewe() {
   
   const [selectedReport, setSelectedReport] = useState(MOCK_REPORTS[0]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm] = useState("");
 
   
   const filteredReports = MOCK_REPORTS.filter((report) =>

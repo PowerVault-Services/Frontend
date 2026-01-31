@@ -36,7 +36,7 @@ export default function NewCleaningStep4() {
             filename: "Cleaning_Report.pdf",
             image: { type: "jpeg"as const, quality: 1 },
             html2canvas: { scale: 3, useCORS: true },
-            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait"as const, }
         };
 
         html2pdf().set(opt).from(element).save();
