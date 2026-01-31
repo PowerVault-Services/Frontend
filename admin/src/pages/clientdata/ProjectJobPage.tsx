@@ -1,7 +1,6 @@
 import { useParams } from "react-router-dom";
 import { PROJECTS, type JobType } from "../../mock/project";
 import {
-    JOB_CONFIG,
     JOB_ROUTE_MAP,
     type JobRouteKey,
 } from "../../configs/jobConfig";
@@ -28,8 +27,6 @@ export default function ProjectJobPage() {
         return <div>Not found</div>;
     }
 
-    // ถ้าต้องใช้ config ต่อ
-    const jobConfig = JOB_CONFIG[jobKey];
 
     return (
         <div>

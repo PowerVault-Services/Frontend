@@ -8,7 +8,7 @@ import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 export default function NewServiceStep2() {
 
     const navigate = useNavigate();
-    const [setUploadedFile] = useState(null);
+    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
     const steps = [
         { id: 1, label: "กรอกข้อมูล" },

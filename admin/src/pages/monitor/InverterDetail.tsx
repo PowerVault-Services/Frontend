@@ -48,7 +48,11 @@ const alarms = Array.from({ length: 7 }, (_, i) => ({
     time: "15:30",
 }));
 
-// กำหนด default props กรณีไม่ได้ส่งค่ามา ให้แสดงเป็น "Inverter 1" เหมือนเดิม
+interface InverterDetailProps {
+    inverterName?: string;
+}
+
+
 export default function InverterDetail({
     inverterName = "Inverter 1"}: InverterDetailProps) {
 
