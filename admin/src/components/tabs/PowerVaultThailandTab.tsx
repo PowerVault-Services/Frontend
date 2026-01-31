@@ -51,11 +51,6 @@ export default function PowerVaultThailandTab() {
         if (!confirm("Delete this record?")) return;
 
         setData((prev) => prev.filter((r) => r.id !== id));
-        setSelectedRows((prev) => {
-            const next = new Set(prev);
-            next.delete(id);
-            return next;
-        });
     };
 
     const columns: Column<PowerVaultThailand>[] = [
@@ -161,6 +156,3 @@ export default function PowerVaultThailandTab() {
     );
 }
 
-function setSelectedRows(arg0: (prev: any) => Set<unknown>) {
-    throw new Error("Function not implemented.");
-}

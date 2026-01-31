@@ -4,7 +4,7 @@ interface Props {
   data: OperationResult[];
 }
 
-export default function ReportPreview({ data }: Props) {
+export default function ReportPreview({ data:_ }: Props) {
   return (
     <div
       style={{

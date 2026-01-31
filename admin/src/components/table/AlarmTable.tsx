@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { 
   Download, 
   X, 
@@ -34,7 +34,6 @@ export default function AlarmTable({ data = [] }: AlarmTableProps) {
   
   // State สำหรับ Pagination (Mock)
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 2;
 
   return (
     <div className="rounded-lg text-sm">
@@ -54,7 +53,7 @@ export default function AlarmTable({ data = [] }: AlarmTableProps) {
           </div>
 
           {/* Counters (Divided by vertical lines) */}
-          <div className="h-6 w-[1px] bg-gray-300 mx-1 hidden md:block"></div>
+          <div className="h-6 w-px bg-gray-300 mx-1 hidden md:block"></div>
           
           <div className="flex gap-3">
              {/* Counter 1: Home/Base (Orange) */}
