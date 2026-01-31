@@ -2,7 +2,7 @@ import { JOB_CONFIG, type JobType } from "../configs/jobConfig";
 
 interface Props {
   job: JobType;
-}
+} 
 
 export default function JobHeader({ job }: Props) {
   const config = JOB_CONFIG[job];

@@ -3,6 +3,7 @@ import { useState } from "react";
 import type React from "react";
 import html2pdf from "html2pdf.js";
 
+
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ExportIcon from "../../assets/icons/File Download.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
@@ -33,7 +34,7 @@ export default function NewCleaningStep4() {
         const opt = {
             margin: 0,
             filename: "Cleaning_Report.pdf",
-            image: { type: "jpeg", quality: 1 },
+            image: { type: "jpeg"as const, quality: 1 },
             html2canvas: { scale: 3, useCORS: true },
             jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
         };
