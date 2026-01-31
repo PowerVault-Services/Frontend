@@ -2,8 +2,8 @@ import { DonutChart } from "../charts/DonutChart";
 
 import criticalIcon from "../../assets/icons/critical.svg";
 import majorIcon from "../../assets/icons/Major.svg";
-import minorIcon from "../../assets/icons/minor.svg";
-import warningIcon from "../../assets/icons/warning.svg";
+import minorIcon from "../../assets/icons/Minor.svg";
+import warningIcon from "../../assets/icons/Warning.svg";
 
 export default function AlarmCard() {
   const data = [
