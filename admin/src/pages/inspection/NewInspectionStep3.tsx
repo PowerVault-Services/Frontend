@@ -7,7 +7,7 @@ import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 
 export default function NewInspectionStep3() {
     const navigate = useNavigate();
-    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [_uploadedFile, setUploadedFile] = useState<File | null>(null);
 
 
     const steps = [
