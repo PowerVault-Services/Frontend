@@ -7,6 +7,7 @@ import type { Category, Unit } from "../services/api";
 interface AddProductModalProps {
   open: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 export default function AddProductModal({

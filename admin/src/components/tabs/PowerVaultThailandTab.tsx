@@ -52,12 +52,23 @@ export default function PowerVaultThailandTab({
         return date.toISOString().split("T")[0];
     };
 
+    /* ================= Delete ================= */
+    const handleDelete = (id: number) => {
+        const confirmDelete = window.confirm("ต้องการลบรายการนี้หรือไม่?");
+        if (!confirmDelete) return;
+
+        console.log("Delete project id:", id);
+
+        // TODO: call delete API here
+    };
+
     /* ================= Filtered Data ================= */
     const filteredData = useMemo(() => {
         return data.filter((item) => {
             const matchProjectNo =
                 filters.projectNo === "" ||
                 item.projectNo.toLowerCase().includes(filters.projectNo.toLowerCase());
+
             const matchProjectName =
                 filters.projectName === "" ||
                 item.projectName.toLowerCase().includes(filters.projectName.toLowerCase());
@@ -88,14 +99,16 @@ export default function PowerVaultThailandTab({
     /* ================= Table Columns ================= */
     const columns: Column<PowerVaultThailand>[] = [
         {
+            id: "projectNo",
             key: "projectNo",
             label: "Project No.",
             align: "center",
             render: (value, row) => {
-                const raw = String(value || "");
-                const displayValue = raw.startsWith("NE=")
-                    ? raw.replace("NE=", "")
-                    : raw;
+
+                const raw = String(value ?? "");
+
+                // ตัด NE=
+                const displayValue = raw.replace(/^NE=/, "");
 
                 return (
                     <button
@@ -105,45 +118,54 @@ export default function PowerVaultThailandTab({
                         {displayValue}
                     </button>
                 );
-            },
-            id: ""
+            }
         },
-        { key: "projectName", label: "Project Name", align: "center" },
         {
+            id: "projectName",
+            key: "projectName",
+            label: "Project Name",
+            align: "center"
+        },
+        {
+            id: "capacityKwp",
             key: "capacityKwp",
             label: "System Size (kWp)",
-            align: "center",
-            render: (value) =>
-                value !== undefined && value !== null
-                    ? Number(value).toLocaleString()
-                    : "-",
+            align: "center"
         },
         {
+            id: "endWarranty",
             key: "endWarranty",
             label: "End Warranty",
             align: "center",
-            render: (value) => formatDate(value as string | null),
+            render: (value) => formatDate(value as string | null)
         },
         {
+            id: "status",
             key: "status",
             label: "Status",
-            align: "center",
-            render: (value) => {
-                const statusStr = String(value || "");
-                return (
-                    <span
-                        className={
-                            statusStr.toUpperCase() === "ACTIVE"
-                                ? ""
-                                : "text-gray-500"
-                        }
-                    >
-                        {statusStr.charAt(0).toUpperCase() +
-                            statusStr.slice(1).toLowerCase()}
-                    </span>
-                );
-            },
+            align: "center"
         },
+        {
+            id: "action",
+            label: "",
+            align: "center",
+            render: (_, row) => (
+                <div className="flex justify-center gap-3">
+                    <button
+                        onClick={() => navigate(`/project/edit/${row.id}`)}
+                        className="text-blue-600 hover:text-blue-800"
+                    >
+                        ✏️
+                    </button>
+                    <button
+                        onClick={() => handleDelete(row.id)}
+                        className="text-red-600 hover:text-red-800"
+                    >
+                        🗑
+                    </button>
+                </div>
+            )
+        }
     ];
 
     /* ================= JSX ================= */
@@ -209,4 +231,5 @@ export default function PowerVaultThailandTab({
             </div>
         </div>
     );
+
 }

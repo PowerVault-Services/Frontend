@@ -42,7 +42,7 @@ export default function HomeCleaning() {
       const res = await getCleaningJobs();
 
       const mapped = res.map((item: any) => ({
-        id: item.jobId,              // ⭐ แก้ตรงนี้
+        id: item.jobId,
         jobnumber: item.jobNo,
         projectType: item.projectType,
         projectName: item.projectName,
@@ -243,7 +243,7 @@ export default function HomeCleaning() {
           data={paginatedData}
           loading={loading}
         />
-        <div className="flex items-center justify-between mt-6 text-sm text-gray-500 ">
+        <div className="flex items-center justify-between py-6 text-sm text-gray-500 ">
 
           <span>
             {(page - 1) * pageSize + 1} to{" "}

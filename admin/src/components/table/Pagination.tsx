@@ -46,8 +46,8 @@ export default function Pagination({ page, totalPages, onChange }: Props) {
                         onClick={() => onChange(Number(p))}
                         className={`w-9 h-9 flex items-center justify-center rounded-md border
         ${page === p
-                                ? "border-[#356A2E] text-[#356A2E] font-medium"
-                                : "border-gray-300 text-gray-500"
+                                ? "border-[#356A2E] text-[#356A2E] font-medium bg-white"
+                                : "border-gray-300 text-gray-500 bg-white"
                             }`}
                     >
                         {p}
