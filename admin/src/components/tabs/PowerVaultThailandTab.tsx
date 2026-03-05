@@ -106,6 +106,7 @@ export default function PowerVaultThailandTab({
                     </button>
                 );
             },
+            id: ""
         },
         { key: "projectName", label: "Project Name", align: "center" },
         {
@@ -208,9 +209,4 @@ export default function PowerVaultThailandTab({
             </div>
         </div>
     );
-<<<<<<< HEAD
 }
-
-=======
-}
->>>>>>> da78097 (connet api)

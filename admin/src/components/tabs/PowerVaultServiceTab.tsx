@@ -7,12 +7,14 @@ import DataTable, { type Column } from "../table/DataTable";
 import { JOB_CONFIG } from "../../configs/jobConfig";
 import { getServiceEntries } from "../../services/api";
 
+type JobType = "SERVICE" | "CLEANING" | "INSPECTION" | "OM";
+
 interface PowerVaultService {
   id: string;
   projectnumber: string;
   projectName: string;
   systemSize: number;
-  job: "SERVICE" | "CLEANING" | "INSPECTION" | "OM";
+  job: JobType;
   description: string;
 }
 
@@ -53,7 +55,7 @@ export default function PowerVaultServiceTab() {
             projectnumber: String(item.siteId),
             projectName: item.projectName ?? "-",
             systemSize: item.systemSize ?? 0,
-            job: item.job,
+            job: item.job as JobType,
             description: item.description ?? "",
           }));
 
@@ -161,7 +163,7 @@ export default function PowerVaultServiceTab() {
           `}
         >
 
-          {JOB_CONFIG[value]?.label ?? value}
+          {JOB_CONFIG[value as JobType]?.label ?? value}
         </span>
       ),
     },

@@ -122,6 +122,11 @@ export const getCleaningProjects = async () => {
   return res.data.data;
 };
 
+export const getCleaningJobs = async () => {
+  const res = await api.get("/cleaning/jobs");
+  return res.data.data;
+};
+
 export const createCleaningStep1 = async (payload: {
   siteId: number;
   projectType: string;

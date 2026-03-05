@@ -9,6 +9,27 @@ import TextInputFilter from "../../components/TextInputFilter";
 import { getCleaningProjects, createCleaningStep1 } from "../../services/api";
 import type { CleaningProject } from "../../services/types";
 
+function formatPhones(phone?: string) {
+    if (!phone) return "";
+
+    const cleaned = phone.replace(/\D/g, "");
+
+    if (cleaned.length === 10) {
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    }
+
+    return phone;
+}
+
+function parseEmails(emails?: string) {
+    if (!emails) return [];
+
+    return emails
+        .split(/[;,]/) // รองรับ ; หรือ ,
+        .map((e) => e.trim())
+        .filter(Boolean);
+}
+
 export default function NewCleaningStep1() {
     const navigate = useNavigate();
     const FIELD_WIDTH = "w-[532px]";
@@ -69,7 +90,7 @@ export default function NewCleaningStep1() {
     // Save Draft
     // ==========================
     function saveStep1Data() {
-        
+
         const payload = {
             projectId,
             projectName: project?.projectName ?? "",
@@ -101,7 +122,7 @@ export default function NewCleaningStep1() {
             </div>
 
             {/* Form */}
-            <div className="flex flex-col h-[822px] px-28 py-5 gap-y-[58px] bg-white rounded-2xl justify-between items-center">
+            <div className="flex flex-col min-h-[822px] px-28 py-5 gap-y-[58px] bg-white rounded-2xl justify-between items-center">
 
                 <ProgressBar steps={steps} currentStep={currentStep} />
 
@@ -153,7 +174,7 @@ export default function NewCleaningStep1() {
                     <div className={FIELD_WIDTH}>
                         <InputField
                             label="Contact Phone Number"
-                            value={formatPhones(project?.contactPhone)} // NEW
+                            value={formatPhones(project?.contactPhone ?? "")}
                             disabled
                         />
                     </div>
@@ -165,7 +186,7 @@ export default function NewCleaningStep1() {
                         <div
                             className="min-h-10 p-4 rounded-sm border bg-[#EDEDED] text-[14px] text-green-500 border-green-200 cursor-not-allowed space-y-1"
                         >
-                            {parseEmails(project?.contactEmail).map((email, index) => (
+                            {parseEmails(project?.contactEmail ?? "").map((email, index) => (
                                 <div key={index} className="flex items-center gap-2 break-all">
                                     <span>{email}</span>
                                 </div>
@@ -249,6 +270,11 @@ export default function NewCleaningStep1() {
 
                     <button
                         onClick={async () => {
+                            if (!projectId) {
+                                alert("กรุณาเลือก Project");
+                                return;
+                            }
+
                             if (!date || !time) {
                                 alert("กรุณาเลือกวันที่และเวลา");
                                 return;

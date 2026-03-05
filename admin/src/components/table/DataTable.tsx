@@ -1,7 +1,7 @@
 import React from "react";
 
 export interface Column<T> {
-  id: string; // ใช้เป็น unique key ของ column
+  id: string;
   key?: keyof T;
   label: string;
   render?: (value: any, row: T) => React.ReactNode;
@@ -23,30 +23,54 @@ const alignClass = {
   right: "text-right",
 };
 
-export default function DataTable<T>({
+export default function DataTable<T extends { id: number | string }>({
   columns,
   data,
   loading = false,
 }: DataTableProps<T>) {
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl overflow-x-auto border border-[#DEE2E6]">
+        <table className="w-full border-collapse">
+          <thead className="bg-[#356A2E] text-white">
+            <tr>
+              {columns.map((col) => (
+                <th
+                  key={`head-${col.id}`}
+                  className="px-4 py-4 text-center text-[15px] font-medium border-r border-green-200 last:border-none"
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="text-center py-6 text-gray-400"
+              >
+                Loading...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl overflow-x-auto border border-[#DEE2E6]">
       <table className="w-full border-collapse">
-        
+
         {/* ---------- Header ---------- */}
-        <thead className="bg-green-700 text-white">
+        <thead className="bg-[#356A2E] text-white">
           <tr>
-            {columns.map((col) => (
+            {columns.map((col, colIndex) => (
               <th
-                key={col.id}
-                className={`
-                  px-4 py-3
-                  text-xs font-light
-                  ${alignClass[col.align ?? "left"]}
-                  border-r border-[#DEE2E6]
-                  last:border-r-0
-                  whitespace-normal wrap-break-word
-                  align-middle
-                `}
+                key={`head-${col.id}-${colIndex}`}
+                className="px-4 py-4 text-center text-[15px] font-medium border-r border-green-200 last:border-none"
               >
                 {col.label}
               </th>
@@ -56,20 +80,11 @@ export default function DataTable<T>({
 
         {/* ---------- Body ---------- */}
         <tbody className="bg-white">
-          {loading ? (
+          {data.length === 0 ? (
             <tr>
               <td
                 colSpan={columns.length}
-                className="text-center py-6 border-t border-[#DEE2E6]"
-              >
-                Loading...
-              </td>
-            </tr>
-          ) : data.length === 0 ? (
-            <tr>
-              <td
-                colSpan={columns.length}
-                className="text-center py-6 border-t border-[#DEE2E6]"
+                className="text-center py-6 text-gray-400"
               >
                 No data
               </td>
@@ -77,26 +92,23 @@ export default function DataTable<T>({
           ) : (
             data.map((row, rowIndex) => (
               <tr
-                key={rowIndex}
-                className="border-t border-[#DEE2E6] text-sm text-gray-700"
+                key={`row-${row.id}-${rowIndex}`}
+                className="border-t border-gray-300"
               >
-                {columns.map((col) => {
-                  const value = col.key ? (row as any)[col.key] : undefined;
+                {columns.map((col, colIndex) => {
+
+                  const value = col.key ? row[col.key] : undefined;
 
                   return (
                     <td
-                      key={col.id}
-                      style={{ width: col.width }}
-                      className={`
-                        px-4 py-3
-                        ${alignClass[col.align ?? "left"]}
-                        border-r border-[#DEE2E6]
-                        last:border-r-0
-                      `}
+                      key={`cell-${row.id}-${col.id}-${colIndex}`}
+                      className={`px-4 py-4 text-[15px] border-r border-gray-300 last:border-none ${
+                        alignClass[col.align ?? "center"]
+                      }`}
                     >
                       {col.render
                         ? col.render(value, row)
-                        : String(value ?? "-")}
+                        : (value ?? "-") as React.ReactNode}
                     </td>
                   );
                 })}
@@ -104,6 +116,7 @@ export default function DataTable<T>({
             ))
           )}
         </tbody>
+
       </table>
     </div>
   );
