@@ -49,6 +49,7 @@ export default function HomeCleaning() {
 
   const columns: Column<Cleaning>[] = [
     {
+      id: "checkbox",
       key: "id",
       label: "",
       align: "center",
@@ -65,15 +66,16 @@ export default function HomeCleaning() {
       ),
     },
 
-    { key: "jobnumber", label: "Job No.", align: "center" },
-    { key: "projectType", label: "Project Type", align: "center" },
-    { key: "projectName", label: "Project Name", align: "center" },
-    { key: "systemSize", label: "System Size (kWp)", align: "center" },
-    { key: "date", label: "Date", align: "center" },
-    { key: "time", label: "Time", align: "center" },
-    { key: "status", label: "Status", align: "center" },
+    { id: "jobnumber", key: "jobnumber", label: "Job No.", align: "center" },
+    { id: "projectType", key: "projectType", label: "Project Type", align: "center" },
+    { id: "projectName", key: "projectName", label: "Project Name", align: "center" },
+    { id: "systemSize", key: "systemSize", label: "System Size (kWp)", align: "center" },
+    { id: "date", key: "date", label: "Date", align: "center" },
+    { id: "time", key: "time", label: "Time", align: "center" },
+    { id: "status", key: "status", label: "Status", align: "center" },
 
     {
+      id: "actions",
       key: "id",
       label: "Actions",
       align: "center",
@@ -99,17 +101,17 @@ export default function HomeCleaning() {
 
   return (
     <div className="w-full">
-        <div className="flex justify-between pb-9">
-            <h1 className="text-green-800">Cleaning</h1>
-            <Link to="/cleaning/new/step1">
-                <button className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5">
-                    <img src={AddIcon} alt="" />
-                    New Cleaning Job
-                </button>
-            </Link>
+      <div className="flex justify-between pb-9">
+        <h1 className="text-green-800">Cleaning</h1>
 
-        </div>
-      
+        <Link to="/cleaning/new/step1">
+          <button className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5">
+            <img src={AddIcon} alt="" />
+            New Cleaning Job
+          </button>
+        </Link>
+      </div>
+
       <SearchBox>
         <div className="grid grid-cols-4 justify-between gap-2.5">
           <TextInputFilter label="Job No." value={""} onChange={() => {}} />
@@ -127,10 +129,28 @@ export default function HomeCleaning() {
           />
 
           <TextInputFilter label="Project Name" value={""} onChange={() => {}} />
-          <TextInputFilter label="System Size (kWp)" value={""} onChange={() => {}} />
+
+          <TextInputFilter
+            label="System Size (kWp)"
+            value={""}
+            onChange={() => {}}
+          />
+
           <TextInputFilter label="PV Module (ea.)" value={""} onChange={() => {}} />
-          <TextInputFilter label="Date" type="date" value={""} onChange={() => {}} />
-          <TextInputFilter label="Time" type="time" value={""} onChange={() => {}} />
+
+          <TextInputFilter
+            label="Date"
+            type="date"
+            value={""}
+            onChange={() => {}}
+          />
+
+          <TextInputFilter
+            label="Time"
+            type="time"
+            value={""}
+            onChange={() => {}}
+          />
 
           <SelectFilter
             label="รับเหมา"
@@ -166,7 +186,11 @@ export default function HomeCleaning() {
       </div>
 
       <div className="pt-[25px]">
-        <DataTable<Cleaning> columns={columns} data={data} loading={loading} />
+        <DataTable<Cleaning>
+          columns={columns}
+          data={data}
+          loading={loading}
+        />
       </div>
     </div>
   );

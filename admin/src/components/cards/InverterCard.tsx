@@ -24,6 +24,7 @@ export default function InverterCard({
   inverter,
   maxPower = 100,
 }: InverterCardProps) {
+
   const navigate = useNavigate();
 
   // --- Logic คำนวณ Gauge ---
@@ -48,34 +49,19 @@ export default function InverterCard({
           {inverter.name}
         </h5>
 
-        {/* ปุ่มไปหน้า Detail */}
         <button
           type="button"
           onClick={() => navigate(`/monitor/inverter/${inverter.id}`)}
-          className="
-            p-1 rounded-full
-            hover:bg-green-100
-            transition
-          "
-          aria-label="View inverter detail"
+          className="p-1 rounded-full hover:bg-green-100 transition"
         >
-          <img
-            src={MenuDots}
-            alt="detail inverter"
-            className="w-6 h-6"
-          />
+          <img src={MenuDots} alt="detail inverter" className="w-6 h-6" />
         </button>
       </div>
 
-      {/* ===== Gauge Chart (SVG) ===== */}
+      {/* ===== Gauge ===== */}
       <div className="flex justify-center items-center relative h-[100px] w-full mt-2">
         <div className="relative w-[160px] h-[83px] flex justify-center">
-          <svg
-            height="83"
-            width="160"
-            viewBox="0 0 160 90"
-            className="overflow-visible"
-          >
+          <svg height="83" width="160" viewBox="0 0 160 90">
             <path
               d={`M 5 80 A ${normalizedRadius} ${normalizedRadius} 0 0 1 155 80`}
               fill="none"
@@ -91,23 +77,17 @@ export default function InverterCard({
               strokeDasharray={`${circumference} ${circumference}`}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
-              className="transition-all duration-500 ease-out"
             />
-            <g
-              className="transition-all duration-500 ease-out"
-              transform={`translate(${knobX}, ${knobY})`}
-            >
+            <g transform={`translate(${knobX}, ${knobY})`}>
               <circle r="9" fill="black" fillOpacity="0.1" cy="2" />
               <circle r="8" fill="white" />
               <circle r="4" fill="#7CB376" />
             </g>
           </svg>
 
-          <div className="absolute top-8 left-0 right-0 text-center translate-y-2">
+          <div className="absolute top-8 left-0 right-0 text-center">
             <div className="flex justify-center items-baseline gap-1 text-green-900">
-              <span className="text-[24px] font-bold leading-none">
-                {inverter.power}
-              </span>
+              <span className="text-[24px] font-bold">{inverter.power}</span>
               <span className="text-[16px] font-bold">kW</span>
             </div>
           </div>
@@ -115,12 +95,10 @@ export default function InverterCard({
       </div>
 
       {/* ===== Info ===== */}
-      <div className="mt-3 flex flex-col text-xs w-[230px]">
+      <div className="mt-3 flex flex-col text-xs">
         <div className="flex items-center">
-          <span className="w-[103px] text-green-900 font-bold">
-            Status
-          </span>
-          <span className="flex items-center gap-[5px]">
+          <span className="w-[103px] font-bold">Status</span>
+          <span className="flex items-center gap-1">
             <span
               className={`w-2 h-2 rounded-full ${statusDotColor[inverter.status]}`}
             />
@@ -129,17 +107,13 @@ export default function InverterCard({
         </div>
 
         <div className="flex items-center">
-          <span className="w-[103px] text-green-900 font-bold">
-            Alarm
-          </span>
+          <span className="w-[103px] font-bold">Alarm</span>
           <span>{inverter.alarm}</span>
         </div>
 
         <div className="flex items-center">
-          <span className="w-[103px] text-green-900 font-bold">
-            Inverter Model
-          </span>
-          <span className="break-words">{inverter.model}</span>
+          <span className="w-[103px] font-bold">Inverter Model</span>
+          <span>{inverter.model}</span>
         </div>
       </div>
     </div>

@@ -16,12 +16,14 @@ export default function NewCleaningStep5() {
 
   const [currentStep] = useState(5);
   const [reportFileUrl, setReportFileUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const [jobData, setJobData] = useState<{
     projectName?: string;
     date?: string;
     time?: string;
     remark?: string;
+    contactEmail?: string;
   }>({});
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function NewCleaningStep5() {
   }, []);
 
   useEffect(() => {
-    const raw = localStorage.getItem("cleaning_step1"); // 👈 master data
+    const raw = localStorage.getItem("cleaning_step1");
     if (raw) setJobData(JSON.parse(raw));
   }, []);
 
@@ -38,12 +40,70 @@ export default function NewCleaningStep5() {
     if (!dateStr) return "";
 
     const date = new Date(dateStr);
+
     const months = [
       "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
       "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"
     ];
 
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
+  }
+
+  /* =========================
+     Send Email API
+  ========================= */
+
+  async function handleSendEmail() {
+
+    const jobId = localStorage.getItem("jobId");
+
+    if (!jobId) {
+      alert("ไม่พบ jobId");
+      return;
+    }
+
+    try {
+
+      setLoading(true);
+
+      const response = await fetch("/api/cleaning/step5/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          jobId: Number(jobId),
+          to: "ืnita290646@gmail.com",
+          subject: "รายงานการบำรุงรักษาระบบ Solar System",
+          body: `
+            <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+            <p>บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตนำส่งรายงานการเข้าบำรุงรักษาระบบ Solar System</p>
+            <p>โครงการ <b>${jobData.projectName || "-"}</b></p>
+            <p>วันที่ปฏิบัติงาน ${formatThaiDate(jobData.date)}</p>
+            <p>รายละเอียดตามไฟล์แนบ</p>
+          `
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Send email failed");
+      }
+
+      alert("ส่งรายงานเรียบร้อยแล้ว");
+
+      navigate("/cleaning/home");
+
+    } catch (error) {
+
+      console.error(error);
+      alert("ไม่สามารถส่งอีเมลได้");
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
   }
 
   return (
@@ -130,15 +190,19 @@ export default function NewCleaningStep5() {
         </div>
 
         <div className="flex w-full max-w-[1095px] justify-between">
-          <button onClick={() => navigate("/cleaning/new/step4")}
+          <button
+            onClick={() => navigate("/cleaning/new/step4")}
             className="w-[195px] border border-green-600 text-green-600 px-6 py-2.5 rounded-2xl">
             ก่อนหน้า
           </button>
 
-          <button onClick={() => navigate("/cleaning/new/step5")}
-            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl">
-            ยืนยันส่งอีเมล
+          <button
+            onClick={handleSendEmail}
+            disabled={loading}
+            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl disabled:opacity-50">
+            {loading ? "กำลังส่ง..." : "ยืนยันส่งอีเมล"}
           </button>
+
         </div>
       </div>
     </div>

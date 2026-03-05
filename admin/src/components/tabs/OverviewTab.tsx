@@ -1,4 +1,7 @@
 import { useEffect, useState, useRef } from "react";
+
+import api from "../../services/api";
+
 import EnergyFlowCard from "../cards/EnergyFlowCard";
 import EnergyManagementCard from "../../components/EnergyManagementCard";
 import InverterCard from "../cards/InverterCard";
@@ -10,6 +13,8 @@ import MainWeather from "../cards/MainWeather";
 // Import Icons
 import ArrowLeft from "../../assets/icons/Arrow Left.svg";
 import ArrowRight from "../../assets/icons/Arrow Right.svg";
+
+
 
 /* ================= Types ================= */
 type Inverter = {
@@ -53,28 +58,51 @@ type MainWeather = {
   status: "Connect" | "Disconnect";
 };
 
-export default function OverviewTab() {
+interface OverviewTabProps {
+  plantId?: number; // รับ plantId มาจากหน้า HomeMonitor
+}
+
+export default function OverviewTab({ plantId }: OverviewTabProps) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   // Ref สำหรับ Container ของ Inverter
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const payload = data;
+
+
   useEffect(() => {
-    setLoading(true);
-    fetch("/api/overview")
-      .then((res) => res.json())
-      .then(setData)
-      .finally(() => setLoading(false));
-  }, []);
+    if (!plantId) return;
+
+    const fetchOverview = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get(
+          `/monitoring/sites/${plantId}/overview`
+        );
+
+        // response.data = { data: {...} }
+        setData(response.data.data);
+      } catch (err) {
+        console.error("ไม่สามารถดึงข้อมูล Overview ได้:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOverview();
+  }, [plantId]);
+
+
 
   /* ================= Logic การเลื่อน (Scroll) ================= */
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
       const { current } = scrollContainerRef;
       // เลื่อนทีละประมาณความกว้างของ Container หารด้วย 4 (หรือ 1 เพื่อเลื่อนทั้งหน้า)
-      const scrollAmount = current.clientWidth / 1; 
-      
+      const scrollAmount = current.clientWidth / 1;
+
       current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
@@ -84,51 +112,44 @@ export default function OverviewTab() {
 
   if (loading) return <div>Loading...</div>;
 
-  /* ================= Mock Data ================= */
-  const inverters: Inverter[] = [
-    { id: "1", name: "Inverter 1", power: 12.5, status: "Connect", alarm: "-", model: "Huawei SUN2000" },
-    { id: "2", name: "Inverter 2", power: 8.2, status: "Disconnect", alarm: "Grid Lost", model: "Growatt MAX" },
-    { id: "3", name: "Inverter 3", power: 8.2, status: "Disconnect", alarm: "Grid Lost", model: "Growatt MAX" },
-    { id: "4", name: "Inverter 4", power: 88.2, status: "Disconnect", alarm: "Grid Lost", model: "Growatt MAX" },
-    { id: "5", name: "Inverter 5", power: 100.0, status: "Connect", alarm: "-", model: "Huawei SUN2000" }, 
-    { id: "6", name: "Inverter 6", power: 5.5, status: "Connect", alarm: "-", model: "Huawei SUN2000" }, 
-  ];
+  const inverters: Inverter[] =
+    data?.inverters?.map((inv: any) => ({
+      id: String(inv.id),
+      name: inv.name,
+      model: inv.model,
+      power: inv.activePower ?? 0,
+      status: inv.status === "Normal" ? "Connect" : "Disconnect",
+      alarm: inv.status === "Fault" ? "Fault" : "-",
+    })) || [];
 
-  const mainMeters: MainMeter[] = [
-    { id: "1", voltage: 220, current: 5.5, power: 12.1, status: "Connect" },
-  ];
 
-  const mainBatteries: MainBattery[] = [
-    { id: "1", soc: 85, temp: 25, powerstatus: "Normal", status: "Disconnect" },
-  ];
 
-  const mainSolars: MainSolar[] = [
-    { id: "1", irradiance: 750, Current: 4.2, powerstatus: "Online", status: "Connect" },
-  ];
+  // TODO: waiting API support
+  const mainMeters: MainMeter[] = [];
+  const mainBatteries: MainBattery[] = [];
+  const mainSolars: MainSolar[] = [];
+  const mainWeathers: MainWeather[] = [];
 
-  const mainWeathers: MainWeather[] = [
-    { id: "1", wind: 3.5, temp: 30, powerstatus: "Normal", status: "Connect" },
-  ];
 
-  // เช็คจำนวนรายการว่าเกิน 4 หรือไม่
   const isScrollable = inverters.length > 4;
 
   return (
     <div className="flex flex-col gap-[18px]">
       {/* ===== Top Section ===== */}
-      <div className="flex gap-[18px]">
+      <div className="flex gap-[18px] w-full">
         <EnergyFlowCard
-          pv={data?.pv || 0}
-          grid={data?.grid || 0}
-          battery={data?.battery || 0}
-          load={data?.load || 0}
+          pv={0}
+          grid={0}
+          battery={0}
+          load={0}
         />
+
         <EnergyManagementCard />
       </div>
 
       {/* ===== Inverters Section ===== */}
       <div className="relative group">
-        
+
         {/* ปุ่มซ้าย */}
         {isScrollable && (
           <button
@@ -155,14 +176,13 @@ export default function OverviewTab() {
           }
           style={isScrollable ? { scrollbarWidth: "none", msOverflowStyle: "none" } : {}}
         >
-           <style>{`
+          <style>{`
              .no-scrollbar::-webkit-scrollbar { display: none; }
            `}</style>
 
           {inverters.map((inv) => (
-            <div 
-              key={inv.id} 
-              // ไม่ต้องคำนวณ Width ที่นี่แล้ว เพราะ Parent (Grid) จัดการให้
+            <div
+              key={inv.id}
               className="w-full"
             >
               <InverterCard inverter={inv} />

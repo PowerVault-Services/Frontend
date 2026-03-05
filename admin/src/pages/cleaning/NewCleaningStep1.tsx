@@ -5,12 +5,11 @@ import ProgressBar from "../../components/progress/ProgressBar";
 import SelectFilter from "../../components/SelectFilter";
 import InputField from "../../components/InputField";
 import TextInputFilter from "../../components/TextInputFilter";
-import { PROJECTS, type Project } from "../../mock/project";
 
-
+import { getCleaningProjects, createCleaningStep1 } from "../../services/api";
+import type { CleaningProject } from "../../services/types";
 
 export default function NewCleaningStep1() {
-
     const navigate = useNavigate();
     const FIELD_WIDTH = "w-[532px]";
 
@@ -24,8 +23,9 @@ export default function NewCleaningStep1() {
 
     const [currentStep] = useState(1);
 
+    const [projects, setProjects] = useState<CleaningProject[]>([]);
     const [projectId, setProjectId] = useState("");
-    const [project, setProject] = useState<Project | null>(null);
+    const [project, setProject] = useState<CleaningProject | null>(null);
 
     const [date, setDate] = useState("");
     const [time, setTime] = useState("");
@@ -33,21 +33,55 @@ export default function NewCleaningStep1() {
     const [contractor, setContractor] = useState("");
     const [projectType, setProjectType] = useState("");
 
+    // ==========================
+    // Load Projects
+    // ==========================
     useEffect(() => {
-        const selected = PROJECTS.find(p => p.id === projectId);
-        setProject(selected ?? null);
-    }, [projectId]);
+        async function loadProjects() {
+            try {
+                const data = await getCleaningProjects();
+                setProjects(data);
+            } catch (error) {
+                console.error("โหลด cleaning projects ไม่สำเร็จ:", error);
+            }
+        }
 
+        loadProjects();
+    }, []);
+
+    // ==========================
+    // หา project ที่เลือก
+    // ==========================
+    useEffect(() => {
+        if (!projectId) {
+            setProject(null);
+            return;
+        }
+
+        const selected = projects.find(
+            (p) => p.siteId === Number(projectId)
+        );
+
+        setProject(selected ?? null);
+    }, [projectId, projects]);
+
+    // ==========================
+    // Save Draft
+    // ==========================
     function saveStep1Data() {
+        
         const payload = {
-            projectName: project?.name ?? "",
+            projectId,
+            projectName: project?.projectName ?? "",
             date,
             time,
             remark,
+            contractor,
+            projectType,
         };
+
         localStorage.setItem("cleaning_step1", JSON.stringify(payload));
     }
-
 
     return (
         <div className="w-full">
@@ -57,8 +91,9 @@ export default function NewCleaningStep1() {
                 <h1 className="text-green-800">New Cleaning Job</h1>
 
                 <button
+                    onClick={saveStep1Data}
                     className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
-          text-green-700 bg-white border-2 border-green-700 rounded-md"
+                    text-green-700 bg-white border-2 border-green-700 rounded-md"
                 >
                     <img src={SaveDraftIcon} alt="" />
                     Save Draft
@@ -70,67 +105,78 @@ export default function NewCleaningStep1() {
 
                 <ProgressBar steps={steps} currentStep={currentStep} />
 
-
-
                 {/* Form Fields */}
                 <div className="grid grid-cols-2 w-[1095px] justify-center gap-y-[27px]">
 
+                    {/* Project Name */}
                     <div className={FIELD_WIDTH}>
                         <SelectFilter
                             label="Project Name"
                             placeholder="Select Project"
                             value={projectId}
                             onChange={setProjectId}
-                            options={PROJECTS.map(p => ({
-                                label: p.name,
-                                value: p.id,
+                            options={projects.map((p) => ({
+                                label: p.projectName,
+                                value: String(p.siteId),
                             }))}
                         />
                     </div>
 
+                    {/* Location */}
                     <div className={FIELD_WIDTH}>
                         <InputField
                             label="Location"
-                            value={project?.location ?? ""}
+                            value={project?.address ?? ""}
                             disabled
                         />
                     </div>
 
+                    {/* System Size */}
                     <div className={FIELD_WIDTH}>
                         <InputField
                             label="System Size (kWp)"
-                            value={project?.systemSize ?? ""}
+                            value={project?.systemSizeKWp?.toString() ?? ""}
                             disabled
                         />
                     </div>
 
+                    {/* PV Module */}
                     <div className={FIELD_WIDTH}>
                         <InputField
                             label="PV Module (ea.)"
-                            value={project?.pvModule ?? ""}
+                            value={project?.pvModuleEA?.toString() ?? ""}
                             disabled
                         />
                     </div>
 
+                    {/* Phone */}
                     <div className={FIELD_WIDTH}>
                         <InputField
                             label="Contact Phone Number"
-                            value={project?.phone ?? ""}
+                            value={formatPhones(project?.contactPhone)} // NEW
                             disabled
                         />
                     </div>
 
-                    <div className={FIELD_WIDTH}>
-                        <InputField
-                            label="Contact Email"
-                            value={project?.email ?? ""}
-                            disabled
-                        />
+                    {/* Email */}
+                    <div className="flex flex-col gap-1 w-full">
+                        <label className="text-sm text-green-800">Contact Email</label>
+
+                        <div
+                            className="min-h-10 p-4 rounded-sm border bg-[#EDEDED] text-[14px] text-green-500 border-green-200 cursor-not-allowed space-y-1"
+                        >
+                            {parseEmails(project?.contactEmail).map((email, index) => (
+                                <div key={index} className="flex items-center gap-2 break-all">
+                                    <span>{email}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
+                    {/* Date */}
                     <div className={FIELD_WIDTH}>
                         <TextInputFilter
-                            label="Date"
+                            label="Date*"
                             type="date"
                             placeholder="Select Date"
                             value={date}
@@ -138,9 +184,10 @@ export default function NewCleaningStep1() {
                         />
                     </div>
 
+                    {/* Time */}
                     <div className={FIELD_WIDTH}>
                         <TextInputFilter
-                            label="Time"
+                            label="Time*"
                             type="time"
                             placeholder="Select Time"
                             value={time}
@@ -148,6 +195,7 @@ export default function NewCleaningStep1() {
                         />
                     </div>
 
+                    {/* Remark */}
                     <div className={FIELD_WIDTH}>
                         <TextInputFilter
                             label="หมายเหตุ"
@@ -157,6 +205,7 @@ export default function NewCleaningStep1() {
                         />
                     </div>
 
+                    {/* Contractor */}
                     <div className={FIELD_WIDTH}>
                         <SelectFilter
                             label="รับเหมา"
@@ -171,6 +220,7 @@ export default function NewCleaningStep1() {
                         />
                     </div>
 
+                    {/* Project Type */}
                     <div className={FIELD_WIDTH}>
                         <SelectFilter
                             label="Project Type"
@@ -189,21 +239,62 @@ export default function NewCleaningStep1() {
 
                 {/* Footer */}
                 <div className="flex w-full max-w-[1095px] justify-between">
+
                     <button
                         onClick={() => navigate("/cleaning")}
-                        className="w-[195px] border border-green-600 text-green-600 px-6 py-2.5 rounded-2xl">
+                        className="w-[195px] border border-green-600 text-green-600 px-6 py-2.5 rounded-2xl"
+                    >
                         ยกเลิก
                     </button>
 
                     <button
-                        onClick={() => {
-                            saveStep1Data();
-                            navigate("/cleaning/new/step2");
+                        onClick={async () => {
+                            if (!date || !time) {
+                                alert("กรุณาเลือกวันที่และเวลา");
+                                return;
+                            }
+
+                            try {
+
+                                const result = await createCleaningStep1({
+                                    siteId: Number(projectId),
+                                    projectType,
+                                    contactPhone: project?.contactPhone ?? "",
+                                    contactEmail: project?.contactEmail ?? "",
+                                    workDate: date,
+                                    workTimeText: time,
+                                    customerName: project?.projectName ?? "",
+                                    note: remark,
+                                });
+
+                                localStorage.setItem("jobId", String(result.data.jobId));
+
+                                const payload = {
+                                    jobId: result.data.jobId,
+                                    projectId,
+                                    projectName: project?.projectName,
+                                    contactEmail: project?.contactEmail,
+                                    date,
+                                    time,
+                                    remark,
+                                };
+
+                                localStorage.setItem("cleaning_step1", JSON.stringify(payload));
+
+                                navigate("/cleaning/new/step2");
+
+                            } catch (err) {
+                                console.error(err);
+                                alert("สร้าง Cleaning Job ไม่สำเร็จ");
+                            }
                         }}
-                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl">
+                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                    >
                         ถัดไป
                     </button>
+
                 </div>
+
             </div>
         </div>
     );

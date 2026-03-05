@@ -1,6 +1,5 @@
 import { useParams } from "react-router-dom";
-import { PROJECTS } from "../../mock/project";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TagNav from "../../components/TagNav";
 
 import InformationTab from "../../components/tabs/clientdata/InformationTab";
@@ -8,11 +7,12 @@ import WarrantyDetailTab from "../../components/tabs/clientdata/WarrantyDetailTa
 import ForecastDetailTab from "../../components/tabs/forecast/ForecastDetailTab";
 import OtherTable from "../../components/table/OtherTable";
 
+import { getThailandProjects } from "../../services/api";
 
-export default function ProjectDetail() {
+export default function ClientDataDetail() {
     const { id } = useParams();
-
-    const project = PROJECTS.find(p => p.id === id);
+    const [project, setProject] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
 
     const homeTags = [
         { id: "Information", label: "Information" },
@@ -25,21 +25,60 @@ export default function ProjectDetail() {
 
     const [activeProject, setActiveProject] = useState<string>("Information");
 
+    // ================= FETCH DETAIL FROM SAME SOURCE AS HOME =================
+    useEffect(() => {
+        if (!id) return;
+
+        const fetchDetail = async () => {
+            try {
+                setLoading(true);
+
+                const res = await getThailandProjects({
+                    page: 1,
+                    pageSize: 1000, // ดึงมาเยอะพอสำหรับหา id
+                });
+
+                if (res?.data?.items) {
+                    const found = res.data.items.find(
+                        (item: any) => item.siteId === Number(id)
+                    );
+
+                    setProject(found || null);
+                }
+
+            } catch (error) {
+                console.error("โหลดรายละเอียดโครงการไม่สำเร็จ:", error);
+                setProject(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDetail();
+    }, [id]);
+
+    // ================= RENDER TAB =================
     const renderTabContent = () => {
         switch (activeProject) {
             case "Information":
-                return <InformationTab />;
+                return <InformationTab project={project} />;
             case "Warranty Detail":
-                return <WarrantyDetailTab />;
+                return <WarrantyDetailTab project={project} />;
             case "Forecast":
-                return <ForecastDetailTab />;
+                return <ForecastDetailTab project={project} />;
             case "Other":
-                return <OtherTable />;
+                return <OtherTable project={project} />;
             default:
                 return null;
         }
     };
 
+    // ================= LOADING =================
+    if (loading) {
+        return <div className="p-10">กำลังโหลดข้อมูล...</div>;
+    }
+
+    // ================= NOT FOUND =================
     if (!project) {
         return <div className="p-10">ไม่พบข้อมูลโครงการ</div>;
     }
@@ -48,18 +87,30 @@ export default function ProjectDetail() {
         <div className="w-full">
             <div className="flex flex-row justify-between">
                 <h1 className="pb-9 text-green-800 flex flex-col gap-8">
-                    <span>ข้อมูล : {project.name}</span>
-                    <span>Systemsize : {project.systemSize} kWp</span>
+                    <span>ข้อมูล : {project?.projectName?.trim() || "-"}</span>
+                    <span>
+                        Systemsize :{" "}
+                        {project?.systemSizeKWp !== undefined &&
+                        project?.systemSizeKWp !== null
+                            ? Number(project.systemSizeKWp).toLocaleString()
+                            : "-"}{" "}
+                        kWp
+                    </span>
                 </h1>
+
                 <h2 className="items-end pb-9 text-green-700 flex flex-col gap-8">
-                    <span>Start Warranty : {project.startWarranty}</span>
-                    <span>End Warranty : {project.endWarranty}</span>
+                    <span>
+                        Start Warranty :{" "}
+                        {project?.startWarranty || "-"}
+                    </span>
+                    <span>
+                        End Warranty :{" "}
+                        {project?.endWarranty || "-"}
+                    </span>
                 </h2>
             </div>
 
-            {/* ===== Main Content ===== */}
             <section className="min-w-0">
-                {/* Tabs */}
                 <div className="flex items-center justify-between w-auto">
                     <TagNav
                         items={homeTags}
@@ -68,7 +119,6 @@ export default function ProjectDetail() {
                     />
                 </div>
 
-                {/* Content Box */}
                 <div className="border border-green-800 bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px]">
                     {renderTabContent()}
                 </div>

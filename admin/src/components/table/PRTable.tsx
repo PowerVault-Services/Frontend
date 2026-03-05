@@ -1,142 +1,183 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React from "react";
 
-// --- Types ---
-export interface PRDataRow {
-  id: string;
-  // Irradiation
-  irrActual: number | string;
-  irrForecast: number | string;
-  irrVar: number | string;
-  // Production
-  prodActual: number | string;
-  prodForecast: number | string;
-  prodVar: number | string;
-  // Performance Ratio
-  prActual: number | string;
-  prForecast: number | string;
-  prVar: number | string;
+
+interface Metric {
+  actual: number | null;
+  forecast: number | null;
+  varPct: number | null;
+}
+
+interface PRRowFromAPI {
+  month?: number;
+  year?: number;
+  date?: string;
+  irradiation: Metric;
+  production: Metric;
+  pr: Metric;
 }
 
 interface PRTableProps {
-  data?: PRDataRow[];
+  data?: PRRowFromAPI[];
+  year?: number;
+  loading?: boolean; // 👈 รองรับ loading
 }
 
-export default function PRTable({ data = [] }: PRTableProps) {
-  // Mock Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
+const monthLabels = [
+  "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+];
 
-  const emptyRows = Math.max(0, 4 - data.length); 
+export default function PRTable({
+  data = [],
+  year,
+  loading = false
+}: PRTableProps) {
+
+  const formatValue = (val: number | null, isPercent = false) => {
+    if (val === null || val === undefined) return "-";
+    return isPercent
+      ? `${val.toFixed(2)}%`
+      : val.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  };
+
+  const displayYear =
+    year ??
+    data?.[0]?.year ??
+    new Date().getFullYear();
+
+  const yearShort = String(displayYear).slice(-2);
+
+  const rows = monthLabels.map((_, index) => {
+    const found = data.find(d => d.month === index + 1);
+    return (
+      found || {
+        month: index + 1,
+        irradiation: { actual: null, forecast: null, varPct: null },
+        production: { actual: null, forecast: null, varPct: null },
+        pr: { actual: null, forecast: null, varPct: null }
+      }
+    );
+  });
 
   return (
-    <div className="bg-white">
-      
-      {/* ===== Table Container ===== */}
-      <div className="border border-gray-200 rounded-t-lg overflow-hidden">
+    <div className="relative bg-white">
+
+      {/* ===== Table Wrapper ===== */}
+      <div
+        className={`border border-gray-200 rounded-t-lg overflow-hidden transition-opacity duration-300 ${
+          loading ? "opacity-40 pointer-events-none" : "opacity-100"
+        }`}
+      >
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px] border-collapse text-sm">
-            
-            {/* ===== Table Header ===== */}
+          <table className="w-full min-w-[1100px] border-collapse text-sm">
+
             <thead className="bg-green-700 text-white">
-              {/* Row 1: Main Categories */}
               <tr>
-                <th colSpan={3} className="py-3 px-2 text-center font-normal border-r border-[#B9B9B9] border-b border-white/20">
+                <th
+                  rowSpan={2}
+                  className="py-3 px-4 text-left font-normal border-r border-white/20"
+                >
+                  Month
+                </th>
+
+                <th colSpan={3} className="py-3 px-2 text-center font-normal border-r border-white/20">
                   Irradiation (kWh / m2)
                 </th>
-                <th colSpan={3} className="py-3 px-2 text-center font-normal border-r border-[#B9B9B9] border-b border-white/20">
+
+                <th colSpan={3} className="py-3 px-2 text-center font-normal border-r border-white/20">
                   Production (kWh)
                 </th>
-                <th colSpan={3} className="py-3 px-2 text-center font-normal border-b border-white/20">
+
+                <th colSpan={3} className="py-3 px-2 text-center font-normal">
                   Performance Ratio (%)
                 </th>
               </tr>
-              
-              {/* Row 2: Sub Categories (Actual, Forecast, Var%) */}
-              <tr className="">
-                {/* Irradiation Sub-cols */}
-                <th className="py-2 px-4 text-center font-normal  border-r border-white/20 w-[11%]">Actual</th>
-                <th className="py-2 px-4 text-center font-normal  border-r border-white/20 w-[11%]">Forecast</th>
-                <th className="py-2 px-4 text-center font-normal  border-r border-white/20 w-[11%]">Var%</th>
-                
-                {/* Production Sub-cols */}
-                <th className="py-2 px-4 text-center font-normal  border-r border-white/20 w-[11%]">Actual</th>
-                <th className="py-2 px-4 text-center font-normal  border-r border-white/20 w-[11%]">Forecast</th>
-                <th className="py-2 px-4 text-center font-normal  border-r border-white/20 w-[11%]">Var%</th>
-                
-                {/* PR Sub-cols */}
-                <th className="py-2 px-4 text-center font-normal  border-r border-white/20 w-[11%]">Actual</th>
-                <th className="py-2 px-4 text-center font-normal  border-r border-white/20 w-[11%]">Forecast</th>
-                <th className="py-2 px-4 text-center font-normal  w-[11%]">Var%</th>
+
+              <tr>
+                {["Actual","Forecast","Var%"].map((label, i) => (
+                  <th
+                    key={`irr-${i}`}
+                    className="py-2 px-4 text-center font-normal border-r border-white/20"
+                  >
+                    {label}
+                  </th>
+                ))}
+                {["Actual","Forecast","Var%"].map((label, i) => (
+                  <th
+                    key={`prod-${i}`}
+                    className="py-2 px-4 text-center font-normal border-r border-white/20"
+                  >
+                    {label}
+                  </th>
+                ))}
+                {["Actual","Forecast","Var%"].map((label, i) => (
+                  <th
+                    key={`pr-${i}`}
+                    className="py-2 px-4 text-center font-normal border-r border-white/20"
+                  >
+                    {label}
+                  </th>
+                ))}
               </tr>
             </thead>
 
-            {/* ===== Table Body ===== */}
             <tbody className="text-gray-700">
-              {/* Render Data Rows */}
-              {data.map((row, idx) => (
-                <tr key={row.id || idx} className="border-b border-gray-200 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-center border-r border-gray-200">{row.irrActual}</td>
-                  <td className="py-3 px-4 text-center border-r border-gray-200">{row.irrForecast}</td>
-                  <td className="py-3 px-4 text-center border-r border-gray-200">{row.irrVar}</td>
-                  
-                  <td className="py-3 px-4 text-center border-r border-gray-200">{row.prodActual}</td>
-                  <td className="py-3 px-4 text-center border-r border-gray-200">{row.prodForecast}</td>
-                  <td className="py-3 px-4 text-center border-r border-gray-200">{row.prodVar}</td>
-                  
-                  <td className="py-3 px-4 text-center border-r border-gray-200">{row.prActual}</td>
-                  <td className="py-3 px-4 text-center border-r border-gray-200">{row.prForecast}</td>
-                  <td className="py-3 px-4 text-center">{row.prVar}</td>
-                </tr>
-              ))}
+              {rows.map((row, idx) => (
+                <tr
+                  key={idx}
+                  className="border-b border-gray-200 hover:bg-gray-50"
+                >
+                  <td className="py-3 px-4 text-left border-r border-gray-200">
+                    {monthLabels[(row.month ?? 1) - 1]}-{yearShort}
+                  </td>
 
-              {/* Render Empty Rows */}
-              {Array.from({ length: emptyRows }).map((_, idx) => (
-                <tr key={`empty-${idx}`} className="border-b border-gray-200 h-[45px]">
-                  <td className="border-r border-gray-200"></td>
-                  <td className="border-r border-gray-200"></td>
-                  <td className="border-r border-gray-200"></td>
-                  <td className="border-r border-gray-200"></td>
-                  <td className="border-r border-gray-200"></td>
-                  <td className="border-r border-gray-200"></td>
-                  <td className="border-r border-gray-200"></td>
-                  <td className="border-r border-gray-200"></td>
-                  <td></td>
+                  {/* Irradiation */}
+                  <td className="py-3 px-4 text-center border-r border-gray-200">
+                    {formatValue(row.irradiation.actual)}
+                  </td>
+                  <td className="py-3 px-4 text-center border-r border-gray-200">
+                    {formatValue(row.irradiation.forecast)}
+                  </td>
+                  <td className="py-3 px-4 text-center border-r border-gray-200">
+                    {formatValue(row.irradiation.varPct, true)}
+                  </td>
+
+                  {/* Production */}
+                  <td className="py-3 px-4 text-center border-r border-gray-200">
+                    {formatValue(row.production.actual)}
+                  </td>
+                  <td className="py-3 px-4 text-center border-r border-gray-200">
+                    {formatValue(row.production.forecast)}
+                  </td>
+                  <td className="py-3 px-4 text-center border-r border-gray-200">
+                    {formatValue(row.production.varPct, true)}
+                  </td>
+
+                  {/* PR */}
+                  <td className="py-3 px-4 text-center border-r border-gray-200">
+                    {formatValue(row.pr.actual)}
+                  </td>
+                  <td className="py-3 px-4 text-center border-r border-gray-200">
+                    {formatValue(row.pr.forecast)}
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    {formatValue(row.pr.varPct, true)}
+                  </td>
                 </tr>
               ))}
             </tbody>
+
           </table>
         </div>
       </div>
 
-      {/* ===== Pagination Footer ===== */}
-      <div className="flex justify-between items-center mt-4 text-gray-500 text-xs">
-        {/* ข้อความฝั่งซ้าย (Mock ตามรูป) */}
-        <div>1 to 9 of 7 items</div>
-        
-        <div className="flex gap-1">
-          <button className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50">
-            <ChevronLeft size={16} />
-          </button>
-          
-          <button 
-             className={`w-8 h-8 flex items-center justify-center border rounded ${currentPage === 1 ? 'border-[#2F4F39] text-[#2F4F39] font-bold' : 'border-gray-200'}`}
-             onClick={() => setCurrentPage(1)}
-          >
-            1
-          </button>
-          
-          <button 
-             className={`w-8 h-8 flex items-center justify-center border rounded ${currentPage === 2 ? 'border-[#2F4F39] text-[#2F4F39] font-bold' : 'border-gray-200'}`}
-             onClick={() => setCurrentPage(2)}
-          >
-            2
-          </button>
-
-          <button className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50">
-            <ChevronRight size={16} />
-          </button>
+      {/* ===== Spinner Overlay ===== */}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-10 h-10 border-4 border-green-700 border-t-transparent rounded-full animate-spin"></div>
         </div>
-      </div>
+      )}
+
     </div>
   );
 }

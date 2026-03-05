@@ -59,7 +59,7 @@ function App() {
             <Route path="home" element={<HomeMonitor />} />
             <Route path="alarm" element={<AlarmMonitor />} />
             <Route
-              path="/monitor/inverter/:inverterId"
+              path="inverter/:inverterId"
               element={<InverterDetail />}
             />
             <Route path="pr" element={<PRMonitor />} />

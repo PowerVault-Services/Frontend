@@ -1,4 +1,8 @@
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
+import { getStockInList, createStockIn } from "../../services/api";
+
+
 import AddIcon from "../../assets/icons/Add Circle.svg";
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
@@ -25,8 +29,9 @@ interface StockIn {
 
 
 export default function StockIn() {
-    const [data] = useState<StockIn[]>([]);
-    const [loading] = useState(true);
+    const [data, setData] = useState<StockIn[]>([]);
+    const [loading, setLoading] = useState(true);
+
     const [openModal, setOpenModal] = useState(false);
 
     const columns: Column<StockIn>[] = [
@@ -106,6 +111,55 @@ export default function StockIn() {
     ];
 
 
+    const fetchStockIn = async () => {
+        try {
+            setLoading(true);
+
+            const res = await getStockInList();
+
+            console.log("StockIn Response:", res);
+
+            const list = Array.isArray(res.data?.data)
+                ? res.data.data
+                : [];
+
+            const formatted: StockIn[] = list.map((item: any) => ({
+                date: item.date,
+                productCode: item.sku,
+                category: item.category,
+                projectType: item.projectType,
+                productName: item.name,
+                unit: item.unit,
+                stockIn: item.qty,
+                stockOut: 0,
+                remainingStock: item.onHand,
+                note: item.note,
+                warrantyYear: item.warrantyYear,
+                warrantyStartDate: item.warrantyStartDate,
+                warrantyEndDate: item.warrantyEndDate,
+                description: item.description,
+            }));
+
+            setData(formatted);
+
+        } catch (err) {
+            console.error(err);
+            setData([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
+
+    useEffect(() => {
+        fetchStockIn();
+    }, []);
+
+
+
+
     return (
         <div className="w-full">
             <div className="flex justify-between pb-9">
@@ -155,12 +209,19 @@ export default function StockIn() {
             <AddProductModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
-                onNext={() => {
-                    // logic ขั้นต่อไป
-                    setOpenModal(false);
+                onNext={async (formData) => {
+                    try {
+                        await createStockIn(formData);
+
+                        setOpenModal(false);
+
+                        await fetchStockIn();   // 👈 reload table ทันที
+
+                    } catch (err) {
+                        console.error(err);
+                    }
                 }}
             />
-
 
 
         </div>

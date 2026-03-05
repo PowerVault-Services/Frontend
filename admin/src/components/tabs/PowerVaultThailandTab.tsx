@@ -1,145 +1,199 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PROJECTS } from "../../mock/project";
+import { useState, useMemo } from "react";
 import SearchBox from "../SearchBox";
 import TextInputFilter from "../TextInputFilter";
 import SelectFilter from "../SelectFilter";
 import DataTable, { type Column } from "../table/DataTable";
 
+import { createThailandProject } from "../../services/api";
+import type { CreateThailandProjectPayload } from "../../services/api";
 
-interface PowerVaultThailand {
-    id: string;
-    projectnumber: string;
-    projectType: string;
+/* ================= Interface ================= */
+export interface PowerVaultThailand {
+    id: number;
+    projectNo: string;
     projectName: string;
-    systemSize: number;
-    date: string;
-    time: string;
+    capacityKwp: number;
     status: string;
-    startwarranty?: string;
-    endwarranty?: string;
+    startWarranty?: string | null;
+    endWarranty?: string | null;
 }
 
-export default function PowerVaultThailandTab() {
-    const [data, setData] = useState<PowerVaultThailand[]>([]);
-    const [loading, setLoading] = useState(true);
+interface PowerVaultThailandTabProps {
+    data: PowerVaultThailand[];
+    isLoading: boolean;
+    pagination: any;
+    onPageChange: (page: number) => void;
+}
+
+export default function PowerVaultThailandTab({
+    data,
+    isLoading,
+    pagination,
+    onPageChange
+}: PowerVaultThailandTabProps) {
+
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const tableData: PowerVaultThailand[] = PROJECTS.map((p) => ({
-            id: String(p.id),                 // ✅ FIX: cast to string
-            projectnumber: String(p.id),      // ✅ FIX: consistent type
-            projectName: p.name,
-            projectType: "Solar",
-            systemSize: p.systemSize,
-            startwarranty: "2023-01-01",
-            endwarranty: "2026-01-01",
-            date: "2025-01-10",
-            time: "10:00",
-            status: "Active",
-        }));
+    /* ================= Filter State ================= */
+    const [filters, setFilters] = useState({
+        projectNo: "",
+        projectName: "",
+        capacityKwp: "",
+        endWarranty: "",
+        status: "all",
+    });
 
-        setData(tableData);
-        setLoading(false);
-    }, []);
-
-    const handleEdit = (row: PowerVaultThailand) => {
-        console.log("Edit:", row);
+    /* ================= Safe Date Format ================= */
+    const formatDate = (isoString?: string | null) => {
+        if (!isoString) return "-";
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return "-";
+        return date.toISOString().split("T")[0];
     };
 
-    const handleDelete = (id: string) => {
-        if (!confirm("Delete this record?")) return;
+    /* ================= Filtered Data ================= */
+    const filteredData = useMemo(() => {
+        return data.filter((item) => {
+            const matchProjectNo =
+                filters.projectNo === "" ||
+                item.projectNo.toLowerCase().includes(filters.projectNo.toLowerCase());
+            const matchProjectName =
+                filters.projectName === "" ||
+                item.projectName.toLowerCase().includes(filters.projectName.toLowerCase());
 
-        setData((prev) => prev.filter((r) => r.id !== id));
-    };
+            const matchCapacity =
+                filters.capacityKwp === "" ||
+                item.capacityKwp === Number(filters.capacityKwp);
 
+            const matchEndWarranty =
+                filters.endWarranty === "" ||
+                (item.endWarranty &&
+                    formatDate(item.endWarranty) === filters.endWarranty);
+
+            const matchStatus =
+                filters.status === "all" ||
+                item.status.toUpperCase() === filters.status;
+
+            return (
+                matchProjectNo &&
+                matchProjectName &&
+                matchCapacity &&
+                matchEndWarranty &&
+                matchStatus
+            );
+        });
+    }, [data, filters]);
+
+    /* ================= Table Columns ================= */
     const columns: Column<PowerVaultThailand>[] = [
         {
-            key: "projectnumber",
+            key: "projectNo",
             label: "Project No.",
             align: "center",
-            render: (value, row) => (
-                <button
-                    onClick={() => navigate(`/project/${row.id}`)}
-                    className="text-green-800 underline hover:text-green-900"
-                >
-                    {value}
-                </button>
-            ),
+            render: (value, row) => {
+                const raw = String(value || "");
+                const displayValue = raw.startsWith("NE=")
+                    ? raw.replace("NE=", "")
+                    : raw;
+
+                return (
+                    <button
+                        onClick={() => navigate(`/project/${row.id}`)}
+                        className="text-green-800 underline hover:text-green-900"
+                    >
+                        {displayValue}
+                    </button>
+                );
+            },
         },
         { key: "projectName", label: "Project Name", align: "center" },
-        { key: "systemSize", label: "System Size (kWp)", align: "center" },
-        { key: "endwarranty", label: "End Warranty", align: "center" },
-        { key: "status", label: "Status", align: "center" },
         {
-            key: "id",
-            label: "Actions",
+            key: "capacityKwp",
+            label: "System Size (kWp)",
             align: "center",
-            render: (_, row) => (
-                <div className="flex justify-center gap-3">
-                    <button
-                        onClick={() => handleEdit(row)}
-                        className="text-blue-600 hover:text-blue-800"
+            render: (value) =>
+                value !== undefined && value !== null
+                    ? Number(value).toLocaleString()
+                    : "-",
+        },
+        {
+            key: "endWarranty",
+            label: "End Warranty",
+            align: "center",
+            render: (value) => formatDate(value as string | null),
+        },
+        {
+            key: "status",
+            label: "Status",
+            align: "center",
+            render: (value) => {
+                const statusStr = String(value || "");
+                return (
+                    <span
+                        className={
+                            statusStr.toUpperCase() === "ACTIVE"
+                                ? ""
+                                : "text-gray-500"
+                        }
                     >
-                        ✏️
-                    </button>
-
-                    <button
-                        onClick={() => handleDelete(row.id)}
-                        className="text-red-600 hover:text-red-800"
-                    >
-                        🗑
-                    </button>
-                </div>
-            ),
+                        {statusStr.charAt(0).toUpperCase() +
+                            statusStr.slice(1).toLowerCase()}
+                    </span>
+                );
+            },
         },
     ];
 
+    /* ================= JSX ================= */
     return (
         <div className="flex flex-col gap-[18px]">
             <SearchBox>
-                <div className="grid grid-cols-4 justify-between gap-2.5">
-                    <TextInputFilter label="Job No." value={""} onChange={() => {}} />
-
-                    <SelectFilter
-                        label="Project Type"
-                        placeholder="All"
-                        value={""}
-                        onChange={() => {}}
-                        options={[
-                            { label: "All", value: "all" },
-                            { label: "Project A", value: "project_a" },
-                            { label: "Project B", value: "project_b" },
-                        ]}
+                <div className="grid grid-cols-3 justify-between gap-2.5">
+                    <TextInputFilter
+                        label="Project No."
+                        value={filters.projectNo}
+                        onChange={(value) =>
+                            setFilters({ ...filters, projectNo: value })
+                        }
                     />
 
-                    <TextInputFilter label="Project Name" value={""} onChange={() => {}} />
-                    <TextInputFilter label="System Size (kWp)" value={""} onChange={() => {}} />
-                    <TextInputFilter label="PV Module (ea.)" value={""} onChange={() => {}} />
-                    <TextInputFilter label="Date" type="date" value={""} onChange={() => {}} />
-                    <TextInputFilter label="Time" type="time" value={""} onChange={() => {}} />
+                    <TextInputFilter
+                        label="Project Name"
+                        value={filters.projectName}
+                        onChange={(value) =>
+                            setFilters({ ...filters, projectName: value })
+                        }
+                    />
 
-                    <SelectFilter
-                        label="รับเหมา"
-                        placeholder="All"
-                        value={""}
-                        onChange={() => {}}
-                        options={[
-                            { label: "All", value: "all" },
-                            { label: "Project A", value: "project_a" },
-                            { label: "Project B", value: "project_b" },
-                        ]}
+                    <TextInputFilter
+                        label="System Size (kWp)"
+                        value={filters.capacityKwp}
+                        onChange={(value) =>
+                            setFilters({ ...filters, capacityKwp: value })
+                        }
+                    />
+
+                    <TextInputFilter
+                        label="End Warranty"
+                        type="date"
+                        value={filters.endWarranty}
+                        onChange={(value) =>
+                            setFilters({ ...filters, endWarranty: value })
+                        }
                     />
 
                     <SelectFilter
                         label="Status"
                         placeholder="All"
-                        value={""}
-                        onChange={() => {}}
+                        value={filters.status}
+                        onChange={(value) =>
+                            setFilters({ ...filters, status: value })
+                        }
                         options={[
                             { label: "All", value: "all" },
-                            { label: "Pending", value: "pending" },
-                            { label: "Completed", value: "completed" },
+                            { label: "Active", value: "ACTIVE" },
+                            { label: "Inactive", value: "INACTIVE" },
                         ]}
                     />
                 </div>
@@ -148,11 +202,15 @@ export default function PowerVaultThailandTab() {
             <div className="pt-[25px]">
                 <DataTable<PowerVaultThailand>
                     columns={columns}
-                    data={data}
-                    loading={loading}
+                    data={filteredData}
+                    loading={isLoading}
                 />
             </div>
         </div>
     );
+<<<<<<< HEAD
 }
 
+=======
+}
+>>>>>>> da78097 (connet api)

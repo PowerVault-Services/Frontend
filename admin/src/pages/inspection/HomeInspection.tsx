@@ -7,7 +7,7 @@ import ZipIcon from "../../assets/icons/ZIP File.svg";
 import AddIcon from "../../assets/icons/Add Circle.svg";
 import DataTable, { type Column } from "../../components/table/DataTable";
 
-interface Cleaning {
+interface Inspection {
   id: number;
   jobnumber: string;
   projectType: string;
@@ -18,21 +18,30 @@ interface Cleaning {
   status: string;
 }
 
-export default function HomeInspection() {
-  const [data, setData] = useState<Cleaning[]>([]);
+export default function InspectionHome() {
+
+  const [data, setData] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    fetch("/api/inspection")
-      .then((res) => res.json())
-      .then((res) => {
-        setData(res);
-        setLoading(false);
-      });
+    loadInspectionJobs();
   }, []);
 
-  const handleEdit = (row: Cleaning) => {
+  const loadInspectionJobs = async () => {
+    try {
+      const res = await fetch("/api/inspection");
+      const json = await res.json();
+
+      setData(json.data ?? []);
+      setLoading(false);
+    } catch (err) {
+      console.error("โหลด inspection jobs ไม่สำเร็จ:", err);
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (row: Inspection) => {
     console.log("Edit:", row);
   };
 
@@ -40,6 +49,7 @@ export default function HomeInspection() {
     if (!confirm("Delete this record?")) return;
 
     setData((prev) => prev.filter((r) => r.id !== id));
+
     setSelectedRows((prev) => {
       const next = new Set(prev);
       next.delete(id);
@@ -47,8 +57,10 @@ export default function HomeInspection() {
     });
   };
 
-  const columns: Column<Cleaning>[] = [
+  const columns: Column<Inspection>[] = [
+
     {
+      id: "checkbox",
       key: "id",
       label: "",
       align: "center",
@@ -65,20 +77,22 @@ export default function HomeInspection() {
       ),
     },
 
-    { key: "jobnumber", label: "Job No.", align: "center" },
-    { key: "projectType", label: "Project Type", align: "center" },
-    { key: "projectName", label: "Project Name", align: "center" },
-    { key: "systemSize", label: "System Size (kWp)", align: "center" },
-    { key: "date", label: "Date", align: "center" },
-    { key: "time", label: "Time", align: "center" },
-    { key: "status", label: "Status", align: "center" },
+    { id: "jobnumber", key: "jobnumber", label: "Job No.", align: "center" },
+    { id: "projectType", key: "projectType", label: "Project Type", align: "center" },
+    { id: "projectName", key: "projectName", label: "Project Name", align: "center" },
+    { id: "systemSize", key: "systemSize", label: "System Size (kWp)", align: "center" },
+    { id: "date", key: "date", label: "Date", align: "center" },
+    { id: "time", key: "time", label: "Time", align: "center" },
+    { id: "status", key: "status", label: "Status", align: "center" },
 
     {
+      id: "actions",
       key: "id",
       label: "Actions",
       align: "center",
       render: (_, row) => (
         <div className="flex justify-center gap-3">
+
           <button
             onClick={() => handleEdit(row)}
             className="text-blue-600 hover:text-blue-800"
@@ -92,6 +106,7 @@ export default function HomeInspection() {
           >
             🗑
           </button>
+
         </div>
       ),
     },
@@ -99,19 +114,21 @@ export default function HomeInspection() {
 
   return (
     <div className="w-full">
-        <div className="flex justify-between pb-9">
-            <h1 className="text-green-800">Inspection</h1>
-            <Link to="/inspection/new/step1">
-                <button className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5">
-                    <img src={AddIcon} alt="" />
-                    New Inspection Job
-                </button>
-            </Link>
 
-        </div>
-      
+      <div className="flex justify-between pb-9">
+        <h1 className="text-green-800">Inspection</h1>
+
+        <Link to="/inspection/new/step1">
+          <button className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5">
+            <img src={AddIcon} alt="" />
+            New Inspection Job
+          </button>
+        </Link>
+      </div>
+
       <SearchBox>
         <div className="grid grid-cols-4 justify-between gap-2.5">
+
           <TextInputFilter label="Job No." value={""} onChange={() => {}} />
 
           <SelectFilter
@@ -121,14 +138,17 @@ export default function HomeInspection() {
             onChange={() => {}}
             options={[
               { label: "All", value: "all" },
-              { label: "Project A", value: "project_a" },
-              { label: "Project B", value: "project_b" },
+              { label: "Type A", value: "type_a" },
+              { label: "Type B", value: "type_b" },
             ]}
           />
 
           <TextInputFilter label="Project Name" value={""} onChange={() => {}} />
+
           <TextInputFilter label="System Size (kWp)" value={""} onChange={() => {}} />
+
           <TextInputFilter label="Date" type="date" value={""} onChange={() => {}} />
+
           <TextInputFilter label="Time" type="time" value={""} onChange={() => {}} />
 
           <SelectFilter
@@ -138,10 +158,12 @@ export default function HomeInspection() {
             onChange={() => {}}
             options={[
               { label: "All", value: "all" },
-              { label: "Pending", value: "pending" },
+              { label: "Draft", value: "draft" },
+              { label: "Sent", value: "sent" },
               { label: "Completed", value: "completed" },
             ]}
           />
+
         </div>
       </SearchBox>
 
@@ -153,8 +175,13 @@ export default function HomeInspection() {
       </div>
 
       <div className="pt-[25px]">
-        <DataTable<Cleaning> columns={columns} data={data} loading={loading} />
+        <DataTable<Inspection>
+          columns={columns}
+          data={data}
+          loading={loading}
+        />
       </div>
+
     </div>
   );
 }

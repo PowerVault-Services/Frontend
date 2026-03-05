@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getStockOutList, createStockOut } from "../../services/api";
 import AddIcon from "../../assets/icons/Add Circle.svg";
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
@@ -24,9 +25,9 @@ interface StockOut {
 }
 
 
-export default function StockIn() {
-    const [data] = useState<StockOut[]>([]);
-    const [loading] = useState(true);
+export default function StockOut() {
+    const [data, setData] = useState<StockOut[]>([]);
+    const [loading, setLoading] = useState(true);
     const [openModal, setOpenModal] = useState(false);
 
     const columns: Column<StockOut>[] = [
@@ -87,6 +88,39 @@ export default function StockIn() {
         },
     ];
 
+    useEffect(() => {
+        loadData();
+    }, []);
+
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const res = await getStockOutList();
+
+            // 🔥 ถ้า backend structure ไม่ตรง ให้ map ตรงนี้
+            const mapped = res.map((item: any) => ({
+                date: item.txDate,
+                productCode: item.product?.code,
+                category: item.product?.category,
+                projectType: item.project,
+                productName: item.product?.name,
+                unit: item.product?.unit,
+                stockOut: item.outQty,
+                remainingStock: item.onHand,
+                note: item.note,
+                description: item.description,
+            }));
+
+            setData(mapped);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
 
     return (
         <div className="w-full">
@@ -134,10 +168,24 @@ export default function StockIn() {
             <AddProductModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
-                onNext={() => {
-                    // logic ขั้นต่อไป
-                    setOpenModal(false);
+                onNext={async (formData) => {
+                    try {
+                        await createStockOut({
+                            productId: formData.productId,
+                            quantity: Number(formData.quantity),
+                            txDate: formData.txDate,
+                            project: formData.project,
+                            receiver: formData.receiver,
+                            note: formData.note,
+                        });
+
+                        setOpenModal(false);
+                        await loadData();
+                    } catch (err: any) {
+                        alert(err.message); // insufficient stock: onHand=3
+                    }
                 }}
+
             />
 
         </div>

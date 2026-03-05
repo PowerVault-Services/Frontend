@@ -1,8 +1,7 @@
-// tailwind.config.js
+
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
-    colors: {},
     extend: {
       colors: {
         background: "var(--background)",
@@ -37,8 +36,26 @@ export default {
           blue: "var(--system-blue)",
         },
       },
+
       fontFamily: {
         mitr: ['"Mitr"', "sans-serif"],
+      },
+
+      // ✅ animation ต้องอยู่ใน extend
+      keyframes: {
+        flowx: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
+        flowy: {
+          "0%": { transform: "translateY(-100%)" },
+          "100%": { transform: "translateY(400%)" },
+        },
+      },
+
+      animation: {
+        flowx: "flowx 2s linear infinite",
+        flowy: "flowy 2s linear infinite",
       },
     },
   },

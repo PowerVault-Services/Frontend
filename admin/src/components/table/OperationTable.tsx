@@ -17,9 +17,15 @@ export interface OperationResult {
   remark: string;
 }
 
+export interface ChecklistItem {
+  item: string;
+  ok: boolean;
+  remark: string;
+}
+
 interface OperationTableProps {
   items?: OperationItem[];
-  onChange?: (data: OperationResult[]) => void;
+  onChange?: (data: ChecklistItem[]) => void;
 }
 
 /* =======================
@@ -75,17 +81,30 @@ export default function OperationTable({
   items = DEFAULT_ITEMS,
   onChange,
 }: OperationTableProps) {
+
   const [rows, setRows] = useState<OperationResult[]>(flattenItems(items));
 
   useEffect(() => {
-    onChange?.(rows);
-  }, [rows, onChange]);
+    const result: ChecklistItem[] = rows
+      .filter(r => r.level !== 0)
+      .map(r => ({
+        item: r.item,
+        ok: r.done,
+        remark: r.remark || "",
+      }));
+
+    onChange?.(result);
+  }, [rows]);
 
   const toggleDone = (id: number) =>
-    setRows(prev => prev.map(r => (r.id === id ? { ...r, done: !r.done } : r)));
+    setRows(prev =>
+      prev.map(r => (r.id === id ? { ...r, done: !r.done } : r))
+    );
 
   const updateRemark = (id: number, value: string) =>
-    setRows(prev => prev.map(r => (r.id === id ? { ...r, remark: value } : r)));
+    setRows(prev =>
+      prev.map(r => (r.id === id ? { ...r, remark: value } : r))
+    );
 
   let mainIndex = 0;
 
@@ -104,26 +123,20 @@ export default function OperationTable({
         <tbody>
           {rows.map(row => {
             const displayIndex = row.level === 0 ? ++mainIndex : "";
+
             return (
               <tr key={row.id}>
-                {/* Index */}
                 <td className="h-9 text-center border-t border-r border-[#D6D6D6]">
                   {displayIndex}
                 </td>
 
-                {/* Item */}
                 <td className="h-9 px-3 py-2.5 border-t border-r border-[#D6D6D6]">
-                  <div
-                    className={`flex items-center ${
-                      row.level ? " text-black" : "font-normal"
-                    }`}
-                  >
+                  <div className={`flex items-center ${row.level ? "text-black" : "font-normal"}`}>
                     {row.level ? "–" : ""}
                     {row.item}
                   </div>
                 </td>
 
-                {/* Done */}
                 <td className="h-9 text-center border-t border-r border-[#D6D6D6]">
                   {row.level !== 0 && (
                     <input
@@ -135,7 +148,6 @@ export default function OperationTable({
                   )}
                 </td>
 
-                {/* Remark */}
                 <td className="h-9 px-2 border-t border-[#D6D6D6]">
                   {row.level !== 0 && (
                     <input

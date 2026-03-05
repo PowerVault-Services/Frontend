@@ -5,25 +5,58 @@ import ProgressBar from "../../components/progress/ProgressBar";
 import SelectFilter from "../../components/SelectFilter";
 import InputField from "../../components/InputField";
 import TextInputFilter from "../../components/TextInputFilter";
-import { PROJECTS, type Project } from "../../mock/project";
+
+import {
+    getInspectionProjects,
+    createInspectionStep1,
+} from "../../services/api";
+
+import type { InspectionProject } from "../../services/types";
 
 
+// ==========================
+// NEW: format phone
+// ==========================
+function formatPhones(phone?: string | null) {
+    if (!phone) return "";
+
+    return phone
+        .split(";")
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .join(", ");
+}
+
+// ==========================
+// NEW: parse email
+// ==========================
+function parseEmails(email?: string | null) {
+    if (!email) return [];
+
+    return email
+        .split(";")
+        .map((e) => e.trim())
+        .filter(Boolean);
+}
 
 export default function NewInspectionStep1() {
 
     const navigate = useNavigate();
     const FIELD_WIDTH = "w-[532px]";
 
+    const [shutdownHours, setShutdownHours] = useState("");
+
     const steps = [
         { id: 1, label: "กรอกข้อมูล" },
         { id: 2, label: "ส่งอีเมลแจ้งแผน" },
-        { id: 3, label: "แนบรูปภาพ" },
+        { id: 3, label: "ส่งรายงาน" },
     ];
 
     const [currentStep] = useState(1);
 
+    const [projects, setProjects] = useState<InspectionProject[]>([]);
     const [projectId, setProjectId] = useState("");
-    const [project, setProject] = useState<Project | null>(null);
+    const [project, setProject] = useState<InspectionProject | null>(null);
 
     const [date, setDate] = useState("");
     const [time, setTime] = useState("");
@@ -31,21 +64,62 @@ export default function NewInspectionStep1() {
     const [contractor, setContractor] = useState("");
     const [projectType, setProjectType] = useState("");
 
-    useEffect(() => {
-        const selected = PROJECTS.find(p => p.id === projectId);
-        setProject(selected ?? null);
-    }, [projectId]);
 
-    function saveInspectionStep1() {
+    // ==========================
+    // Load Projects
+    // ==========================
+    useEffect(() => {
+        async function loadProjects() {
+            try {
+                const data = await getInspectionProjects();
+                setProjects(data);
+            } catch (error) {
+                console.error("โหลด inspection projects ไม่สำเร็จ:", error);
+            }
+        }
+
+        loadProjects();
+    }, []);
+
+
+    // ==========================
+    // หา project ที่เลือก
+    // ==========================
+    useEffect(() => {
+
+        if (!projectId) {
+            setProject(null);
+            return;
+        }
+
+        const selected = projects.find(
+            (p) => p.siteId === Number(projectId)
+        );
+
+        setProject(selected ?? null);
+
+    }, [projectId, projects]);
+
+
+    // ==========================
+    // Save Draft
+    // ==========================
+    function saveStep1Data() {
+
         const payload = {
-            projectName: project?.name ?? "",
+            projectId,
+            projectName: project?.projectName ?? "",
             date,
             time,
             remark,
+            contractor,
+            projectType,
+            shutdownHours,
         };
 
         localStorage.setItem("inspection_step1", JSON.stringify(payload));
     }
+
 
     return (
         <div className="w-full">
@@ -55,6 +129,7 @@ export default function NewInspectionStep1() {
                 <h1 className="text-green-800">New Inspection Job</h1>
 
                 <button
+                    onClick={saveStep1Data}
                     className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
           text-green-700 bg-white border-2 border-green-700 rounded-md"
                 >
@@ -63,64 +138,77 @@ export default function NewInspectionStep1() {
                 </button>
             </div>
 
+
             {/* Form */}
             <div className="flex flex-col h-[822px] px-28 py-5 gap-y-[58px] bg-white rounded-2xl justify-between items-center">
 
                 <ProgressBar steps={steps} currentStep={currentStep} />
 
-
-
                 {/* Form Fields */}
                 <div className="grid grid-cols-2 w-[1095px] justify-center gap-y-[27px]">
 
+                    {/* Project */}
                     <div className={FIELD_WIDTH}>
                         <SelectFilter
                             label="Project Name"
                             placeholder="Select Project"
                             value={projectId}
                             onChange={setProjectId}
-                            options={PROJECTS.map(p => ({
-                                label: p.name,
-                                value: p.id,
+                            options={projects.map((p) => ({
+                                label: p.projectName,
+                                value: String(p.siteId),
                             }))}
                         />
                     </div>
 
+                    {/* Location */}
                     <div className={FIELD_WIDTH}>
                         <InputField
                             label="Location"
-                            value={project?.location ?? ""}
+                            value={project?.address ?? ""}
                             disabled
                         />
                     </div>
 
+                    {/* System Size */}
                     <div className="col-span-2 w-full">
                         <InputField
                             label="System Size (kWp)"
-                            value={project?.systemSize ?? ""}
+                            value={project?.systemSizeKWp?.toString() ?? ""}
                             disabled
                         />
                     </div>
 
+                    {/* Phone */}
                     <div className={FIELD_WIDTH}>
                         <InputField
                             label="Contact Phone Number"
-                            value={project?.phone ?? ""}
+                            value={formatPhones(project?.contactPhone)}
                             disabled
                         />
                     </div>
 
-                    <div className={FIELD_WIDTH}>
-                        <InputField
-                            label="Contact Email"
-                            value={project?.email ?? ""}
-                            disabled
-                        />
+                    {/* Email */}
+                    <div className="flex flex-col gap-1 w-full">
+                        <label className="text-sm text-green-800">Contact Email</label>
+
+                        <div
+                            className="min-h-10 p-4 rounded-sm border bg-[#EDEDED] text-[14px]
+              text-green-500 border-green-200 cursor-not-allowed space-y-1"
+                        >
+                            {parseEmails(project?.contactEmail).map((email, index) => (
+                                <div key={index} className="break-all">
+                                    {email}
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
+
+                    {/* Date */}
                     <div className={FIELD_WIDTH}>
                         <TextInputFilter
-                            label="Date"
+                            label="Date*"
                             type="date"
                             placeholder="Select Date"
                             value={date}
@@ -128,9 +216,10 @@ export default function NewInspectionStep1() {
                         />
                     </div>
 
+                    {/* Time */}
                     <div className={FIELD_WIDTH}>
                         <TextInputFilter
-                            label="Time"
+                            label="Time*"
                             type="time"
                             placeholder="Select Time"
                             value={time}
@@ -138,20 +227,19 @@ export default function NewInspectionStep1() {
                         />
                     </div>
 
+                    {/* จำนวนชั่วโมง */}
                     <div className={FIELD_WIDTH}>
-                        <SelectFilter
-                            label="รับเหมา"
-                            placeholder="Select"
-                            value={contractor}
-                            onChange={setContractor}
-                            options={[
-                                { label: "Contractor A", value: "contractor_a" },
-                                { label: "Contractor B", value: "contractor_b" },
-                                { label: "Contractor C", value: "contractor_c" },
-                            ]}
+                        <TextInputFilter
+                            label="ระยะเวลาปิด(ชั่วโมง)"
+                            type="number"
+                            placeholder="เช่น 3"
+                            value={shutdownHours}
+                            onChange={setShutdownHours}
                         />
                     </div>
 
+
+                    {/* Project Type */}
                     <div className={FIELD_WIDTH}>
                         <SelectFilter
                             label="Project Type"
@@ -166,6 +254,8 @@ export default function NewInspectionStep1() {
                         />
                     </div>
 
+
+                    {/* Remark */}
                     <div className="col-span-2 w-full">
                         <TextInputFilter
                             label="หมายเหตุ"
@@ -175,25 +265,72 @@ export default function NewInspectionStep1() {
                         />
                     </div>
 
+
                 </div>
+
 
                 {/* Footer */}
                 <div className="flex w-full max-w-[1095px] justify-between">
+
                     <button
                         onClick={() => navigate("/inspection")}
-                        className="w-[195px] border border-green-600 text-green-600 px-6 py-2.5 rounded-2xl">
+                        className="w-[195px] border border-green-600 text-green-600 px-6 py-2.5 rounded-2xl"
+                    >
                         ยกเลิก
                     </button>
 
+
                     <button
-                        onClick={() => {
-                            saveInspectionStep1();
-                            navigate("/inspection/new/step2");
+                        onClick={async () => {
+
+                            if (!date || !time) {
+                                alert("กรุณาเลือกวันที่และเวลา");
+                                return;
+                            }
+
+                            try {
+
+                                const result = await createInspectionStep1({
+                                    siteId: Number(projectId),
+                                    projectType,
+                                    contactPhone: project?.contactPhone ?? "",
+                                    contactEmail: project?.contactEmail ?? "",
+                                    workDate: date,
+                                    workTimeText: time,
+                                    customerName: project?.projectName ?? "",
+                                    note: remark,
+                                });
+
+                                localStorage.setItem("jobId", String(result.data.jobId));
+
+                                const payload = {
+                                    jobId: result.data.jobId,
+                                    projectId,
+                                    projectName: project?.projectName,
+                                    contactEmail: project?.contactEmail,
+                                    date,
+                                    time,
+                                    shutdownHours,
+                                    remark,
+                                };
+
+                                localStorage.setItem("inspection_step1", JSON.stringify(payload));
+
+                                navigate("/inspection/new/step2");
+
+                            } catch (err) {
+                                console.error(err);
+                                alert("สร้าง Inspection Job ไม่สำเร็จ");
+                            }
+
                         }}
-                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl">
+                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                    >
                         ถัดไป
                     </button>
+
                 </div>
+
             </div>
         </div>
     );

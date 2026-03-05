@@ -1,66 +1,120 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { PROJECTS, type JobType } from "../../mock/project";
 import SearchBox from "../SearchBox";
 import TextInputFilter from "../TextInputFilter";
 import SelectFilter from "../SelectFilter";
 import DataTable, { type Column } from "../table/DataTable";
 import { JOB_CONFIG } from "../../configs/jobConfig";
+import { getServiceEntries } from "../../services/api";
 
 interface PowerVaultService {
   id: string;
   projectnumber: string;
   projectName: string;
   systemSize: number;
-  job: JobType;
+  job: "SERVICE" | "CLEANING" | "INSPECTION" | "OM";
   description: string;
 }
 
-const jobToSlug = (job: JobType) => {
-  switch (job) {
-    case "Service":
-      return "service";
-    case "Cleaning":
-      return "cleaning";
-    case "Inspection":
-      return "inspection";
-    case "OM":
-      return "om";
-  }
-};
+const jobToSlug = (job: string) => job.toLowerCase();
 
 export default function PowerVaultServiceTab() {
   const [data, setData] = useState<PowerVaultService[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    projectNo: "",
+    projectName: "",
+    systemSize: "",
+    job: "all",
+  });
+
   const navigate = useNavigate();
 
+  /* ================= Fetch API ================= */
   useEffect(() => {
-    const tableData: PowerVaultService[] = PROJECTS.flatMap((project) =>
-      project.jobs.map((j) => ({
-        id: `${project.id}_${j.job}`,
-        projectnumber: project.id,
-        projectName: project.name,
-        systemSize: project.systemSize,
-        job: j.job,
-        description: j.description,
-      }))
-    );
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await getServiceEntries(
+          filters.job !== "all" ? filters.job : undefined
+        );
 
-    setData(tableData);
-    setLoading(false);
-  }, []);
+        console.log("SERVICE API:", res.data);
+
+        // รองรับหลายรูปแบบ response
+        const apiData =
+          res?.data?.data ??
+          res?.data ??
+          [];
+
+        if (Array.isArray(apiData)) {
+          const mapped: PowerVaultService[] = apiData.map((item: any) => ({
+            id: String(item.id),
+            projectnumber: String(item.siteId),
+            projectName: item.projectName ?? "-",
+            systemSize: item.systemSize ?? 0,
+            job: item.job,
+            description: item.description ?? "",
+          }));
+
+          setData(mapped);
+        } else {
+          setData([]);
+        }
+
+      } catch (error) {
+        console.error("Error loading service entries:", error);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [filters.job]);
 
   const goToJobPage = (row: PowerVaultService) => {
     navigate(`/project/${row.projectnumber}/${jobToSlug(row.job)}`);
   };
 
-  const jobBadgeClass = (job: JobType) => {
+  /* ================= Filtered Data ================= */
+  const filteredData = useMemo(() => {
+    return data.filter((item) => {
+      const matchProjectNo =
+        filters.projectNo === "" ||
+        item.projectnumber
+          .toLowerCase()
+          .includes(filters.projectNo.toLowerCase());
+
+      const matchProjectName =
+        filters.projectName === "" ||
+        item.projectName
+          .toLowerCase()
+          .includes(filters.projectName.toLowerCase());
+
+      const matchSystemSize =
+        filters.systemSize === "" ||
+        item.systemSize === Number(filters.systemSize);
+
+      const matchJob =
+        filters.job === "all" || item.job === filters.job;
+
+      return (
+        matchProjectNo &&
+        matchProjectName &&
+        matchSystemSize &&
+        matchJob
+      );
+    });
+  }, [data, filters]);
+
+  const jobBadgeClass = (job: string) => {
     switch (job) {
-      case "Service":
+      case "SERVICE":
         return "bg-sky-100 text-sky-700";
-      case "Cleaning":
+      case "CLEANING":
         return "bg-purple-100 text-purple-700";
-      case "Inspection":
+      case "INSPECTION":
         return "bg-pink-100 text-pink-700";
       case "OM":
         return "bg-orange-100 text-orange-700";
@@ -106,7 +160,8 @@ export default function PowerVaultServiceTab() {
             ${jobBadgeClass(value)}
           `}
         >
-          {JOB_CONFIG[value as JobType].label}
+
+          {JOB_CONFIG[value]?.label ?? value}
         </span>
       ),
     },
@@ -121,18 +176,42 @@ export default function PowerVaultServiceTab() {
     <div className="flex flex-col gap-[18px]">
       <SearchBox>
         <div className="grid grid-cols-4 gap-2.5">
-          <TextInputFilter label="Project No." value="" onChange={() => {}} />
-          <TextInputFilter label="Project Name" value="" onChange={() => {}} />
+          <TextInputFilter
+            label="Project No."
+            value={filters.projectNo}
+            onChange={(value) =>
+              setFilters({ ...filters, projectNo: value })
+            }
+          />
+
+          <TextInputFilter
+            label="Project Name"
+            value={filters.projectName}
+            onChange={(value) =>
+              setFilters({ ...filters, projectName: value })
+            }
+          />
+
+          <TextInputFilter
+            label="System Size (kWp)"
+            value={filters.systemSize}
+            onChange={(value) =>
+              setFilters({ ...filters, systemSize: value })
+            }
+          />
+
           <SelectFilter
             label="Job"
             placeholder="All"
-            value=""
-            onChange={() => {}}
+            value={filters.job}
+            onChange={(value) =>
+              setFilters({ ...filters, job: value })
+            }
             options={[
               { label: "All", value: "all" },
-              { label: "Service", value: "Service" },
-              { label: "Cleaning", value: "Cleaning" },
-              { label: "Inspection", value: "Inspection" },
+              { label: "Service", value: "SERVICE" },
+              { label: "Cleaning", value: "CLEANING" },
+              { label: "Inspection", value: "INSPECTION" },
               { label: "O&M", value: "OM" },
             ]}
           />
@@ -140,7 +219,11 @@ export default function PowerVaultServiceTab() {
       </SearchBox>
 
       <div className="pt-[25px]">
-        <DataTable columns={columns} data={data} loading={loading} />
+        <DataTable
+          columns={columns}
+          data={Array.isArray(filteredData) ? filteredData : []}
+          loading={loading}
+        />
       </div>
     </div>
   );

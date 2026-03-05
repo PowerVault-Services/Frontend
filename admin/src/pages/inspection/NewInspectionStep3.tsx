@@ -4,42 +4,211 @@ import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 
-
 export default function NewInspectionStep3() {
+
     const navigate = useNavigate();
     const [_uploadedFile, setUploadedFile] = useState<File | null>(null);
 
 
+    const [loading, setLoading] = useState(false);
+    const [reportFile, setReportFile] = useState<File | null>(null);
+
+    const [emailStatus, setEmailStatus] =
+        useState<"idle" | "sending" | "sent">("idle");
+
+    const [showConfirm, setShowConfirm] = useState(false);
+
     const steps = [
         { id: 1, label: "กรอกข้อมูล" },
         { id: 2, label: "ส่งอีเมลแจ้งแผน" },
-        { id: 3, label: "แนบรูปภาพ" },
+        { id: 3, label: "ส่งรายงาน" },
     ];
 
     const [currentStep] = useState(3);
 
-    const [jobData, setJobData] = useState<{
-        projectName?: string;
-        date?: string;
-        time?: string;
-        remark?: string;
-    }>({});
+    const [jobData, setJobData] = useState({
+        jobId: "",
+        projectName: "",
+        date: "",
+        time: "",
+        remark: "",
+    });
 
+    // =========================
+    // Load step1 data
+    // =========================
     useEffect(() => {
+
         const raw = localStorage.getItem("inspection_step1");
-        if (raw) setJobData(JSON.parse(raw));
+
+        if (!raw) return;
+
+        const data = JSON.parse(raw);
+
+        setJobData(data);
+
+        const sent = localStorage.getItem(
+            `inspection_step3_sent_${data.jobId}`
+        );
+
+        if (sent === "true") {
+            setEmailStatus("sent");
+        }
+
     }, []);
 
+    // =========================
+    // Format Thai Date
+    // =========================
     function formatThaiDate(dateStr?: string) {
+
         if (!dateStr) return "";
 
         const date = new Date(dateStr);
+
         const months = [
-            "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-            "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+            "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน",
+            "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม",
+            "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
         ];
 
         return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
+    }
+
+    // =========================
+    // Save Draft
+    // =========================
+    async function handleSaveDraft() {
+
+        if (loading) return;
+
+        try {
+
+            setLoading(true);
+
+            const subject =
+                `รายงาน Inspection ระบบ Solar System โครงการ ${jobData.projectName}`;
+
+            const body = `
+เรียน ท่านผู้เกี่ยวข้อง
+
+บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System
+โครงการ ${jobData.projectName}
+
+เข้าปฏิบัติงานวันที่ ${formatThaiDate(jobData.date)}
+
+รายละเอียดตามไฟล์แนบ
+`;
+
+            const form = new FormData();
+
+            form.append("jobId", String(jobData.jobId));
+            form.append("to", "nita290646@gmail.com");
+            form.append("subject", subject);
+            form.append("body", body);
+
+            if (reportFile) {
+                form.append("report", reportFile);
+            }
+
+            const res = await fetch("/api/inspection/step3/draft", {
+                method: "POST",
+                body: form
+            });
+
+            const json = await res.json();
+
+            if (!json.success) {
+                throw new Error("Save draft failed");
+            }
+
+            alert("บันทึก Draft สำเร็จ");
+
+        } catch (err) {
+
+            console.error(err);
+            alert("บันทึก Draft ไม่สำเร็จ");
+
+        } finally {
+
+            setLoading(false);
+        }
+    }
+
+    // =========================
+    // Send Email
+    // =========================
+    async function handleSendEmail() {
+
+        if (emailStatus === "sending") return;
+
+        if (emailStatus === "sent") {
+            navigate("/inspection");
+            return;
+        }
+
+        try {
+
+            setEmailStatus("sending");
+
+            const subject =
+                `รายงาน Inspection ระบบ Solar System โครงการ ${jobData.projectName}`;
+
+            const body = `
+เรียน ท่านผู้เกี่ยวข้อง
+
+บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System
+โครงการ ${jobData.projectName}
+
+เข้าปฏิบัติงานวันที่ ${formatThaiDate(jobData.date)}
+
+รายละเอียดตามไฟล์แนบ
+`;
+
+            const form = new FormData();
+
+            form.append("jobId", String(jobData.jobId));
+            form.append("to", "nita290646@gmail.com");
+            form.append("subject", subject);
+            form.append("body", body);
+
+            if (reportFile) {
+                form.append("report", reportFile);
+            }
+
+            // save draft first
+            await fetch("/api/inspection/step3/draft", {
+                method: "POST",
+                body: form
+            });
+
+            // send email
+            await fetch("/api/inspection/step3/send", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    jobId: jobData.jobId
+                })
+            });
+
+            localStorage.setItem(
+                `inspection_step3_sent_${jobData.jobId}`,
+                "true"
+            );
+
+            setEmailStatus("sent");
+
+            navigate("/inspection");
+
+        } catch (err) {
+
+            console.error(err);
+            alert("ส่งรายงานไม่สำเร็จ");
+
+            setEmailStatus("idle");
+        }
     }
 
     return (
@@ -47,77 +216,102 @@ export default function NewInspectionStep3() {
 
             {/* Header */}
             <div className="flex justify-between pb-9">
-                <h1 className="text-green-800">New Inspection Job</h1>
 
-                <button className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
-          text-green-700 bg-white border-2 border-green-700 rounded-md">
+                <h1 className="text-green-800">
+                    New Inspection Job
+                </h1>
+
+                <button
+                    onClick={handleSaveDraft}
+                    disabled={loading}
+                    className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
+                    text-green-700 bg-white border-2 border-green-700 rounded-md"
+                >
                     <img src={SaveDraftIcon} alt="save draft" />
-                    Save Draft
+                    {loading ? "Saving..." : "Save Draft"}
                 </button>
+
             </div>
 
-            <div className="flex flex-col h-[822px] px-28 py-5 gap-y-[58px] bg-white rounded-2xl justify-between items-center">
+            <div className="flex flex-col h-[822px] px-28 py-5 gap-y-[58px]
+            bg-white rounded-2xl justify-between items-center">
+
                 <ProgressBar steps={steps} currentStep={currentStep} />
 
                 <div className="grid w-[1095px]">
+
                     <label className="text-[16px] font-normal text-black">
                         รายละเอียดแจ้งแผน
                     </label>
 
-                    <div className="h-[406px] rounded-lg border border-green-800 flex items-center justify-center">
-                        <div className="w-[953px] text-[18px] text-gray-800 leading-relaxed">
+                    {/* Email Preview */}
+                    <div className="h-[406px] rounded-lg border border-green-800
+                    flex items-center justify-center">
 
-                            <p><span>From :</span> ทีมดูแลระบบ PowerVault Service</p>
+                        <div className="w-[953px] text-[18px]
+                        text-gray-800 leading-relaxed">
+
+                            <p>From : ทีมดูแลระบบ PowerVault Service</p>
 
                             <p>
-                                <span>To :</span>{" "}
+                                To :{" "}
                                 <span className="text-[#2196F3] font-semibold">
                                     {jobData.projectName || "-"}
                                 </span>
                             </p>
 
                             <div className="pt-4 indent-10">
+
                                 <p>เรียน ท่านผู้เกี่ยวข้อง</p>
 
-                                <p>เรื่อง ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System ประจําปี 2568</p>
+                                <p>
+                                    เรื่อง ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System
+                                </p>
 
                                 <p className="pt-4 indent-10">
-                                    บริษัท พาวเวอร์วอลท์ จํากัด ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System ประจําปี 2568
+                                    บริษัท พาวเวอร์วอลท์ จำกัด
+                                    ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System
                                 </p>
 
                                 <p className="indent-10">
                                     โครงการ{" "}
                                     <span className="text-[#2196F3] font-semibold">
-                                        {jobData.projectName || "-"}
+                                        {jobData.projectName}
                                     </span>{" "}
-                                    เข้าปฏิบัติงาน ในวันที่{" "}
+                                    เข้าปฏิบัติงานวันที่{" "}
                                     <span className="text-[#2196F3] font-semibold">
                                         {formatThaiDate(jobData.date)}
                                     </span>{" "}
                                     รายละเอียดตามไฟล์แนบค่ะ
                                 </p>
+
                             </div>
+
                         </div>
+
                     </div>
 
+                    {/* Upload */}
                     <div className="mt-[27px]">
-                        {/* Upload Inspection Report */}
+
                         <label className="text-[16px] font-normal">
                             อัปโหลดเอกสารไฟล์ (Inspection Report)
                         </label>
+
                         <label
                             htmlFor="teamFile"
-                            className="flex items-center rounded-lg h-[39px] border border-dashed border-green-800 px-4 py-3 text-sm text-gray-600 cursor-pointer hover:bg-green-50 transition"
+                            className="flex items-center rounded-lg h-[39px]
+                            border border-dashed border-green-800 px-4 py-3
+                            text-sm text-gray-600 cursor-pointer
+                            hover:bg-green-50 transition"
                         >
-                            {/* icon (import svg) */}
-                            <img
-                                src={UploadIcon}
-                                alt="upload"
-                                className="h-4.5 w-4.5"
-                            />
 
-                            <span className="text-[#2979FF] font-normal">
-                                คลิกเลือกไฟล์เพื่ออัปโหลด
+                            <img src={UploadIcon} alt="upload" className="h-4.5 w-4.5" />
+
+                            <span className="text-[#2979FF] ml-2">
+                                {reportFile
+                                    ? reportFile.name
+                                    : "คลิกเลือกไฟล์เพื่ออัปโหลด"}
                             </span>
 
                             <input
@@ -126,26 +320,94 @@ export default function NewInspectionStep3() {
                                 className="hidden"
                                 accept=".pdf,.jpg,.jpeg,.xls,.xlsx"
                                 onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) setUploadedFile(file);
+                                    if (e.target.files?.[0]) {
+                                        setReportFile(e.target.files[0]);
+                                    }
                                 }}
                             />
+
                         </label>
+
                     </div>
+
                 </div>
 
+                {/* Footer */}
                 <div className="flex w-full max-w-[1095px] justify-between">
-                    <button onClick={() => navigate("/inspection/new/step2")}
-                        className="w-[195px] border border-green-600 text-green-600 px-6 py-2.5 rounded-2xl">
+
+                    <button
+                        onClick={() => navigate("/inspection/new/step2")}
+                        className="w-[195px] border border-green-600
+                        text-green-600 px-6 py-2.5 rounded-2xl"
+                    >
                         ก่อนหน้า
                     </button>
 
-                    <button onClick={() => navigate("/inspection/new/step3")}
-                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl">
-                        ยืนยันส่งอีเมล
+                    <button
+                        disabled={emailStatus === "sending" || emailStatus === "sent"}
+                        onClick={() => setShowConfirm(true)}
+                        className="w-[195px] bg-green-700 text-white
+                        px-6 py-2.5 rounded-2xl"
+                    >
+                        {emailStatus === "sending"
+                            ? "กำลังส่ง..."
+                            : emailStatus === "sent"
+                                ? "ส่งรายงานแล้ว"
+                                : "ยืนยันส่งรายงาน"}
                     </button>
+
                 </div>
+
             </div>
+
+            {/* Confirm Modal */}
+            {showConfirm && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+                    <div className="bg-white rounded-xl w-[720px] p-6 shadow-lg">
+
+                        <h2 className="text-lg font-semibold">
+                            ยืนยันการส่งรายงาน
+                        </h2>
+
+                        <p className="text-gray-600 mt-3 text-xl">
+
+                            คุณต้องการส่งรายงาน Inspection ไปยังโครงการ
+
+                            <span className="text-green-700 font-semibold">
+                                {" "} {jobData.projectName} {" "}
+                            </span>
+
+                            ใช่หรือไม่
+
+                        </p>
+
+                        <div className="flex justify-end gap-3 mt-6">
+
+                            <button
+                                onClick={() => setShowConfirm(false)}
+                                className="px-4 py-2 border border-gray-300 rounded-lg"
+                            >
+                                ยกเลิก
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setShowConfirm(false);
+                                    handleSendEmail();
+                                }}
+                                className="px-4 py-2 bg-green-700 text-white rounded-lg"
+                            >
+                                ยืนยันส่ง
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            )}
+
         </div>
     );
 }

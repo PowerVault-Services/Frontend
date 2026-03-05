@@ -69,7 +69,7 @@ export default function ReportViewe() {
       <div className="flex-1 bg-gray-50 flex flex-col h-full">
         
         {/* Preview Header */}
-        <div className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between shadow-sm z-10">
+        <div className="h-16  border-b border-gray-200 px-6 flex items-center justify-between shadow-sm z-10">
            <div>
               <h5 className="text-gray-800 truncate">{selectedReport.title}</h5>
               <p className="text-xs text-gray-500">ประเภทไฟล์: {selectedReport.type} • อัปเดตเมื่อ: {selectedReport.date}</p>
@@ -77,7 +77,7 @@ export default function ReportViewe() {
            
            {/* Action Buttons */}
            <div className="flex gap-3">
-              <button className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 border border-gray-200 transition">
+              <button className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 border transition">
                 Print
               </button>
               <button className="px-4 py-2 rounded-lg text-sm text-white bg-green-600 hover:bg-green-700 shadow-sm transition">

@@ -1,10 +1,13 @@
+import React from "react";
+
 export interface Column<T> {
-  key: keyof T;
+  id: string; // ใช้เป็น unique key ของ column
+  key?: keyof T;
   label: string;
   render?: (value: any, row: T) => React.ReactNode;
   align?: "left" | "center" | "right";
   width?: string;
-} 
+}
 
 interface DataTableProps<T> {
   columns: Column<T>[];
@@ -28,12 +31,13 @@ export default function DataTable<T>({
   return (
     <div className="rounded-2xl overflow-x-auto border border-[#DEE2E6]">
       <table className="w-full border-collapse">
+        
         {/* ---------- Header ---------- */}
         <thead className="bg-green-700 text-white">
           <tr>
             {columns.map((col) => (
               <th
-                key={String(col.key)}
+                key={col.id}
                 className={`
                   px-4 py-3
                   text-xs font-light
@@ -71,24 +75,31 @@ export default function DataTable<T>({
               </td>
             </tr>
           ) : (
-            data.map((row, i) => (
-              <tr key={i} className="border-t border-[#DEE2E6] text-sm text-gray-700">
-                {columns.map((col) => (
-                  <td
-                    key={String(col.key)}
-                    style={{ width: col.width }}
-                    className={`
-                      px-4 py-3
-                      ${alignClass[col.align ?? "left"]}
-                      border-r border-[#DEE2E6]
-                      last:border-r-0
-                    `}
-                  >
-                    {col.render
-                      ? col.render(row[col.key], row)
-                      : String(row[col.key] ?? "-")}
-                  </td>
-                ))}
+            data.map((row, rowIndex) => (
+              <tr
+                key={rowIndex}
+                className="border-t border-[#DEE2E6] text-sm text-gray-700"
+              >
+                {columns.map((col) => {
+                  const value = col.key ? (row as any)[col.key] : undefined;
+
+                  return (
+                    <td
+                      key={col.id}
+                      style={{ width: col.width }}
+                      className={`
+                        px-4 py-3
+                        ${alignClass[col.align ?? "left"]}
+                        border-r border-[#DEE2E6]
+                        last:border-r-0
+                      `}
+                    >
+                      {col.render
+                        ? col.render(value, row)
+                        : String(value ?? "-")}
+                    </td>
+                  );
+                })}
               </tr>
             ))
           )}

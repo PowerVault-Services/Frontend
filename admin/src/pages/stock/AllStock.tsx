@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getStockSummary } from "../../services/api";
 import AddIcon from "../../assets/icons/Add Circle.svg";
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
@@ -7,19 +8,19 @@ import AddProductModal from "../../components/AddProductModal";
 
 
 interface AllStock {
-    productCode: number;
+    productCode: string;
     category: string;
-    projectType: string;
     productName: string;
-    unit: number;
-    stockIn: string;
-    stockOut: string;
-    remainingStock: string;
+    unit: string;
+    stockIn: number;
+    stockOut: number;
+    remainingStock: number;
 }
 
+
 export default function AllStock() {
-    const [data] = useState<AllStock[]>([]);
-    const [loading] = useState(true);
+    const [data, setData] = useState<AllStock[]>([]);
+    const [loading, setLoading] = useState(true);
     const [openModal, setOpenModal] = useState(false);
 
     const columns: Column<AllStock>[] = [
@@ -31,6 +32,38 @@ export default function AllStock() {
         { key: "stockOut", label: "จ่ายออก", align: "center" },
         { key: "remainingStock", label: "คงเหลือ", align: "center" },
     ];
+
+    useEffect(() => {
+        const fetchSummary = async () => {
+            try {
+                setLoading(true);
+
+                const res = await getStockSummary();
+
+                const list = res.data.list; // 👈 สำคัญมาก
+
+                const formatted: AllStock[] = list.map((item: any) => ({
+                    productCode: item.sku,
+                    category: item.category,
+                    productName: item.name,
+                    unit: item.unit,
+                    stockIn: item.inQty,
+                    stockOut: item.outQty,
+                    remainingStock: item.onHand,
+                }));
+
+                setData(formatted);
+
+            } catch (err) {
+                console.error(err);
+                setData([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSummary();
+    }, []);
 
     return (
         <div className="w-full">
