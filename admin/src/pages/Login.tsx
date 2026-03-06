@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export default function Login() {
   const navigate = useNavigate();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (localStorage.getItem("token")) {
@@ -12,11 +17,38 @@ export default function Login() {
     }
   }, [navigate]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username && password) {
-      localStorage.setItem("token", "mock-token");
+
+    try {
+
+      setError("");
+      setLoading(true);
+
+      const res = await axios.post("/api/auth/login", {
+        username,
+        password,
+      });
+
+      const { token, user } = res.data;
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
       navigate("/", { replace: true });
+
+    } catch (err: any) {
+
+      if (err.response?.status === 401) {
+        setError("Invalid username or password");
+      } else {
+        setError("Login failed. Please try again.");
+      }
+
+    } finally {
+
+      setLoading(false);
+
     }
   };
 
@@ -46,6 +78,13 @@ export default function Login() {
             className="h-[156px] max-w-full object-contain"
           />
         </div>
+
+        {/* error */}
+        {error && (
+          <div className="mb-6 text-red-600 text-center font-medium">
+            {error}
+          </div>
+        )}
 
         {/* Username */}
         <div className="w-full max-w-[643px] mb-6">
@@ -98,6 +137,7 @@ export default function Login() {
         {/* Login Button */}
         <button
           type="submit"
+          disabled={loading}
           className="
             w-full
             max-w-[643px]
@@ -110,11 +150,14 @@ export default function Login() {
             font-medium
             hover:bg-green-600
             transition
+            disabled:bg-green-300
           "
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
+
       </form>
     </div>
   );
 }
+
