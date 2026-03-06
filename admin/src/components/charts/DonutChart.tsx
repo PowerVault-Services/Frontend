@@ -18,7 +18,7 @@ export function DonutChart({
 }: DonutChartProps) {
   return (
     <div className="w-50 h-50 relative">
-      <ResponsiveContainer width="100%" aspect={2}>
+      <ResponsiveContainer width="100%" height={200}>
         <PieChart>
           <Pie
             data={data}

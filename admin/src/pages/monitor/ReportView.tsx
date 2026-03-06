@@ -22,6 +22,12 @@ export default function ReportViewe({ reports, loading }: Props) {
   const filteredReports = reports.filter((report) =>
     report.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  useEffect(() => {
+    if (selectedReport) {
+      console.log("Preview URL:", previewUrl);
+    }
+  }, [selectedReport]);
 
   if (loading) {
     return (
