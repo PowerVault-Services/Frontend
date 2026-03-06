@@ -12,11 +12,8 @@ import {
 } from "../../services/inspection.api";
 
 import type { InspectionProject } from "../../services/types";
+import { saveDraft } from "../../services/draft.api";
 
-
-// ==========================
-// NEW: format phone
-// ==========================
 function formatPhones(phone?: string | null) {
     if (!phone) return "";
 
@@ -27,9 +24,6 @@ function formatPhones(phone?: string | null) {
         .join(", ");
 }
 
-// ==========================
-// NEW: parse email
-// ==========================
 function parseEmails(email?: string | null) {
     if (!email) return [];
 
@@ -45,6 +39,14 @@ export default function NewInspectionStep1() {
     const FIELD_WIDTH = "w-[532px]";
 
     const [shutdownHours, setShutdownHours] = useState("");
+    const [projects, setProjects] = useState<InspectionProject[]>([]);
+    const [projectId, setProjectId] = useState("");
+    const [project, setProject] = useState<InspectionProject | null>(null);
+
+    const [date, setDate] = useState("");
+    const [time, setTime] = useState("");
+    const [remark, setRemark] = useState("");
+    const [projectType, setProjectType] = useState("");
 
     const steps = [
         { id: 1, label: "กรอกข้อมูล" },
@@ -54,20 +56,6 @@ export default function NewInspectionStep1() {
 
     const [currentStep] = useState(1);
 
-    const [projects, setProjects] = useState<InspectionProject[]>([]);
-    const [projectId, setProjectId] = useState("");
-    const [project, setProject] = useState<InspectionProject | null>(null);
-
-    const [date, setDate] = useState("");
-    const [time, setTime] = useState("");
-    const [remark, setRemark] = useState("");
-    const [contractor, setContractor] = useState("");
-    const [projectType, setProjectType] = useState("");
-
-
-    // ==========================
-    // Load Projects
-    // ==========================
     useEffect(() => {
         async function loadProjects() {
             try {
@@ -81,10 +69,6 @@ export default function NewInspectionStep1() {
         loadProjects();
     }, []);
 
-
-    // ==========================
-    // หา project ที่เลือก
-    // ==========================
     useEffect(() => {
 
         if (!projectId) {
@@ -102,22 +86,56 @@ export default function NewInspectionStep1() {
 
 
     // ==========================
-    // Save Draft
+    // Save Draft (ใช้ API)
     // ==========================
-    function saveStep1Data() {
+    async function saveStep1Data() {
 
-        const payload = {
-            projectId,
-            projectName: project?.projectName ?? "",
-            date,
-            time,
-            remark,
-            contractor,
-            projectType,
-            shutdownHours,
-        };
+        if (!projectId) {
+            alert("กรุณาเลือก Project");
+            return;
+        }
 
-        localStorage.setItem("inspection_step1", JSON.stringify(payload));
+        try {
+
+            const result = await createInspectionStep1({
+                siteId: Number(projectId),
+                projectType,
+                contactPhone: project?.contactPhone ?? "",
+                contactEmail: project?.contactEmail ?? "",
+                workDate: date,
+                workTimeText: time,
+                customerName: project?.projectName ?? "",
+                note: remark,
+            });
+
+            const jobId = result.data.jobId;
+
+            await saveDraft(jobId, 1);
+
+            const payload = {
+                jobId,
+                projectId,
+                projectName: project?.projectName,
+                contactEmail: project?.contactEmail,
+                date,
+                time,
+                shutdownHours,
+                remark,
+            };
+
+            localStorage.setItem(
+                "inspection_step1",
+                JSON.stringify(payload)
+            );
+
+            alert("บันทึก Draft สำเร็จ");
+
+        } catch (err) {
+
+            console.error(err);
+            alert("บันทึก Draft ไม่สำเร็จ");
+
+        }
     }
 
 

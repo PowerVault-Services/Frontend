@@ -11,6 +11,8 @@ export default function ReportViewe({ reports, loading }: Props) {
   const [selectedReport, setSelectedReport] = useState<ReportItem | null>(null);
   const [searchTerm] = useState("");
 
+  const API_BASE = import.meta.env.VITE_API_URL || "";
+
   useEffect(() => {
     if (reports.length && !selectedReport) {
       setSelectedReport(reports[0]);
@@ -29,10 +31,18 @@ export default function ReportViewe({ reports, loading }: Props) {
     );
   }
 
+  const previewUrl = selectedReport?.previewUrl
+    ? `${API_BASE}${selectedReport.previewUrl}`
+    : "";
+
+  const downloadUrl = selectedReport?.downloadUrl
+    ? `${API_BASE}${selectedReport.downloadUrl}`
+    : "";
+
   return (
     <div className="w-full h-[calc(100vh-100px)] min-h-[600px] bg-white border border-gray-200 rounded-xl shadow-sm flex overflow-hidden">
 
-      {/* --- LEFT SIDE: List --- */}
+      {/* LEFT SIDE */}
       <div className="w-1/3 min-w-[300px] border-r border-gray-200 flex flex-col bg-white">
 
         <div className="p-6 border-b border-gray-100">
@@ -92,13 +102,12 @@ export default function ReportViewe({ reports, loading }: Props) {
 
       </div>
 
-      {/* --- RIGHT SIDE: Preview --- */}
+      {/* RIGHT SIDE */}
       <div className="flex-1 bg-gray-50 flex flex-col h-full">
 
         {selectedReport && (
 
           <>
-            {/* Preview Header */}
             <div className="h-16 border-b border-gray-200 px-6 flex items-center justify-between shadow-sm z-10">
 
               <div>
@@ -122,7 +131,7 @@ export default function ReportViewe({ reports, loading }: Props) {
                 </button>
 
                 <a
-                  href={selectedReport.downloadUrl}
+                  href={downloadUrl}
                   download
                   className="px-4 py-2 rounded-lg text-sm text-white bg-green-600 hover:bg-green-700 shadow-sm transition"
                 >
@@ -133,13 +142,17 @@ export default function ReportViewe({ reports, loading }: Props) {
 
             </div>
 
-            {/* Preview Content */}
+            {/* Preview */}
             <div className="flex-1 overflow-y-auto p-8 flex items-center justify-center">
 
-              <iframe
-                src={selectedReport.previewUrl}
-                className="w-full max-w-[210mm] min-h-[297mm] bg-white shadow-lg rounded-sm"
-              />
+              {previewUrl ? (
+                <iframe
+                  src={previewUrl}
+                  className="w-full max-w-[210mm] min-h-[297mm] bg-white shadow-lg rounded-sm"
+                />
+              ) : (
+                <div className="text-gray-400">No preview available</div>
+              )}
 
             </div>
 

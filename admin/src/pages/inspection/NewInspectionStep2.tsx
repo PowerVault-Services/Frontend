@@ -4,6 +4,8 @@ import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 
+import { saveDraft } from "../../services/draft.api";
+
 export default function NewInspectionStep2() {
 
     const navigate = useNavigate();
@@ -94,16 +96,16 @@ export default function NewInspectionStep2() {
                 `ขออนุญาตเข้าตรวจสอบระบบ Solar System โครงการ ${formData.projectName}`;
 
             const body = `
-                เรียน ท่านผู้เกี่ยวข้อง
+เรียน ท่านผู้เกี่ยวข้อง
 
-                บริษัท พาวเวอร์วอลท์ จำกัด ขอแจ้งแผน Inspection ระบบ Solar System
-                โครงการ ${formData.projectName}
+บริษัท พาวเวอร์วอลท์ จำกัด ขอแจ้งแผน Inspection ระบบ Solar System
+โครงการ ${formData.projectName}
 
-                วันที่ ${formatThaiDate(formData.date)}
-                เวลา ${formData.time}
+วันที่ ${formatThaiDate(formData.date)}
+เวลา ${formData.time}
 
-                โดยจะขออนุญาตปิดระบบประมาณ ${formData.shutdownHours} ชม.
-                `;
+โดยจะขออนุญาตปิดระบบประมาณ ${formData.shutdownHours} ชม.
+`;
 
             const form = new FormData();
 
@@ -116,6 +118,7 @@ export default function NewInspectionStep2() {
                 form.append("attachments", uploadedFile);
             }
 
+            // save email draft
             const res = await fetch("/api/inspection/step2/draft", {
                 method: "POST",
                 body: form
@@ -126,6 +129,9 @@ export default function NewInspectionStep2() {
             if (!json.success) {
                 throw new Error("Save draft failed");
             }
+
+            // save step draft
+            await saveDraft(Number(formData.jobId), 2);
 
             alert("บันทึก Draft สำเร็จ");
 
@@ -197,6 +203,9 @@ export default function NewInspectionStep2() {
                     jobId: formData.jobId
                 })
             });
+
+            // mark step complete
+            await saveDraft(Number(formData.jobId), 2);
 
             localStorage.setItem(
                 `inspection_step2_sent_${formData.jobId}`,
