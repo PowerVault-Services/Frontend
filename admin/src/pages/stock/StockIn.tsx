@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getStockInList } from "../../services/api";
+import { getStockInList } from "../../services/stock.api";
 
 import AddIcon from "../../assets/icons/Add Circle.svg";
 import SearchBox from "../../components/SearchBox";
@@ -35,11 +35,12 @@ export default function StockIn() {
     const pageSize = 13;
 
     const [totalItems, setTotalItems] = useState(0);
-    const totalPages = Math.ceil(totalItems / pageSize);
 
     const [keyword, setKeyword] = useState("");
     const [dateFrom, setDateFrom] = useState("");
     const [dateTo, setDateTo] = useState("");
+
+    const totalPages = Math.ceil(totalItems / pageSize);
 
     const columns: Column<StockIn>[] = [
         { id: "date", key: "date", label: "วันที่", align: "center" },
@@ -75,13 +76,19 @@ export default function StockIn() {
             if (dateFrom) params.append("dateFrom", dateFrom);
             if (dateTo) params.append("dateTo", dateTo);
 
-            const res = await getStockInList(params.toString());
+            // 👇 เรียก API พร้อม query string
+            const res = await getStockInList(`?${params.toString()}`);
 
             const json = res.data;
 
-            if (!json.success) return;
+            if (!json?.success) {
+                setData([]);
+                return;
+            }
 
-            const mapped: StockIn[] = json.data.list.map((item: any) => ({
+            const list = json.data?.list ?? [];
+
+            const mapped: StockIn[] = list.map((item: any) => ({
                 id: item.id,
                 date: item.txDate?.slice(0, 10),
                 productCode: item.sku,
@@ -98,11 +105,13 @@ export default function StockIn() {
             }));
 
             setData(mapped);
-            setTotalItems(json.data.pagination.total);
+
+            setTotalItems(json.data?.pagination?.total ?? 0);
 
         } catch (err) {
 
             console.error("โหลด StockIn ไม่สำเร็จ", err);
+            setData([]);
 
         } finally {
 
@@ -132,6 +141,8 @@ export default function StockIn() {
 
             </div>
 
+            {/* Search */}
+
             <SearchBox>
 
                 <div className="grid grid-cols-4 justify-between gap-2.5">
@@ -160,6 +171,8 @@ export default function StockIn() {
 
             </SearchBox>
 
+            {/* Table */}
+
             <div className="pt-[25px]">
 
                 <DataTable<StockIn>
@@ -169,6 +182,8 @@ export default function StockIn() {
                 />
 
             </div>
+
+            {/* Pagination */}
 
             <div className="flex items-center justify-between py-6 text-sm text-gray-500">
 
@@ -184,6 +199,8 @@ export default function StockIn() {
                 />
 
             </div>
+
+            {/* Modal */}
 
             <AddProductModal
                 open={openModal}

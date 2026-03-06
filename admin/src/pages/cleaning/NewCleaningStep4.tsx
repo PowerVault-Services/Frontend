@@ -8,7 +8,8 @@ import ExportIcon from "../../assets/icons/File Download.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import ReportPreview from "../../components/ReportPreview";
 
-import { generateCleaningReport } from "../../services/api";
+import { generateCleaningReport } from "../../services/cleaning.api";
+import { saveDraft } from "../../services/draft.api";
 
 export default function NewCleaningStep4() {
   const navigate = useNavigate();
@@ -76,6 +77,32 @@ export default function NewCleaningStep4() {
     window.open(reportData.download, "_blank");
   }
 
+  async function handleSaveDraft() {
+
+    try {
+
+      const jobId = localStorage.getItem("jobId");
+
+      if (!jobId) {
+        alert("ไม่พบ jobId");
+        return;
+      }
+
+      await saveDraft(Number(jobId), 4);
+
+      alert("บันทึกเรียบร้อยแล้ว");
+
+      navigate("/cleaning");
+
+    } catch (err) {
+
+      console.error(err);
+      alert("Save Draft ไม่สำเร็จ");
+
+    }
+
+  }
+
   return (
     <div className="w-full">
 
@@ -84,6 +111,7 @@ export default function NewCleaningStep4() {
         <h1 className="text-green-800">New Cleaning Job</h1>
 
         <button
+          onClick={handleSaveDraft}
           className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
           text-green-700 bg-white border-2 border-green-700 rounded-md"
         >

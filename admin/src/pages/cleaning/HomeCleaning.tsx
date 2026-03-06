@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
@@ -8,7 +8,7 @@ import AddIcon from "../../assets/icons/Add Circle.svg";
 import DataTable, { type Column } from "../../components/table/DataTable";
 import Pagination from "../../components/table/Pagination";
 
-import { getCleaningJobs } from "../../services/api";
+import { getCleaningJobs } from "../../services/cleaning.api";
 
 interface Cleaning {
   id: number;
@@ -16,65 +16,122 @@ interface Cleaning {
   projectType: string;
   projectName: string;
   systemSize: number;
+  pvModuleEA?: number;
   date: string;
   time: string;
   status: string;
 }
 
 export default function HomeCleaning() {
+
   const [data, setData] = useState<Cleaning[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
 
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+
   const [page, setPage] = useState(1);
   const pageSize = 13;
 
-  const totalItems = data.length;
+  const [totalItems, setTotalItems] = useState(0);
   const totalPages = Math.ceil(totalItems / pageSize);
 
-  const paginatedData = data.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
+  const allSelected = data.length > 0 && selectedRows.size === data.length;
+  const partiallySelected =
+    selectedRows.size > 0 && selectedRows.size < data.length;
 
+  // ทำให้ checkbox เป็นสถานะ -
   useEffect(() => {
-    const load = async () => {
-      const res = await getCleaningJobs();
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = partiallySelected;
+    }
+  }, [partiallySelected]);
 
-      const mapped = res.map((item: any) => ({
+  // filters
+  const [jobNo, setJobNo] = useState("");
+  const [projectType, setProjectType] = useState("");
+  const [projectName, setProjectName] = useState("");
+  const [systemSize, setSystemSize] = useState("");
+  const [pvModuleEA, setPvModuleEA] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [status, setStatus] = useState("");
+
+  const fetchCleaning = async () => {
+
+    try {
+
+      setLoading(true);
+
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize)
+      });
+
+      if (jobNo) params.append("jobNo", jobNo);
+      if (projectType) params.append("projectType", projectType);
+      if (projectName) params.append("projectName", projectName);
+      if (systemSize) params.append("systemSizeKWp", systemSize);
+      if (pvModuleEA) params.append("pvModuleEA", pvModuleEA);
+      if (date) params.append("date", date);
+      if (status) params.append("status", status);
+
+      const json = await getCleaningJobs(`?${params.toString()}`);
+      console.log(json.data);
+
+      const list = json.data ?? [];
+
+      const mapped: Cleaning[] = list.map((item: any) => ({
         id: item.jobId,
         jobnumber: item.jobNo,
         projectType: item.projectType,
         projectName: item.projectName,
         systemSize: item.systemSizeKWp,
-        date: item.date,
+        pvModuleEA: item.pvModuleEA,
+        date: item.date?.slice(0, 10),
         time: item.time,
-        status: item.status,
+        status: item.status
       }));
 
       setData(mapped);
-      setLoading(false);
-    };
+      setTotalItems(json.pagination?.total ?? 0);
 
-    load();
-  }, []);
+    } catch (err) {
+
+      console.error("โหลด Cleaning Jobs ไม่สำเร็จ", err);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  };
+
+  useEffect(() => {
+    fetchCleaning();
+  }, [page, jobNo, projectType, projectName, systemSize, pvModuleEA, date, status]);
 
   const handleEdit = (row: Cleaning) => {
     console.log("Edit:", row);
   };
 
   const handleDelete = (id: number) => {
+
     if (!confirm("Delete this record?")) return;
 
-    setData((prev) => prev.filter((r) => r.id !== id));
-    setSelectedRows((prev) => {
+    setData(prev => prev.filter(r => r.id !== id));
+
+    setSelectedRows(prev => {
       const next = new Set(prev);
       next.delete(id);
       return next;
     });
+
   };
 
   const handleDownloadZip = () => {
+
     if (selectedRows.size === 0) {
       alert("กรุณาเลือกอย่างน้อย 1 รายการ");
       return;
@@ -83,45 +140,95 @@ export default function HomeCleaning() {
     const ids = Array.from(selectedRows);
 
     console.log("Download jobs:", ids);
+  };
+
+  const statusBadge = (status: string) => {
+
+    const base = "px-3 py-1 rounded-full text-xs font-semibold";
+
+    switch (status) {
+
+      case "COMPLETED":
+        return <span className={`${base} bg-green-100 text-green-700`}>Completed</span>;
+
+      case "PENDING":
+        return <span className={`${base} bg-yellow-100 text-yellow-700`}>Pending</span>;
+
+      case "DRAFT":
+        return <span className={`${base} bg-gray-200 text-gray-700`}>Draft</span>;
+
+      case "IN_PROGRESS":
+        return <span className={`${base} bg-blue-100 text-blue-700`}>In Progress</span>;
+
+      case "CANCELLED":
+        return <span className={`${base} bg-red-100 text-red-700`}>Cancelled</span>;
+
+      default:
+        return <span className={`${base} bg-gray-100 text-gray-600`}>{status}</span>;
+    }
 
   };
 
   const columns: Column<Cleaning>[] = [
     {
       id: "checkbox",
-      label: "",
-      align: "center",
-      render: (_, row) => (
+      label: (
         <input
-          key={row.id}
+          ref={headerCheckboxRef}
           type="checkbox"
-          checked={selectedRows.has(row.id)}
+          checked={allSelected}
           onChange={(e) => {
+
             const checked = e.target.checked;
 
-            setSelectedRows((prev) => {
-              const next = new Set(prev);
+            if (checked) {
+              setSelectedRows(new Set(data.map(r => r.id)));
+            } else {
+              setSelectedRows(new Set());
+            }
 
-              if (checked) {
-                next.add(row.id);
-              } else {
-                next.delete(row.id);
-              }
-
-              return next;
-            });
           }}
         />
       ),
+      align: "center",
+      render: (_, row) => (
+        <input
+          type="checkbox"
+          checked={selectedRows.has(row.id)}
+          onChange={(e) => {
+
+            const checked = e.target.checked;
+
+            setSelectedRows(prev => {
+
+              const next = new Set(prev);
+
+              checked ? next.add(row.id) : next.delete(row.id);
+
+              return next;
+
+            });
+
+          }}
+        />
+      )
     },
 
     { id: "jobnumber", key: "jobnumber", label: "Job No.", align: "center" },
     { id: "projectType", key: "projectType", label: "Project Type", align: "center" },
     { id: "projectName", key: "projectName", label: "Project Name", align: "center" },
     { id: "systemSize", key: "systemSize", label: "System Size (kWp)", align: "center" },
+    { id: "pvModuleEA", key: "pvModuleEA", label: "PV Module EA", align: "center" },
     { id: "date", key: "date", label: "Date", align: "center" },
     { id: "time", key: "time", label: "Time", align: "center" },
-    { id: "status", key: "status", label: "Status", align: "center" },
+
+    {
+      id: "status",
+      key: "status",
+      label: "Status",
+      align: "center",
+      render: (value) => statusBadge(value)
+    },
 
     {
       id: "actions",
@@ -130,6 +237,7 @@ export default function HomeCleaning() {
       align: "center",
       render: (_, row) => (
         <div className="flex justify-center gap-3">
+
           <button
             onClick={() => handleEdit(row)}
             className="text-blue-600 hover:text-blue-800"
@@ -143,14 +251,17 @@ export default function HomeCleaning() {
           >
             🗑
           </button>
+
         </div>
-      ),
-    },
+      )
+    }
   ];
 
   return (
     <div className="w-full">
+
       <div className="flex justify-between pb-9">
+
         <h1 className="text-green-800">Cleaning</h1>
 
         <Link to="/cleaning/new/step1">
@@ -159,75 +270,55 @@ export default function HomeCleaning() {
             New Cleaning Job
           </button>
         </Link>
+
       </div>
 
       <SearchBox>
+
         <div className="grid grid-cols-4 justify-between gap-2.5">
-          <TextInputFilter label="Job No." value={""} onChange={() => { }} />
+
+          <TextInputFilter label="Job No." value={jobNo} onChange={setJobNo} />
 
           <SelectFilter
             label="Project Type"
             placeholder="All"
-            value={""}
-            onChange={() => { }}
+            value={projectType}
+            onChange={setProjectType}
             options={[
-              { label: "All", value: "all" },
+              { label: "All", value: "" },
               { label: "Project A", value: "project_a" },
-              { label: "Project B", value: "project_b" },
+              { label: "Project B", value: "project_b" }
             ]}
           />
 
-          <TextInputFilter label="Project Name" value={""} onChange={() => { }} />
+          <TextInputFilter label="Project Name" value={projectName} onChange={setProjectName} />
 
-          <TextInputFilter
-            label="System Size (kWp)"
-            value={""}
-            onChange={() => { }}
-          />
+          <TextInputFilter label="System Size (kWp)" value={systemSize} onChange={setSystemSize} />
+          <TextInputFilter label="PV Module (ea.)" value={pvModuleEA} onChange={setPvModuleEA} />
 
-          <TextInputFilter label="PV Module (ea.)" value={""} onChange={() => { }} />
+          <TextInputFilter label="Date" type="date" value={date} onChange={setDate} />
 
-          <TextInputFilter
-            label="Date"
-            type="date"
-            value={""}
-            onChange={() => { }}
-          />
-
-          <TextInputFilter
-            label="Time"
-            type="time"
-            value={""}
-            onChange={() => { }}
-          />
-
-          <SelectFilter
-            label="รับเหมา"
-            placeholder="All"
-            value={""}
-            onChange={() => { }}
-            options={[
-              { label: "All", value: "all" },
-              { label: "Project A", value: "project_a" },
-              { label: "Project B", value: "project_b" },
-            ]}
-          />
+          <TextInputFilter label="Time" type="time" value={time} onChange={setTime} />
 
           <SelectFilter
             label="Status"
             placeholder="All"
-            value={""}
-            onChange={() => { }}
+            value={status}
+            onChange={setStatus}
             options={[
-              { label: "All", value: "all" },
-              { label: "Pending", value: "pending" },
-              { label: "Completed", value: "completed" },
+              { label: "All", value: "" },
+              { label: "Pending", value: "PENDING" },
+              { label: "Completed", value: "COMPLETED" },
+              { label: "Draft", value: "DRAFT" }
             ]}
           />
+
         </div>
+
       </SearchBox>
 
       <div className="flex justify-end mt-[65px]">
+
         <button
           onClick={handleDownloadZip}
           className="flex items-center px-7 py-3 gap-1.5 bg-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25)] border-2 border-green-700 rounded-md text-xs text-green-700 font-normal"
@@ -235,15 +326,18 @@ export default function HomeCleaning() {
           <img src={ZipIcon} alt="" />
           ดาวน์โหลด zip file ({selectedRows.size})
         </button>
+
       </div>
 
       <div className="pt-[25px]">
+
         <DataTable<Cleaning>
           columns={columns}
-          data={paginatedData}
+          data={data}
           loading={loading}
         />
-        <div className="flex items-center justify-between py-6 text-sm text-gray-500 ">
+
+        <div className="flex items-center justify-between py-6 text-sm text-gray-500">
 
           <span>
             {(page - 1) * pageSize + 1} to{" "}
@@ -257,6 +351,7 @@ export default function HomeCleaning() {
           />
 
         </div>
+
       </div>
 
     </div>

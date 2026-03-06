@@ -4,6 +4,7 @@ import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 
+
 export default function NewInspectionStep3() {
 
     const navigate = useNavigate();

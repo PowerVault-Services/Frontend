@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getMonitoringPlants } from "../../services/api";
+import { getMonitoringSites } from "../../services/monitoring.api";
 
 import HomeIcon from "../../assets/icons/home.svg";
 import TagNav from "../../components/TagNav";
@@ -33,8 +33,8 @@ export default function HomeMonitor() {
     const fetchPlants = async () => {
       setLoading(true);
       try {
-        const res = await getMonitoringPlants();
-        const data = Array.isArray(res?.data) ? res.data : [];
+        const res = await getMonitoringSites();
+        const data = Array.isArray(res) ? res : [];
 
         setPlants(data);
 

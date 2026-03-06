@@ -4,6 +4,9 @@ import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import OperationTable from "../../components/table/OperationTable";
 
+import { saveDraft } from "../../services/draft.api";
+import { saveCleaningChecklist } from "../../services/cleaning.api";
+
 interface ChecklistItem {
   item: string;
   ok: boolean;
@@ -25,7 +28,6 @@ export default function NewCleaningStep3_02() {
   const [loading, setLoading] = useState(false);
   const [checklistData, setChecklistData] = useState<ChecklistItem[]>([]);
 
-  // 🔥 สร้าง summary อัตโนมัติ
   const generateSummaryNote = (data: ChecklistItem[]) => {
     const total = data.length;
     const okCount = data.filter((i) => i.ok).length;
@@ -51,10 +53,10 @@ export default function NewCleaningStep3_02() {
   };
 
   const handleSubmitChecklist = async () => {
+
     if (loading) return;
 
     const jobId = localStorage.getItem("jobId");
-    const token = localStorage.getItem("token");
 
     if (!jobId) {
       alert("ไม่พบ jobId");
@@ -69,39 +71,61 @@ export default function NewCleaningStep3_02() {
     const autoSummary = generateSummaryNote(checklistData);
 
     try {
+
       setLoading(true);
 
-      const response = await fetch("/api/cleaning/step3/checklist", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify({
-          jobId: Number(jobId),
-          checklistJson: JSON.stringify(checklistData),
-          step3SummaryNote: autoSummary,
-        }),
+      const result = await saveCleaningChecklist({
+        jobId: Number(jobId),
+        checklistJson: JSON.stringify(checklistData),
+        step3SummaryNote: autoSummary
       });
 
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
+      if (!result.success) {
         throw new Error("API Error");
       }
 
       alert("บันทึก Checklist สำเร็จ");
 
-      // 👉 ไป Step4 ทันที
       navigate("/cleaning/new/step4", { replace: true });
 
     } catch (error) {
+
       console.error(error);
       alert("เกิดข้อผิดพลาดในการบันทึก");
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
+
+  async function handleSaveDraft() {
+
+    try {
+
+      const jobId = localStorage.getItem("jobId");
+
+      if (!jobId) {
+        alert("ไม่พบ jobId");
+        return;
+      }
+
+      await saveDraft(Number(jobId), 3);
+
+      alert("บันทึกเรียบร้อยแล้ว");
+
+      navigate("/cleaning");
+
+    } catch (err) {
+
+      console.error(err);
+      alert("Save Draft ไม่สำเร็จ");
+
+    }
+
+  }
 
   return (
     <div className="w-full">
@@ -110,6 +134,7 @@ export default function NewCleaningStep3_02() {
         <h1 className="text-green-800">New Cleaning Job</h1>
 
         <button
+          onClick={handleSaveDraft}
           className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
           text-green-700 bg-white border-2 border-green-700 rounded-md"
         >

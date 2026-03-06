@@ -1,8 +1,8 @@
 import TextInputFilter from "./TextInputFilter";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getStockMeta, createStockProduct } from "../services/api";
-import type { Category, Unit } from "../services/api";
+import { getStockMeta, createStockProduct } from "../services/stock.api";
+import type { Category, Unit } from "../services/stock.api";
 
 interface AddProductModalProps {
   open: boolean;

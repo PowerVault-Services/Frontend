@@ -5,7 +5,7 @@ import TextInputFilter from "../TextInputFilter";
 import SelectFilter from "../SelectFilter";
 import DataTable, { type Column } from "../table/DataTable";
 import { JOB_CONFIG } from "../../configs/jobConfig";
-import { getServiceEntries } from "../../services/api";
+import { getServiceEntries } from "../../services/client.api";
 
 type JobType = "SERVICE" | "CLEANING" | "INSPECTION" | "OM";
 

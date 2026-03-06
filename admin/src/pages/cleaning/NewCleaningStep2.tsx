@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadIcon from "../../assets/icons/Cloud Upload.svg";
-import { saveCleaningStep2Draft, sendCleaningStep2 } from "../../services/api";
+import { saveCleaningStep2Draft, sendCleaningStep2 } from "../../services/cleaning.api";
 
 export default function NewCleaningStep2() {
 

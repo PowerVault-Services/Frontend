@@ -6,7 +6,9 @@ import UploadFileField from "../../components/UploadFileField";
 import SelectFilter from "../../components/SelectFilter";
 import TextInputFilter from "../../components/TextInputFilter";
 import ImageGalleryUpload from "../../components/ImageGalleryUpload";
-import { createServiceStep3Draft } from "../../services/api";
+import { createServiceStep3Draft } from "../../services/service.api";
+
+import MaterialRequisition from "../../components/MaterialRequisition";
 
 export default function NewServiceStep3() {
 
@@ -152,7 +154,7 @@ export default function NewServiceStep3() {
             </div>
 
             {/* Form */}
-            <div className="flex flex-col h-[822px] px-28 py-5 bg-white rounded-2xl items-center justify-between content-start">
+            <div className="flex flex-col min-h-[822px] px-28 py-5 bg-white rounded-2xl items-center justify-between">
 
                 <ProgressBar steps={steps} currentStep={currentStep} />
 
@@ -183,11 +185,12 @@ export default function NewServiceStep3() {
                         onChange={(file) => setReportFile(file)}
                     />
 
-                    <div className="py-6">
-                        <p className="text-lg font-medium text-green-800">การเบิกวัสดุ</p>
+                    <div className="">
+                        <MaterialRequisition/>
                     </div>
+                    
 
-                    <div
+                    {/* <div
                         className="grid
                         w-[1091px]
                         grid-cols-2
@@ -227,12 +230,12 @@ export default function NewServiceStep3() {
                             onChange={setAmount}
                         />
 
-                    </div>
+                    </div> */}
 
                 </div>
 
                 {/* Footer */}
-                <div className="flex w-full max-w-[1095px] justify-between">
+                <div className="flex w-full max-w-[1095px] justify-between pt-4">
 
                     <button
                         onClick={() => navigate("/service/new/step2")}

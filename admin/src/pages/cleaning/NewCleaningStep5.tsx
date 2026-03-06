@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 
+import { saveDraft } from "../../services/draft.api";
+
 export default function NewCleaningStep5() {
   const navigate = useNavigate();
 
@@ -42,8 +44,8 @@ export default function NewCleaningStep5() {
     const date = new Date(dateStr);
 
     const months = [
-      "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
-      "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"
+      "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+      "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
     ];
 
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
@@ -73,7 +75,7 @@ export default function NewCleaningStep5() {
         },
         body: JSON.stringify({
           jobId: Number(jobId),
-          to: "ืnita290646@gmail.com",
+          to: "nita290646@gmail.com",
           subject: "รายงานการบำรุงรักษาระบบ Solar System",
           body: `
             <p>เรียน ท่านผู้เกี่ยวข้อง</p>
@@ -106,6 +108,32 @@ export default function NewCleaningStep5() {
 
   }
 
+  async function handleSaveDraft() {
+
+    try {
+
+      const jobId = localStorage.getItem("jobId");
+
+      if (!jobId) {
+        alert("ไม่พบ jobId");
+        return;
+      }
+
+      await saveDraft(Number(jobId), 5);
+
+      alert("บันทึกเรียบร้อยแล้ว");
+
+      navigate("/cleaning");
+
+    } catch (err) {
+
+      console.error(err);
+      alert("Save Draft ไม่สำเร็จ");
+
+    }
+
+  }
+
   return (
     <div className="w-full">
 
@@ -113,7 +141,7 @@ export default function NewCleaningStep5() {
       <div className="flex justify-between pb-9">
         <h1 className="text-green-800">New Cleaning Job</h1>
 
-        <button className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
+        <button onClick={handleSaveDraft} className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
           text-green-700 bg-white border-2 border-green-700 rounded-md">
           <img src={SaveDraftIcon} alt="save draft" />
           Save Draft

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { getStockSummary } from "../../services/api";
+import { getStockSummary } from "../../services/stock.api";
+
 import AddIcon from "../../assets/icons/Add Circle.svg";
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";

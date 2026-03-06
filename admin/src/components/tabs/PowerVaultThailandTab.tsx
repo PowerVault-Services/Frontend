@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react";
+
 import SearchBox from "../SearchBox";
 import TextInputFilter from "../TextInputFilter";
 import SelectFilter from "../SelectFilter";
 import DataTable, { type Column } from "../table/DataTable";
 
-import { createThailandProject } from "../../services/api";
-import type { CreateThailandProjectPayload } from "../../services/api";
+import type { CreateThailandProjectPayload } from "../../services/client.api";
 
 /* ================= Interface ================= */
 export interface PowerVaultThailand {

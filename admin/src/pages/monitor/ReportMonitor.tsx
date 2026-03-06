@@ -1,8 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from "react";
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
 import SelectFilter from "../../components/SelectFilter";
 import ReportViewe from './ReportView';
+
+import { getReports } from "../../services/report.api";
+import type { ReportItem } from "../../services/report.api";
 
 
 const ALL_MONTHS = [
@@ -26,6 +29,9 @@ export default function ReportMonitor() {
     const [startMonth, setStartMonth] = useState<string>("");
     const [endMonth, setEndMonth] = useState<string>("");
 
+    const [reports, setReports] = useState<ReportItem[]>([]);
+    const [loading, setLoading] = useState(false);
+
     const startMonthOptions = useMemo(() => {
         if (!endMonth) return ALL_MONTHS;
         return ALL_MONTHS.filter((m) => parseInt(m.value) <= parseInt(endMonth));
@@ -38,43 +44,78 @@ export default function ReportMonitor() {
 
     // ฟังก์ชัน Reset: เคลียร์ค่า State ทุกตัวให้เป็นค่าว่าง
     const handleReset = () => {
+
         setProjectName("");
         setStartMonth("");
         setEndMonth("");
-        console.log("Reset filters");
+
+        loadReports();
+
     };
 
     // ฟังก์ชัน Search: 
     const handleSearch = () => {
-        const filterData = {
-            projectName,
-            startMonth,
-            endMonth
-        };
-        console.log("Searching with:", filterData);
-        // TODO: เรียก API หรือ Filter ข้อมูลตรงนี้
+
+        const filterData: any = {};
+
+        if (startMonth) {
+            filterData.startMonth = `2026-${startMonth.padStart(2, "0")}`;
+        }
+
+        if (endMonth) {
+            filterData.endMonth = `2026-${endMonth.padStart(2, "0")}`;
+        }
+
+        loadReports(filterData);
+
     };
+
+    useEffect(() => {
+        loadReports();
+    }, []);
+
+    async function loadReports(filters?: any) {
+
+        try {
+
+            setLoading(true);
+
+            const data = await getReports(filters);
+
+            setReports(data);
+
+        } catch (err) {
+
+            console.error("โหลด report ไม่สำเร็จ", err);
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    }
 
     return (
         <div className="w-full">
             <h1 className="text-green-800 pb-9">Report</h1>
             <div className="pb-[62px]">
                 {/* ส่ง onReset และ onSearch เข้าไปที่ SearchBox */}
-                <SearchBox 
-                    onReset={handleReset} 
+                <SearchBox
+                    onReset={handleReset}
                     onSearch={handleSearch}
                 >
                     <div className="grid grid-cols-3 justify-between gap-2.5">
-                        <TextInputFilter 
-                            label="ProjectName" 
-                            value={projectName} 
-                            onChange={(e: any) => setProjectName(e.target.value)} 
+                        <TextInputFilter
+                            label="ProjectName"
+                            value={projectName}
+                            onChange={(e: any) => setProjectName(e.target.value)}
                         />
                         <SelectFilter
                             label="Start Month"
                             placeholder="เลือกเดือนเริ่มต้น"
                             value={startMonth}
-                            onChange={(val: any) => setStartMonth(val)} 
+                            onChange={(val: any) => setStartMonth(val)}
                             options={startMonthOptions}
                         />
                         <SelectFilter
@@ -87,7 +128,7 @@ export default function ReportMonitor() {
                     </div>
                 </SearchBox>
             </div>
-            <ReportViewe></ReportViewe>
+            <ReportViewe reports={reports} loading={loading} />
         </div>
     );
 }

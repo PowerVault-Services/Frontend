@@ -7,7 +7,7 @@ import WarrantyDetailTab from "../../components/tabs/clientdata/WarrantyDetailTa
 import ForecastDetailTab from "../../components/tabs/forecast/ForecastDetailTab";
 import OtherTable from "../../components/table/OtherTable";
 
-import { getThailandProjects } from "../../services/api";
+import { getThailandProjects } from "../../services/client.api";
 
 export default function ClientDataDetail() {
     const { id } = useParams();

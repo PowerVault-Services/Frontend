@@ -6,8 +6,9 @@ import SelectFilter from "../../components/SelectFilter";
 import InputField from "../../components/InputField";
 import TextInputFilter from "../../components/TextInputFilter";
 
-import { getCleaningProjects, createCleaningStep1 } from "../../services/api";
+import { getCleaningProjects, createCleaningStep1 } from "../../services/cleaning.api";
 import type { CleaningProject } from "../../services/types";
+import { saveCleaningDraft } from "../../utils/saveJobDraft";
 
 function formatPhones(phone?: string) {
     if (!phone) return "";
@@ -60,8 +61,8 @@ export default function NewCleaningStep1() {
     useEffect(() => {
         async function loadProjects() {
             try {
-                const data = await getCleaningProjects();
-                setProjects(data);
+                const res = await getCleaningProjects();
+                setProjects(res.data);
             } catch (error) {
                 console.error("โหลด cleaning projects ไม่สำเร็จ:", error);
             }
@@ -89,20 +90,68 @@ export default function NewCleaningStep1() {
     // ==========================
     // Save Draft
     // ==========================
-    function saveStep1Data() {
+    // async function saveStep1Data() {
 
-        const payload = {
-            projectId,
-            projectName: project?.projectName ?? "",
-            date,
-            time,
-            remark,
-            contractor,
-            projectType,
-        };
+    //     try {
 
-        localStorage.setItem("cleaning_step1", JSON.stringify(payload));
-    }
+    //         if (!projectId) {
+    //             alert("กรุณาเลือก Project");
+    //             return;
+    //         }
+
+    //         if (!date || !time) {
+    //             alert("กรุณาเลือกวันที่และเวลา");
+    //             return;
+    //         }
+
+    //         let jobId = localStorage.getItem("jobId");
+
+    //         // ถ้ายังไม่มี jobId ให้สร้าง job ก่อน
+    //         if (!jobId) {
+
+    //             const result = await createCleaningStep1({
+    //                 siteId: Number(projectId),
+    //                 projectType,
+    //                 contactPhone: project?.contactPhone ?? "",
+    //                 contactEmail: project?.contactEmail ?? "",
+    //                 workDate: date,
+    //                 workTimeText: time,
+    //                 customerName: project?.projectName ?? "",
+    //                 note: remark,
+    //             });
+
+    //             jobId = result.data.jobId;
+
+    //             localStorage.setItem("jobId", String(jobId));
+    //         }
+
+    //         // เรียก Draft API
+    //         await saveDraft(Number(jobId), 1);
+
+    //         // backup form data
+    //         const payload = {
+    //             jobId,
+    //             projectId,
+    //             projectName: project?.projectName,
+    //             date,
+    //             time,
+    //             remark,
+    //             contractor,
+    //             projectType,
+    //         };
+
+    //         localStorage.setItem("cleaning_step1", JSON.stringify(payload));
+
+    //         alert("Draft saved");
+    //         navigate("/cleaning");
+
+    //     } catch (err) {
+
+    //         console.error(err);
+    //         alert("Save Draft ไม่สำเร็จ");
+
+    //     }
+    // }
 
     return (
         <div className="w-full">
@@ -110,11 +159,22 @@ export default function NewCleaningStep1() {
             {/* Header */}
             <div className="flex justify-between pb-9">
                 <h1 className="text-green-800">New Cleaning Job</h1>
-
                 <button
-                    onClick={saveStep1Data}
+                    onClick={() =>
+                        saveCleaningDraft({
+                            projectId,
+                            project,
+                            date,
+                            time,
+                            remark,
+                            contractor,
+                            projectType,
+                            step: 1,
+                            navigate,
+                        })
+                    }
                     className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
-                    text-green-700 bg-white border-2 border-green-700 rounded-md"
+  text-green-700 bg-white border-2 border-green-700 rounded-md"
                 >
                     <img src={SaveDraftIcon} alt="" />
                     Save Draft

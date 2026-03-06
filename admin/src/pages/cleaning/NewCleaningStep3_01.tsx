@@ -5,7 +5,8 @@ import ProgressBar from "../../components/progress/ProgressBar";
 import UploadFileField from "../../components/UploadFileField";
 import UploadImagePreviewField from "../../components/UploadImagePreviewField";
 
-import { uploadCleaningEvidence } from "../../services/api";
+import { uploadCleaningEvidence } from "../../services/cleaning.api";
+import { saveDraft } from "../../services/draft.api";
 
 export default function NewCleaningStep3_01() {
   const navigate = useNavigate();
@@ -83,6 +84,32 @@ export default function NewCleaningStep3_01() {
     }
   };
 
+  async function handleSaveDraft() {
+
+    try {
+
+      const jobId = localStorage.getItem("jobId");
+
+      if (!jobId) {
+        alert("ไม่พบ jobId");
+        return;
+      }
+
+      await saveDraft(Number(jobId), 3);
+
+      alert("บันทึกเรียบร้อยแล้ว");
+
+      navigate("/cleaning");
+
+    } catch (err) {
+
+      console.error(err);
+      alert("Save Draft ไม่สำเร็จ");
+
+    }
+
+  }
+
   return (
     <div className="w-full">
       {/* Header */}
@@ -90,6 +117,7 @@ export default function NewCleaningStep3_01() {
         <h1 className="text-green-800">New Cleaning Job</h1>
 
         <button
+          onClick={handleSaveDraft}
           className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
           text-green-700 bg-white border-2 border-green-700 rounded-md"
         >

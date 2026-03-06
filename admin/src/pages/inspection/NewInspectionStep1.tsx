@@ -9,7 +9,7 @@ import TextInputFilter from "../../components/TextInputFilter";
 import {
     getInspectionProjects,
     createInspectionStep1,
-} from "../../services/api";
+} from "../../services/inspection.api";
 
 import type { InspectionProject } from "../../services/types";
 
@@ -71,8 +71,8 @@ export default function NewInspectionStep1() {
     useEffect(() => {
         async function loadProjects() {
             try {
-                const data = await getInspectionProjects();
-                setProjects(data);
+                const res = await getInspectionProjects();
+                setProjects(res.data);
             } catch (error) {
                 console.error("โหลด inspection projects ไม่สำเร็จ:", error);
             }
@@ -154,7 +154,7 @@ export default function NewInspectionStep1() {
                             placeholder="Select Project"
                             value={projectId}
                             onChange={setProjectId}
-                            options={projects.map((p) => ({
+                            options={(projects ?? []).map((p) => ({
                                 label: p.projectName,
                                 value: String(p.siteId),
                             }))}

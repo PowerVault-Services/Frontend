@@ -6,7 +6,7 @@ import PowerVaultThailandTab from "../../components/tabs/PowerVaultThailandTab";
 import PowerVaultServiceTab from "../../components/tabs/PowerVaultServiceTab";
 import AddIcon from "../../assets/icons/Add Circle.svg";
 
-import { getThailandProjects } from "../../services/api";
+import { getThailandProjects } from "../../services/client.api";
 
 export default function HomeClientData() {
 
