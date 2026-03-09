@@ -15,6 +15,11 @@ interface DataTableProps<T> {
   label?: string;
   width?: string;
   loading?: boolean;
+
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const alignClass = {
@@ -27,6 +32,10 @@ export default function DataTable<T extends { id: number | string }>({
   columns,
   data,
   loading = false,
+  page,
+  pageSize,
+  total,
+  onPageChange,
 }: DataTableProps<T>) {
 
   if (loading) {
@@ -102,9 +111,8 @@ export default function DataTable<T extends { id: number | string }>({
                   return (
                     <td
                       key={`cell-${row.id}-${col.id}-${colIndex}`}
-                      className={`px-4 py-4 text-[15px] border-r border-gray-300 last:border-none ${
-                        alignClass[col.align ?? "center"]
-                      }`}
+                      className={`px-4 py-4 text-[15px] border-r border-gray-300 last:border-none ${alignClass[col.align ?? "center"]
+                        }`}
                     >
                       {col.render
                         ? col.render(value, row)

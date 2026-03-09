@@ -1,11 +1,16 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SearchBox from "../SearchBox";
 import TextInputFilter from "../TextInputFilter";
 import SelectFilter from "../SelectFilter";
 import DataTable, { type Column } from "../table/DataTable";
+import Pagination from "../table/Pagination";
+
 import { JOB_CONFIG } from "../../configs/jobConfig";
-import { getServiceEntries } from "../../services/client.api";
+import {
+  getServiceEntries,
+  deleteServiceEntry
+} from "../../services/client.api";
 
 type JobType = "SERVICE" | "CLEANING" | "INSPECTION" | "OM";
 
@@ -22,7 +27,8 @@ const jobToSlug = (job: string) => job.toLowerCase();
 
 export default function PowerVaultServiceTab() {
   const [data, setData] = useState<PowerVaultService[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+
   const [filters, setFilters] = useState({
     projectNo: "",
     projectName: "",
@@ -30,85 +36,81 @@ export default function PowerVaultServiceTab() {
     job: "all",
   });
 
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+
   const navigate = useNavigate();
 
   /* ================= Fetch API ================= */
+
+  const fetchData = async () => {
+    setLoading(true);
+
+    try {
+      const res = await getServiceEntries({
+        job: filters.job !== "all" ? filters.job : undefined,
+        projectNo: filters.projectNo || undefined,
+        projectName: filters.projectName || undefined,
+        systemSizeKWp: filters.systemSize
+          ? Number(filters.systemSize)
+          : undefined,
+        page,
+        pageSize,
+      });
+
+      console.log("SERVICE API", res);
+
+      const items = res?.data?.items ?? [];
+      const totalCount = res?.data?.total ?? 0;
+
+      const mapped: PowerVaultService[] = items.map((item: any) => ({
+        id: String(item.entryId),
+        projectnumber: item.projectNo ?? "-",
+        projectName: item.projectName ?? "-",
+        systemSize: item.systemSizeKWp ?? 0,
+        job: item.job as JobType,
+        description: item.description ?? "",
+      }));
+
+      setData(mapped);
+      setTotal(totalCount);
+    } catch (error) {
+      console.error("Error loading service entries", error);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const res = await getServiceEntries(
-          filters.job !== "all" ? filters.job : undefined
-        );
-
-        console.log("SERVICE API:", res.data);
-
-        // รองรับหลายรูปแบบ response
-        const apiData =
-          res?.data?.data ??
-          res?.data ??
-          [];
-
-        if (Array.isArray(apiData)) {
-          const mapped: PowerVaultService[] = apiData.map((item: any) => ({
-            id: String(item.id),
-            projectnumber: String(item.siteId),
-            projectName: item.projectName ?? "-",
-            systemSize: item.systemSize ?? 0,
-            job: item.job as JobType,
-            description: item.description ?? "",
-          }));
-
-          setData(mapped);
-        } else {
-          setData([]);
-        }
-
-      } catch (error) {
-        console.error("Error loading service entries:", error);
-        setData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, [filters.job]);
+  }, [filters, page]);
 
   const goToJobPage = (row: PowerVaultService) => {
     navigate(`/project/${row.projectnumber}/${jobToSlug(row.job)}`);
   };
 
-  /* ================= Filtered Data ================= */
-  const filteredData = useMemo(() => {
-    return data.filter((item) => {
-      const matchProjectNo =
-        filters.projectNo === "" ||
-        item.projectnumber
-          .toLowerCase()
-          .includes(filters.projectNo.toLowerCase());
+  const handleDelete = async (id: string) => {
 
-      const matchProjectName =
-        filters.projectName === "" ||
-        item.projectName
-          .toLowerCase()
-          .includes(filters.projectName.toLowerCase());
+    const confirmDelete = confirm("Delete this entry?");
 
-      const matchSystemSize =
-        filters.systemSize === "" ||
-        item.systemSize === Number(filters.systemSize);
+    if (!confirmDelete) return;
 
-      const matchJob =
-        filters.job === "all" || item.job === filters.job;
+    try {
 
-      return (
-        matchProjectNo &&
-        matchProjectName &&
-        matchSystemSize &&
-        matchJob
-      );
-    });
-  }, [data, filters]);
+      await deleteServiceEntry(Number(id));
+
+      fetchData(); // reload table
+
+    } catch (error) {
+
+      console.error("Delete failed", error);
+
+    }
+  };
+
+  /* ================= Badge Style ================= */
 
   const jobBadgeClass = (job: string) => {
     switch (job) {
@@ -125,8 +127,11 @@ export default function PowerVaultServiceTab() {
     }
   };
 
+  /* ================= Table Columns ================= */
+
   const columns: Column<PowerVaultService>[] = [
     {
+      id: "projectNo",
       key: "projectnumber",
       label: "Project No.",
       align: "center",
@@ -140,16 +145,19 @@ export default function PowerVaultServiceTab() {
       ),
     },
     {
+      id: "projectName",
       key: "projectName",
       label: "Project Name",
       align: "center",
     },
     {
+      id: "systemSize",
       key: "systemSize",
       label: "System Size (kWp)",
       align: "center",
     },
     {
+      id: "job",
       key: "job",
       label: "Job",
       align: "center",
@@ -162,53 +170,87 @@ export default function PowerVaultServiceTab() {
             ${jobBadgeClass(value)}
           `}
         >
-
           {JOB_CONFIG[value as JobType]?.label ?? value}
         </span>
       ),
     },
     {
+      id: "description",
       key: "description",
       label: "Description",
       align: "center",
     },
+    {
+      id: "actions",
+      label: "Actions",
+      align: "center",
+      render: (_, row) => (
+        <div className="flex justify-center gap-3">
+
+          {/* EDIT */}
+          <button
+            onClick={() =>
+              navigate(`/service/edit/${row.id}`)
+            }
+            className="text-blue-600 hover:text-blue-800"
+          >
+            ✏️
+          </button>
+
+          {/* DELETE */}
+          <button
+            onClick={() => handleDelete(row.id)}
+            className="text-red-600 hover:text-red-800"
+          >
+            🗑
+          </button>
+
+        </div>
+      ),
+    }
   ];
 
   return (
     <div className="flex flex-col gap-[18px]">
+      {/* ================= Filter ================= */}
+
       <SearchBox>
         <div className="grid grid-cols-4 gap-2.5">
           <TextInputFilter
             label="Project No."
             value={filters.projectNo}
-            onChange={(value) =>
-              setFilters({ ...filters, projectNo: value })
-            }
+            onChange={(value) => {
+              setPage(1);
+              setFilters({ ...filters, projectNo: value });
+            }}
           />
 
           <TextInputFilter
             label="Project Name"
             value={filters.projectName}
-            onChange={(value) =>
-              setFilters({ ...filters, projectName: value })
-            }
+            onChange={(value) => {
+              setPage(1);
+              setFilters({ ...filters, projectName: value });
+            }}
           />
 
           <TextInputFilter
             label="System Size (kWp)"
             value={filters.systemSize}
-            onChange={(value) =>
-              setFilters({ ...filters, systemSize: value })
-            }
+            onChange={(value) => {
+              setPage(1);
+              setFilters({ ...filters, systemSize: value });
+            }}
           />
 
           <SelectFilter
             label="Job"
             placeholder="All"
             value={filters.job}
-            onChange={(value) =>
-              setFilters({ ...filters, job: value })
-            }
+            onChange={(value) => {
+              setPage(1);
+              setFilters({ ...filters, job: value });
+            }}
             options={[
               { label: "All", value: "all" },
               { label: "Service", value: "SERVICE" },
@@ -220,12 +262,29 @@ export default function PowerVaultServiceTab() {
         </div>
       </SearchBox>
 
+      {/* ================= Table ================= */}
+
       <div className="pt-[25px]">
-        <DataTable
+        <DataTable<PowerVaultService>
           columns={columns}
-          data={Array.isArray(filteredData) ? filteredData : []}
+          data={data}
           loading={loading}
         />
+
+        {/* ================= Pagination ================= */}
+
+        <div className="flex items-center justify-between py-6 text-sm text-gray-500">
+          <span>
+            {(page - 1) * pageSize + 1} to{" "}
+            {Math.min(page * pageSize, total)} of {total} items
+          </span>
+
+          <Pagination
+            page={page}
+            totalPages={Math.ceil(total / pageSize)}
+            onChange={setPage}
+          />
+        </div>
       </div>
     </div>
   );
