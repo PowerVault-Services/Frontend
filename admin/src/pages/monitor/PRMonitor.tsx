@@ -40,7 +40,6 @@ export default function PRMonitor() {
         }
     };
 
-    // ===== Year Options (เช่น 2025, 2026) =====
     const yearOptions = [
         { label: "2025", value: "2025" },
         { label: "2026", value: "2026" },

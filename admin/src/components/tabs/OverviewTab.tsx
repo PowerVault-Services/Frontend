@@ -17,6 +17,16 @@ import ArrowRight from "../../assets/icons/Arrow Right.svg";
 
 
 /* ================= Types ================= */
+type OverviewResponse = {
+  inverters?: {
+    id: number;
+    name: string;
+    model: string;
+    activePower?: number;
+    status: string;
+  }[];
+};
+
 type Inverter = {
   id: string;
   name: string;
@@ -63,13 +73,11 @@ interface OverviewTabProps {
 }
 
 export default function OverviewTab({ plantId }: OverviewTabProps) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<OverviewResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Ref สำหรับ Container ของ Inverter
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const payload = data;
 
 
   useEffect(() => {

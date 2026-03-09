@@ -4,12 +4,16 @@ import { getMonitoringSites } from "../../services/monitoring.api";
 import HomeIcon from "../../assets/icons/home.svg";
 import TagNav from "../../components/TagNav";
 import OverviewTab from "../../components/tabs/OverviewTab";
+import AlarmTab from "../../components/tabs/AlarmTab";
+import PRTab from "../../components/tabs/PRTab";
+import ReportTab from "../../components/tabs/ReportTab";
 
 /* ================= Types ================= */
 interface Plant {
   id: number;
   name: string;
 }
+
 
 /* ================= Component ================= */
 export default function HomeMonitor() {
@@ -83,6 +87,27 @@ export default function HomeMonitor() {
             plantId={selectedPlant?.id}
           />
         );
+      case "Alarm":
+        return (
+          <AlarmTab
+            key={selectedPlant?.id}
+            plantId={selectedPlant?.id}
+          />
+        );
+      case "%PR":
+        return (
+          <PRTab
+            key={selectedPlant?.id}
+            plantId={selectedPlant?.id}
+          />
+        );
+      case "Report":
+        return (
+          <ReportTab
+            key={selectedPlant?.id}
+            plantId={selectedPlant?.id}
+          />
+        );
       default:
         return <div>Coming soon</div>;
     }
@@ -122,11 +147,10 @@ export default function HomeMonitor() {
                 <li
                   key={plant.id}
                   onClick={() => setSelectedPlant(plant)}
-                  className={`cursor-pointer hover:text-green-600 ${
-                    selectedPlant?.id === plant.id
-                      ? "font-bold text-green-700"
-                      : ""
-                  }`}
+                  className={`cursor-pointer hover:text-green-600 ${selectedPlant?.id === plant.id
+                    ? "font-bold text-green-700"
+                    : ""
+                    }`}
                 >
                   ▶ {plant.name}
                 </li>
