@@ -1,5 +1,6 @@
-
-import FlowLine from "../FlowLine";
+import React from "react";
+// สมมติว่า FlowLine คือ component ที่คุณสร้างไว้สำหรับทำ animation path
+import FlowLine from "../FlowLine"; 
 
 import pvIcon from "../../assets/icons/pv.svg";
 import batteryIcon from "../../assets/icons/battery.svg";
@@ -14,85 +15,136 @@ interface EnergyFlowProps {
   load: number;
 }
 
-/* ================= Node ================= */
+/* ================= Node Component ================= */
 function EnergyNode({
   value,
   icon,
+  label,
+  colorClass,
+  labelPosition = "top",
 }: {
   value: number;
   icon?: string;
+  label: string;
+  colorClass: string;
+  labelPosition?: "top" | "bottom";
 }) {
   return (
-    <div className="flex flex-col items-center justify-center w-[76px] h-[76px] rounded-full border-2 border-[#2AC1E6] text-black">
-      {icon && <img src={icon} alt="icon" className="w-[22px] h-[22px]" />}
-      <div className="text-xs font-light">{value.toFixed(2)}</div>
-      <div className="text-[10px]">kW</div>
+    <div className="flex flex-col items-center justify-center z-10">
+      {labelPosition === "top" && <span className="text-[11px] text-gray-500 mb-1 uppercase font-medium">{label}</span>}
+      <div 
+        className={`flex flex-col items-center justify-center w-[80px] h-[80px] rounded-full border-2 bg-white transition-colors duration-300 ${colorClass}`}
+        style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+      >
+        {icon && <img src={icon} alt="icon" className="w-[24px] h-[24px] mb-0.5" />}
+        <div className="text-[13px] font-bold leading-none">{value.toFixed(2)}</div>
+        <div className="text-[9px] font-light opacity-70">kW</div>
+      </div>
+      {labelPosition === "bottom" && <span className="text-[11px] text-gray-500 mt-1 uppercase font-medium">{label}</span>}
     </div>
   );
 }
 
-/* ================= Card ================= */
+/* ================= Main Card ================= */
 export default function EnergyFlowCard({
   pv,
   grid,
   battery,
   load,
 }: EnergyFlowProps) {
+  // กำหนดสีตามมาตรฐานของ card (อ้างอิงจาก style.ts ใน github)
+  const colors = {
+    pv: "border-[#ff9800] text-[#ff9800]",
+    grid: "border-[#488fc2] text-[#488fc2]",
+    battery: "border-[#a280db] text-[#a280db]",
+    load: "border-[#4db6ac] text-[#4db6ac]",
+  };
 
   return (
-    <div className="rounded-lg p-2 border border-[#DEE2E6] w-[314px] h-[314px] bg-white">
-      <div className="relative w-full h-full">
-
-        {/* ================= NODES ================= */}
-
-        {/* PV */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
-          <div className="text-xs font-light">PV</div>
-          <EnergyNode value={pv} icon={pvIcon} />
+    <div className="flex items-center justify-center">
+      <div className="relative rounded-lg p-2 w-[314px] min-h-[314px] border border-[#DEE2E6]">
+        
+        {/* ================= NODES (จัดวางแบบ Cross) ================= */}
+        
+        {/* Top: PV (Solar) */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2">
+          <EnergyNode 
+            label="Solar" 
+            value={pv} 
+            icon={pvIcon} 
+            colorClass={colors.pv} 
+            labelPosition="top"
+          />
         </div>
 
-        {/* Battery */}
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
-          <EnergyNode value={battery} icon={batteryIcon} />
-          <div className="text-xs font-light">Battery</div>
+        {/* Left: Battery */}
+        <div className="absolute left-4 top-1/2 -translate-y-1/2">
+          <EnergyNode 
+            label="Battery" 
+            value={battery} 
+            icon={batteryIcon} 
+            colorClass={colors.battery} 
+            labelPosition="bottom"
+          />
         </div>
 
-        {/* Grid */}
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
-          <EnergyNode value={grid} icon={gridIcon} />
-          <div className="text-xs font-light">Grid</div>
+        {/* Right: Grid */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          <EnergyNode 
+            label="Grid" 
+            value={grid} 
+            icon={gridIcon} 
+            colorClass={colors.grid} 
+            labelPosition="bottom"
+          />
         </div>
 
-        {/* Load */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
-          <EnergyNode value={load} icon={loadIcon} />
-          <div className="text-xs font-light">Load</div>
+        {/* Bottom: Load (Home) */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+          <EnergyNode 
+            label="Home" 
+            value={load} 
+            icon={loadIcon} 
+            colorClass={colors.load} 
+            labelPosition="bottom"
+          />
         </div>
 
-        {/* ================= FLOW LINES ================= */}
+        {/* ================= FLOW LINES (SVG) ================= */}
         <svg
-          className="absolute inset-0 pointer-events-none"
-          width="314"
-          height="314"
-          viewBox="0 0 314 314"
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          viewBox="0 0 340 340"
           fill="none"
         >
+          {/* เส้นแนวตั้ง: Solar -> Home */}
           <FlowLine
             active={pv > 0}
-            d="M189 117 L189 260"
+            d="M170 100 L170 240" 
+            stroke="#ff9800"
           />
 
-          {/* ===== Battery → Load (ซ้าย) =====*/}
+          {/* เส้นโค้งซ้าย: Battery -> Home (อิงตาม logic ของ card plus) */}
           <FlowLine
-            active={battery > 0}
-            d="M96 177 L127 177 Q151 177 151 201 L151 278"
+            active={battery !== 0}
+            d="M100 170 H130 Q150 170 150 190 V240"
+            stroke="#a280db"
           />
 
-          {/* ===== Grid → Load (ขวา) =====*/}
+          {/* เส้นโค้งขวา: Grid -> Home */}
           <FlowLine
-            active={grid > 0}
-            d="M282 177 L251 177 Q227 177 227 201 L227 278"
+            active={grid !== 0}
+            d="M240 170 H210 Q190 170 190 190 V240"
+            stroke="#488fc2"
           />
+
+          {/* เส้นเสริม: Solar -> Grid (ถ้ามีแดดเหลือ) */}
+          {pv > load && (
+            <FlowLine
+              active={true}
+              d="M170 130 V150 Q170 170 190 170 H240"
+              stroke="#ff9800"
+            />
+          )}
         </svg>
       </div>
     </div>

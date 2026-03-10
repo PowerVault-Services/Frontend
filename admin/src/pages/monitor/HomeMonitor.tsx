@@ -7,11 +7,21 @@ import OverviewTab from "../../components/tabs/OverviewTab";
 import AlarmTab from "../../components/tabs/AlarmTab";
 import PRTab from "../../components/tabs/PRTab";
 import ReportTab from "../../components/tabs/ReportTab";
+import NewAlarm from "../../components/monitor/NewAlarm";
+
+import { getLatestAlarm } from "../../services/alarm.api";
 
 /* ================= Types ================= */
 interface Plant {
   id: number;
   name: string;
+}
+
+interface Alarm {
+  id: number;
+  alarmName: string;
+  occurredAt: string;
+  severity: number;
 }
 
 
@@ -23,6 +33,10 @@ export default function HomeMonitor() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+
+  const [alarms, setAlarms] = useState<Alarm[]>([]);
+  const latestAlarm = alarms[0];
 
   /* ================= Constants ================= */
   const tabs = [
@@ -113,10 +127,50 @@ export default function HomeMonitor() {
     }
   };
 
+  useEffect(() => {
+    if (!selectedPlant) return;
+
+    const fetchAlarm = async () => {
+      try {
+        const data = await getLatestAlarm(selectedPlant.id);
+        setAlarms(data);
+      } catch (err) {
+        console.error("โหลด alarm ไม่สำเร็จ", err);
+        setAlarms([]);
+      }
+    };
+
+    fetchAlarm();
+  }, [selectedPlant]);
+
+  const formatDate = (iso?: string) => {
+    if (!iso) return "-";
+
+    const d = new Date(iso);
+
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (iso?: string) => {
+    if (!iso) return "-";
+
+    const d = new Date(iso);
+
+    return d.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
   /* ================= JSX ================= */
   return (
     <div className="w-full">
       <h1 className="text-green-800 pb-9">Monitoring</h1>
+
 
       <div className="grid grid-cols-[280px_1fr] gap-8 min-h-screen">
         {/* ===== Sidebar ===== */}
@@ -162,13 +216,20 @@ export default function HomeMonitor() {
         {/* ===== Main Content ===== */}
         <section className="min-w-0 w-full">
           {/* Header */}
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1.5">
+            {/* ซ้าย */}
             <div className="flex items-center gap-2">
               <img src={HomeIcon} alt="home" />
               <h5 className="font-semibold text-green-800">
                 {selectedPlant?.name ?? "Select a plant"}
               </h5>
             </div>
+            {/* ขวา */}
+            <NewAlarm
+              alarmName={latestAlarm?.alarmName ?? "No Alarm"}
+              date={latestAlarm?.occurredAt ?? "-"}
+              time={latestAlarm?.occurredAt ?? "-"}
+            />
           </div>
 
           {/* Tabs */}

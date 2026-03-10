@@ -44,10 +44,10 @@ export default function AlarmTable({
   data = [],
   page,
   totalPages,
-  onPageChange
+  onPageChange,
+  onRefresh
 }: AlarmTableProps) {
 
-  const [autoRefresh, setAutoRefresh] = useState(false);
 
   /* ===== Export CSV ===== */
   const handleExport = async () => {
@@ -67,6 +67,16 @@ export default function AlarmTable({
     }
   };
 
+  useEffect(() => {
+    onRefresh(); // โหลดครั้งแรก
+
+    const interval = setInterval(() => {
+      onRefresh?.();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
 
   return (
     <div className="rounded-lg text-sm">
@@ -74,7 +84,7 @@ export default function AlarmTable({
       {/* ===== 1. Top Control Bar ===== */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
 
-        <div className="flex flex-wrap items-center gap-4">
+        {/* <div className="flex flex-wrap items-center gap-4">
           <div
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => setAutoRefresh(!autoRefresh)}
@@ -100,9 +110,9 @@ export default function AlarmTable({
               <Info size={14} /> <span>0</span>
             </div>
           </div>
-        </div>
+        </div> */}
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 ml-auto">
           <button className="flex items-center gap-2 px-4 py-1.5 bg-[#2F4F39] text-white rounded border border-[#2F4F39] hover:bg-[#254230] transition-colors">
             <X size={16} />
             <span>Clear</span>

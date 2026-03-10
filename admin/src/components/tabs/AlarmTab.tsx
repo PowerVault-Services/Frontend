@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import api from "../../services/api";
+import type { Alarm } from "../../services/alarm.api";
 
 type Alarm = {
+  alarmId: ReactNode;
   id: number;
   severity: number;
   severityText: string;
@@ -9,7 +11,6 @@ type Alarm = {
   deviceType: string;
   deviceName: string;
   sn: string;
-  alarmId: string;
   alarmName: string;
   occurrenceTime: string;
   status: string;

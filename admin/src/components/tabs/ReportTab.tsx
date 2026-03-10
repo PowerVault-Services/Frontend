@@ -15,7 +15,7 @@ export default function ReportTab({ plantId }: Props) {
     return (
         <div className="w-full">
 
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-6 justify-end">
 
                 <button
                     onClick={() => setOpenCreate(true)}

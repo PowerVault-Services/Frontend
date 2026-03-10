@@ -24,7 +24,7 @@ export default function InverterDetail() {
     const { inverterId } = useParams();
 
     const [chartData, setChartData] = useState<any[]>([]);
-    const [metric, setMetric] = useState("activePower");
+    const [metric, setMetric] = useState("current");
 
     const [selectedDate, setSelectedDate] = useState(
         new Date().toISOString().split("T")[0]
@@ -35,6 +35,19 @@ export default function InverterDetail() {
     const [loading, setLoading] = useState(true);
 
     const [alarms, setAlarms] = useState<any[]>([]);
+
+    const formatDateTime = (date: string) => {
+        const d = new Date(date);
+
+        return {
+            date: d.toLocaleDateString(),
+            time: d.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+            }),
+        };
+    };
+
 
     /* ================= Fetch APIs ================= */
 
@@ -62,7 +75,7 @@ export default function InverterDetail() {
             try {
                 const res = await api.get("/alarms", {
                     params: {
-                        tab: "active",
+                        tab: "history",
                         inverterId: Number(inverterId),
                         page: 1,
                         pageSize: 10
@@ -81,6 +94,35 @@ export default function InverterDetail() {
 
     }, [inverterId]);
 
+
+
+    {
+        alarms.map((alarm, idx) => {
+            const { date, time } = formatDateTime(alarm.occurredAt);
+
+            return (
+                <div
+                    key={alarm.id ?? idx}
+                    className="border-b border-gray-100 pb-2 last:border-0"
+                >
+                    <div className="flex justify-between items-start">
+                        <span className="font-bold text-[#2F4F39] text-sm">
+                            {alarm.alarmName}
+                        </span>
+                        <MoreHorizontal
+                            size={16}
+                            className="text-blue-500 cursor-pointer"
+                        />
+                    </div>
+
+                    <div className="text-xs text-black mt-1">
+                        Date: {date} &nbsp; Time: {time}
+                    </div>
+                </div>
+            );
+        })
+    }
+
     useEffect(() => {
         if (!inverterId) return;
 
@@ -91,7 +133,7 @@ export default function InverterDetail() {
                     {
                         params: {
                             date: selectedDate,
-                            metric: metric,
+                            tzOffsetMinutes: new Date().getTimezoneOffset(),
                             stringNo: 1
                         }
                     }
@@ -105,7 +147,7 @@ export default function InverterDetail() {
                     const points = raw[0].points ?? [];
 
                     formatted = points.map((item: any) => ({
-                        time: new Date(item.timestamp).toLocaleTimeString([], {
+                        time: new Date(item.t).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit"
                         }),
@@ -119,7 +161,6 @@ export default function InverterDetail() {
                 console.error("History error:", err);
             }
         };
-
         fetchHistory();
 
     }, [inverterId, selectedDate, metric]);
@@ -166,11 +207,16 @@ export default function InverterDetail() {
         }
     };
 
+    // const metricLabelMap: Record<string, string> = {
+    //     activePower: "Active Power",
+    //     dayEnergy: "Day Energy",
+    //     temperature: "Temperature",
+    //     powerFactor: "Power Factor",
+    // };
+
     const metricLabelMap: Record<string, string> = {
-        activePower: "Active Power",
-        dayEnergy: "Day Energy",
-        temperature: "Temperature",
-        powerFactor: "Power Factor",
+        current: "Current (A)",
+        voltage: "Voltage (V)",
     };
 
     return (
@@ -383,13 +429,13 @@ export default function InverterDetail() {
                                     className="border-b border-gray-100 pb-2 last:border-0"
                                 >
                                     <div className="flex justify-between items-start">
-                                        <span className="font-bold text-[#2F4F39] text-sm">
+                                        <span className="font-bold text-blue-700 text-sm">
                                             {alarm.alarmName}
                                         </span>
-                                        <MoreHorizontal
+                                        {/* <MoreHorizontal
                                             size={16}
                                             className="text-blue-500 cursor-pointer"
-                                        />
+                                        /> */}
                                     </div>
 
                                     <div className="text-xs text-black mt-1">

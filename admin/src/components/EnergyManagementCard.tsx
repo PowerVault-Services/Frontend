@@ -10,8 +10,15 @@ export default function EnergyManagementCard() {
     new Date().toISOString().split("T")[0]
   );
 
+  /* ===== Time Range ===== */
+  const startTime = new Date(date);
+  startTime.setHours(0, 0, 0, 0);
+
+  const endTime = new Date(startTime);
+  endTime.setDate(endTime.getDate() + 1);
+
   return (
-    <div className="h-[314px] w-[731px] rounded-lg border border-[#DEE2E6] bg-white px-6 py-5 flex flex-col">
+    <div className="h-[314px] w-full rounded-lg border border-[#DEE2E6] bg-white px-6 py-5 flex flex-col">
 
       {/* ===== Header ===== */}
       <div className="flex justify-between items-center mb-3">
@@ -42,9 +49,10 @@ export default function EnergyManagementCard() {
                   rounded-[13px]
                   leading-none
                   transition-all duration-200
-                  ${period === p
-                    ? "bg-green-600 text-white"
-                    : "bg-transparent text-[#9291A5]"
+                  ${
+                    period === p
+                      ? "bg-green-600 text-white"
+                      : "bg-transparent text-[#9291A5]"
                   }
                 `}
               >
@@ -55,12 +63,14 @@ export default function EnergyManagementCard() {
         </div>
       </div>
 
-      {/* ===== Chart Section ===== */}
-      {/* สำคัญ: flex-1 + min-h-0 เพื่อไม่ให้กราฟล้น */}
+      {/* ===== Chart ===== */}
       <div className="flex-1 min-h-0">
-        <EnergyChart period={period} date={date} />
+        <EnergyChart
+          period={period}
+          startTime={startTime.toISOString()}
+          endTime={endTime.toISOString()}
+        />
       </div>
-
     </div>
   );
 }
