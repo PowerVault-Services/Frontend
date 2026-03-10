@@ -12,6 +12,7 @@ import {
   Info,
   Inbox
 } from "lucide-react";
+import nonconnecticon from "../../assets/icons/nonconnect.svg";
 import api from "../../services/api";
 
 /* ===== Backend Alarm Type ===== */
@@ -23,10 +24,10 @@ interface Alarm {
   deviceType: string | null;
   deviceName: string;
   alarmName: string;
-  alarmId: number;
+  alarmId: string;
   sn: string;
   occurredAt: string;
-  clearedAt: string | null;
+  clearedAt?: string | null;
   status: string;
   raw?: any;
 }
@@ -38,14 +39,16 @@ interface AlarmTableProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onRefresh: () => void;
+  showClearedAt?: boolean;
 }
 
 export default function AlarmTable({
-  data = [],
+  data,
   page,
   totalPages,
   onPageChange,
-  onRefresh
+  onRefresh,
+  showClearedAt = false,
 }: AlarmTableProps) {
 
 
@@ -113,10 +116,6 @@ export default function AlarmTable({
         </div> */}
 
         <div className="flex gap-2 ml-auto">
-          <button className="flex items-center gap-2 px-4 py-1.5 bg-[#2F4F39] text-white rounded border border-[#2F4F39] hover:bg-[#254230] transition-colors">
-            <X size={16} />
-            <span>Clear</span>
-          </button>
 
           <button
             onClick={handleExport}
@@ -147,7 +146,16 @@ export default function AlarmTable({
                 <th className="py-3 px-4 border-r border-white/20">Alarm ID</th>
                 <th className="py-3 px-4 border-r border-white/20">Alarm Name</th>
                 <th className="py-3 px-4 border-r border-white/20">Occurence Time</th>
-                <th className="py-3 px-4 text-center w-[100px]">Operation</th>
+                {!showClearedAt && (
+                  <th className="py-3 px-4 border-r border-white/20">Operation</th>
+                )}
+                {showClearedAt && (
+                  <th className="py-3 px-4 border-r border-white/20">Clear Alarm</th>
+                )}
+                {showClearedAt && (
+                  <th className="py-3 px-4 border-r border-white/20">Status</th>
+                )}
+                
               </tr>
             </thead>
 
@@ -190,9 +198,17 @@ export default function AlarmTable({
                       {new Date(item.occurredAt).toLocaleString()}
                     </td>
 
-                    <td className="py-3 px-4 text-center">
-                      ...
-                    </td>
+                    {showClearedAt && (
+                      <td className="py-3 px-4 border-r">
+                        {item.clearedAt ?? "-"}
+                      </td>
+                    )}
+
+                    {showClearedAt && (
+                      <td className="py-3 px-4 items-center justify-center flex">
+                        <img src={nonconnecticon} alt="" />
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (

@@ -2,22 +2,25 @@ import { useState } from "react";
 import TagNav from "../../components/TagNav";
 
 import ActiveAlarmsTab from "../../components/tabs/ActiveAlarmsTab";
-// import HistoricalAlarmsTab from "../../components/tabs/HistoricalAlarmsTab";
+import HistoricalAlarmsTab from "../../components/tabs/HistoricalAlarmsTab";
 
 export default function AlarmMonitor() {
+
   const homeTags = [
-    { id: "Active Alarms", label: "Active Alarms" },
-    { id: "Historical Alarms", label: "Historical Alarms" },
+    { id: "active", label: "Active Alarms" },
+    { id: "historical", label: "Historical Alarms" },
   ];
 
-  const [activeProject, setActiveProject] = useState<string>("Active Alarms");
+  const [activeProject, setActiveProject] = useState<string>("active");
 
   const renderTabContent = () => {
     switch (activeProject) {
-      case "Active Alarms":
+      case "active":
         return <ActiveAlarmsTab />;
-      case "Historical Alarms":
-        return <div>Alarm</div>;
+
+      case "historical":
+        return <HistoricalAlarmsTab />;
+
       default:
         return null;
     }
@@ -29,6 +32,7 @@ export default function AlarmMonitor() {
 
       {/* ===== Main Content ===== */}
       <section className="w-full">
+
         {/* Tabs */}
         <div className="flex items-center justify-between">
           <TagNav
@@ -42,6 +46,7 @@ export default function AlarmMonitor() {
         <div className="bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px]">
           {renderTabContent()}
         </div>
+
       </section>
     </div>
   );

@@ -5,6 +5,7 @@ interface TextInputFilterProps {
   value: string;
   onChange: (value: string) => void;
   type?: "text" | "date" | "time" | "number";
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
 export default function TextInputFilter({

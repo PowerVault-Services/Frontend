@@ -6,7 +6,7 @@ import SelectFilter from "../../components/SelectFilter";
 import AlarmTable from "../table/AlarmTable";
 import api from "../../services/api";
 
-export default function ActiveAlarmsTab() {
+export default function HistoricalAlarmsTab() {
 
   // ===== FILTER INPUT =====
   const [plantNameInput, setPlantNameInput] = useState("");
@@ -37,7 +37,7 @@ export default function ActiveAlarmsTab() {
 
       const res = await api.get("/alarms", {
         params: {
-          tab: "active",
+          tab: "historical",
           page,
           pageSize,
           ...cleanFilters,
@@ -197,6 +197,7 @@ export default function ActiveAlarmsTab() {
         totalPages={totalPages}
         onPageChange={setPage}
         onRefresh={fetchAlarms}
+        showClearedAt
       />
     </div>
   );
