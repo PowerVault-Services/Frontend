@@ -67,16 +67,16 @@ export default function AlarmTab({ plantId }: Props) {
     <div className="p-6">
 
       {/* FILTER */}
-      <div className="bg-white rounded-xl border p-4 mb-6">
+      <div className="rounded-lg border border-[#DEE2E6] p-4 mb-6">
         <div className="flex flex-wrap gap-4 items-center">
 
           {/* Severity */}
-          <div className="flex flex-col min-w-[180px]">
-            <label className="text-xs font-bold text-gray-500">
+          <div className="flex flex-col min-w-[180px] round-lg">
+            <label className="text-xs font-bold text-gray-500 round-lg">
               Alarm Severity
             </label>
             <select
-              className="border rounded-lg px-3 py-2"
+              className="round-lg border border-[#DEE2E6] px-3 py-2"
               value={severity}
               onChange={(e) => setSeverity(e.target.value)}
             >
@@ -89,12 +89,12 @@ export default function AlarmTab({ plantId }: Props) {
           </div>
 
           {/* Status */}
-          <div className="flex flex-col min-w-[180px]">
+          <div className="flex flex-col min-w-[180px] round-lg">
             <label className="text-xs font-bold text-gray-500">
               Status
             </label>
             <select
-              className="border rounded-lg px-3 py-2"
+              className="round-lg border border-[#DEE2E6] px-3 py-2"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
@@ -107,7 +107,7 @@ export default function AlarmTab({ plantId }: Props) {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-xl border overflow-x-auto">
+      <div className="bg-white rounded-lg border overflow-x-auto">
         <table className="w-full text-sm text-left">
 
           <thead className="bg-gray-50 border-b">
@@ -116,11 +116,11 @@ export default function AlarmTab({ plantId }: Props) {
               <th className="px-4 py-3">Plant Name</th>
               <th className="px-4 py-3">Device Type</th>
               <th className="px-4 py-3">Device Name</th>
-              <th className="px-4 py-3">SN</th>
+              <th className="px-4 py-3 text-center">SN</th>
               <th className="px-4 py-3">Alarm ID</th>
               <th className="px-4 py-3">Alarm Name</th>
               <th className="px-4 py-3">Occurrence Time</th>
-              <th className="px-4 py-3">Operation</th>
+              <th className="px-4 py-3 text-center">Operation</th>
             </tr>
           </thead>
 
@@ -139,12 +139,12 @@ export default function AlarmTab({ plantId }: Props) {
                   {new Date(alarm.occurrenceTime).toLocaleString()}
                 </td>
 
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 items-center text-center">
                   <button
                     onClick={() => handleCreateInspection(alarm)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded"
+                    className="bg-[#2979FF] text-white px-3 py-1 rounded"
                   >
-                    Create Inspection
+                    Create Service
                   </button>
                 </td>
 

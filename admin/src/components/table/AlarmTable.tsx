@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Download,
   X,
@@ -13,6 +14,7 @@ import {
   Inbox
 } from "lucide-react";
 import nonconnecticon from "../../assets/icons/nonconnect.svg";
+import createicon from "../../assets/icons/add_bold.svg";
 import api from "../../services/api";
 
 /* ===== Backend Alarm Type ===== */
@@ -50,6 +52,8 @@ export default function AlarmTable({
   onRefresh,
   showClearedAt = false,
 }: AlarmTableProps) {
+
+  const navigate = useNavigate();
 
 
   /* ===== Export CSV ===== */
@@ -147,7 +151,7 @@ export default function AlarmTable({
                 <th className="py-3 px-4 border-r border-white/20">Alarm Name</th>
                 <th className="py-3 px-4 border-r border-white/20">Occurence Time</th>
                 {!showClearedAt && (
-                  <th className="py-3 px-4 border-r border-white/20">Operation</th>
+                  <th className="py-3 px-4 border-r border-white/20">Create Service</th>
                 )}
                 {showClearedAt && (
                   <th className="py-3 px-4 border-r border-white/20">Clear Alarm</th>
@@ -197,6 +201,14 @@ export default function AlarmTable({
                     <td className="py-3 px-4 border-r">
                       {new Date(item.occurredAt).toLocaleString()}
                     </td>
+
+                    {!showClearedAt && (
+                      <td className="py-3 px-4 items-center justify-center flex"
+                        onClick={() => navigate('/service/new/step1')}
+                      >
+                        <img src={createicon} alt="" />
+                      </td>
+                    )}
 
                     {showClearedAt && (
                       <td className="py-3 px-4 border-r">

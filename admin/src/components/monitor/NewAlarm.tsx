@@ -6,7 +6,7 @@ interface NewAlarmProps {
 
 export default function NewAlarm({ alarmName, date, time }: NewAlarmProps) {
   return (
-    <div className="max-w-[464px] h-[46px] border-2 border-green-400 rounded-lg bg-white px-6 py-0.5 flex items-center justify-between gap-[51px]">
+    <div className="min-w-[464px] h-[46px] border-2 border-green-400 rounded-lg bg-white px-6 py-0.5 flex items-center justify-between gap-[51px]">
       
       {/* Alarm Name */}
       <div className="text-green-700 text-lg font-bold">

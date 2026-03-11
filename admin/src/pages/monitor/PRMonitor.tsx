@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import AddIcon from "../../assets/icons/Add Circle_line.svg";
 import SearchBox from "../../components/SearchBox";
-import SelectFilter from "../../components/SelectFilter";
+import TextInputFilter from "../../components/TextInputFilter";
 import PRTable from "../../components/table/PRTable";
 import api from "../../services/api";
+
 
 export default function PRMonitor() {
 
@@ -13,6 +15,7 @@ export default function PRMonitor() {
 
     const currentYear = new Date().getFullYear();
     const [year, setYear] = useState<string>(String(currentYear));
+    const [projectName, setProjectName] = useState("");
 
     // ===== Data States =====
     const [rows, setRows] = useState<any[]>([]);
@@ -27,6 +30,7 @@ export default function PRMonitor() {
                     siteId,
                     granularity,
                     year: Number(year),
+                    projectName
                 },
             });
 
@@ -52,14 +56,22 @@ export default function PRMonitor() {
 
     return (
         <div className="w-full">
-            <h1 className="text-green-800 pb-9">%PR</h1>
+            <div className="flex justify-between pb-9">
+
+                <h1 className="text-green-800">%PR</h1>
+
+                    <button className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5" onClick={() => (window.location.href = "/monitor/forecast/new")}>
+                        <img src={AddIcon} alt="" />
+                        Add Forcast Data
+                    </button>
+            </div>
 
             <div className="pb-[62px]">
                 <SearchBox onSearch={fetchPR}>
                     <div className="grid grid-cols-2 justify-between gap-2.5">
 
                         {/* Time Granularity */}
-                        <SelectFilter
+                        {/* <SelectFilter
                             label="Time Granularity"
                             placeholder="Select"
                             value={granularity}
@@ -68,16 +80,18 @@ export default function PRMonitor() {
                                 { label: "Month", value: "month" },
                                 { label: "Year", value: "year" },
                             ]}
-                        />
+                        /> */}
 
                         {/* Statistical Period (Year Only) */}
-                        <SelectFilter
+                        {/* <SelectFilter
                             label="Statistical Period"
                             placeholder="Select Year"
                             value={year}
                             onChange={(val: any) => setYear(val)}
                             options={yearOptions}
-                        />
+                        /> */}
+
+                        <TextInputFilter label="Project Name" value={projectName} onChange={setProjectName} />
 
                     </div>
                 </SearchBox>

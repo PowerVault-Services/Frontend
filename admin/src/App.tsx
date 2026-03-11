@@ -11,7 +11,6 @@ import InverterDetail from "./pages/monitor/InverterDetail"
 import AlarmMonitor from "./pages/monitor/AlarmMonitor";
 import PRMonitor from "./pages/monitor/PRMonitor";
 import ReportMonitor from "./pages/monitor/ReportMonitor";
-
 import HomeCleaning from "./pages/cleaning/HomeCleaning";
 import NewCleaningStep1 from "./pages/cleaning/NewCleaningStep1";
 import NewCleaningStep2 from "./pages/cleaning/NewCleaningStep2";
@@ -39,6 +38,8 @@ import ProjectJobPage from "./pages/clientdata/ProjectJobPage";
 import AllStock from "./pages/stock/AllStock";
 import StockIn from "./pages/stock/StockIn";
 import StockOut from "./pages/stock/StockOut";
+import PRAddForecast from "./pages/monitor/PRAddForecast";
+import { EnergyYieldReport } from "./pages/monitor/EnergyYieldReport";
 
 
 function App() {
@@ -64,6 +65,9 @@ function App() {
             />
             <Route path="pr" element={<PRMonitor />} />
             <Route path="report" element={<ReportMonitor />} />
+            <Route path="energy-yield" element={<EnergyYieldReport />} />
+            <Route path="forecast/new" element={<PRAddForecast />} />
+
           </Route>
 
           {/* Cleaning */}

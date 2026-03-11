@@ -45,15 +45,35 @@ export default function ActiveAlarmsTab() {
       });
 
       const data = res.data?.data;
+      const list = data?.list ?? [];
 
-      setAlarms(data?.list ?? []);
+      let filtered = list;
+
+      // ⭐ filter Plant Name (frontend)
+      if (plantNameInput) {
+        filtered = filtered.filter((a: any) =>
+          a.plantName
+            ?.toLowerCase()
+            .includes(plantNameInput.toLowerCase())
+        );
+      }
+
+      // ⭐ filter SN (frontend)
+      if (snInput) {
+        filtered = filtered.filter((a: any) =>
+          a.sn
+            ?.toLowerCase()
+            .includes(snInput.toLowerCase())
+        );
+      }
+
+      setAlarms(filtered);
       setTotalPages(data?.pagination?.totalPages ?? 1);
 
     } catch (err) {
       console.error("Fetch alarm error:", err);
     }
   };
-
   useEffect(() => {
     fetchAlarms();
   }, [page, filters]);
@@ -64,26 +84,54 @@ export default function ActiveAlarmsTab() {
     setPage(1);
 
     const newFilters = {
-      sn: snInput || undefined,
-      q: alarmNameInput || undefined,
-      alarmId: alarmIdInput || undefined,
-      from: startTime ? new Date(startTime).toISOString() : undefined,
-      to: endTime ? new Date(endTime).toISOString() : undefined,
+
+      plantName: plantNameInput.trim() || undefined,
+
+      deviceType:
+        deviceType !== "all"
+          ? deviceType
+          : undefined,
+
+      sn:
+        snInput.trim() || undefined,
+
+      q:
+        alarmNameInput.trim() || undefined,
+
+      alarmId:
+        alarmIdInput
+          ? Number(alarmIdInput)
+          : undefined,
+
+      from:
+        startTime
+          ? new Date(startTime).toISOString()
+          : undefined,
+
+      to:
+        endTime
+          ? new Date(endTime).toISOString()
+          : undefined,
     };
 
     console.log("Search Filters:", newFilters);
 
     setFilters(newFilters);
+
   };
 
   // ===== ENTER SEARCH =====
   const handleKeyDown = (e: React.KeyboardEvent) => {
+
     if (e.key === "Enter") {
       handleSearch();
     }
+
   };
 
+  // ===== RESET =====
   const handleReset = () => {
+
     setPlantNameInput("");
     setDeviceType("all");
     setSnInput("");
@@ -94,11 +142,14 @@ export default function ActiveAlarmsTab() {
 
     setFilters({});
     setPage(1);
+
   };
 
   return (
     <div className="flex flex-col gap-[18px]">
+
       <SearchBox onSearch={handleSearch} onReset={handleReset}>
+
         <div className="grid grid-cols-3 gap-4">
 
           <TextInputFilter
@@ -154,14 +205,7 @@ export default function ActiveAlarmsTab() {
                   type="datetime-local"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="h-[39px]
-                  rounded-sm
-                  border border-green-200
-                  bg-white
-                  px-4
-                  text-[14px]
-                  text-green-500
-                  font-normal"
+                  className="h-[39px] rounded-sm border border-green-200 bg-white px-4 text-[14px] text-green-500 font-normal"
                 />
               </div>
 
@@ -174,21 +218,16 @@ export default function ActiveAlarmsTab() {
                   type="datetime-local"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="h-[39px]
-                  rounded-sm
-                  border border-green-200
-                  bg-white
-                  px-4
-                  text-[14px]
-                  text-green-500
-                  font-normal"
+                  className="h-[39px] rounded-sm border border-green-200 bg-white px-4 text-[14px] text-green-500 font-normal"
                 />
               </div>
 
             </div>
+
           </div>
 
         </div>
+
       </SearchBox>
 
       <AlarmTable
@@ -198,6 +237,7 @@ export default function ActiveAlarmsTab() {
         onPageChange={setPage}
         onRefresh={fetchAlarms}
       />
+
     </div>
   );
 }

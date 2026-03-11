@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getStockOutList, createStockOut } from "../../services/stock.api";
-import AddIcon from "../../assets/icons/Add Circle.svg";
+import AddIcon from "../../assets/icons/Add Circle_line.svg";
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
 import DataTable, { type Column } from "../../components/table/DataTable";

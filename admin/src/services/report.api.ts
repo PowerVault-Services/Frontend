@@ -16,14 +16,23 @@ export interface ReportItem {
   downloadUrl: string;
 }
 
+interface ReportResponse {
+  success: boolean;
+  data: {
+    list: ReportItem[];
+  };
+}
+
 export const getReports = async (params?: {
   siteId?: number;
   startMonth?: string;
   endMonth?: string;
-}) => {
+}): Promise<ReportItem[]> => {
 
-  const res = await api.get("/reports", { params });
+  const res = await api.get<ReportResponse>("/reports", {
+    params
+  });
 
-  return res.data.data.list as ReportItem[];
+  return res.data?.data?.list ?? [];
 
 };

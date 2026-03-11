@@ -4,7 +4,7 @@ import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
 import SelectFilter from "../../components/SelectFilter";
 import ZipIcon from "../../assets/icons/ZIP File.svg";
-import AddIcon from "../../assets/icons/Add Circle.svg";
+import AddIcon from "../../assets/icons/Add Circle_line.svg";
 import DataTable, { type Column } from "../../components/table/DataTable";
 import Pagination from "../../components/table/Pagination";
 

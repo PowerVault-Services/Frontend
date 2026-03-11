@@ -6,28 +6,34 @@ interface Props {
   loading?: boolean;
 }
 
-export default function ReportViewe({ reports, loading }: Props) {
+export default function ReportView({ reports, loading }: Props) {
 
   const [selectedReport, setSelectedReport] = useState<ReportItem | null>(null);
-  const [searchTerm] = useState("");
 
   const API_BASE = import.meta.env.VITE_API_URL || "";
 
+  const previewUrl = selectedReport?.previewUrl
+    ? `${API_BASE}${selectedReport.previewUrl}`
+    : "";
+
+  const downloadUrl = selectedReport?.downloadUrl
+    ? `${API_BASE}${selectedReport.downloadUrl}`
+    : "";
+
+  // เมื่อ reports เปลี่ยน ให้เลือกตัวแรกอัตโนมัติ
   useEffect(() => {
-    if (reports.length && !selectedReport) {
+    if (reports.length > 0) {
       setSelectedReport(reports[0]);
+    } else {
+      setSelectedReport(null);
     }
   }, [reports]);
 
-  const filteredReports = reports.filter((report) =>
-    report.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
   useEffect(() => {
     if (selectedReport) {
       console.log("Preview URL:", previewUrl);
     }
-  }, [selectedReport]);
+  }, [selectedReport, previewUrl]);
 
   if (loading) {
     return (
@@ -37,13 +43,7 @@ export default function ReportViewe({ reports, loading }: Props) {
     );
   }
 
-  const previewUrl = selectedReport?.previewUrl
-    ? `${API_BASE}${selectedReport.previewUrl}`
-    : "";
-
-  const downloadUrl = selectedReport?.downloadUrl
-    ? `${API_BASE}${selectedReport.downloadUrl}`
-    : "";
+  const filteredReports = reports;
 
   return (
     <div className="w-full h-[calc(100vh-100px)] min-h-[600px] bg-white border border-gray-200 rounded-xl shadow-sm flex overflow-hidden">
@@ -58,7 +58,6 @@ export default function ReportViewe({ reports, loading }: Props) {
         <div className="flex-1 overflow-y-auto custom-scrollbar">
 
           {filteredReports.map((report) => (
-
             <div
               key={report.id}
               onClick={() => setSelectedReport(report)}
@@ -72,7 +71,11 @@ export default function ReportViewe({ reports, loading }: Props) {
             >
 
               <div className="flex justify-between items-start mb-1">
-                <p className={`text-lg font-medium ${selectedReport?.id === report.id ? "text-green-900" : "text-gray-700"}`}>
+                <p className={`text-lg font-medium ${
+                  selectedReport?.id === report.id
+                    ? "text-green-900"
+                    : "text-gray-700"
+                }`}>
                   {report.title}
                 </p>
               </div>
@@ -82,20 +85,21 @@ export default function ReportViewe({ reports, loading }: Props) {
                   {new Date(report.createdAt).toLocaleDateString()}
                 </span>
 
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium 
-                  ${report.status === 'COMPLETED'
-                    ? 'bg-green-100 text-green-700'
-                    : report.status === 'DRAFT'
-                      ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-red-100 text-red-700'}
-                `}>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium 
+                    ${
+                      report.status === "COMPLETED"
+                        ? "bg-green-100 text-green-700"
+                        : report.status === "DRAFT"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                >
                   {report.status}
                 </span>
-
               </div>
 
             </div>
-
           ))}
 
           {filteredReports.length === 0 && (
@@ -105,14 +109,12 @@ export default function ReportViewe({ reports, loading }: Props) {
           )}
 
         </div>
-
       </div>
 
       {/* RIGHT SIDE */}
       <div className="flex-1 bg-gray-50 flex flex-col h-full">
 
         {selectedReport && (
-
           <>
             <div className="h-16 border-b border-gray-200 px-6 flex items-center justify-between shadow-sm z-10">
 
@@ -122,7 +124,7 @@ export default function ReportViewe({ reports, loading }: Props) {
                 </h5>
 
                 <p className="text-xs text-gray-500">
-                  ประเภทไฟล์: PDF • อัปเดตเมื่อ:
+                  ประเภทไฟล์: PDF • อัปเดตเมื่อ:{" "}
                   {new Date(selectedReport.createdAt).toLocaleDateString()}
                 </p>
               </div>
@@ -157,11 +159,12 @@ export default function ReportViewe({ reports, loading }: Props) {
                   className="w-full max-w-[210mm] min-h-[297mm] bg-white shadow-lg rounded-sm"
                 />
               ) : (
-                <div className="text-gray-400">No preview available</div>
+                <div className="text-gray-400">
+                  No preview available
+                </div>
               )}
 
             </div>
-
           </>
         )}
 

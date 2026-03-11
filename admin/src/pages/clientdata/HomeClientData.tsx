@@ -4,8 +4,7 @@ import TagNav from "../../components/TagNav";
 
 import PowerVaultThailandTab from "../../components/tabs/PowerVaultThailandTab";
 import PowerVaultServiceTab from "../../components/tabs/PowerVaultServiceTab";
-import AddIcon from "../../assets/icons/Add Circle.svg";
-
+import AddIcon from "../../assets/icons/Add Circle_line.svg";
 import { getThailandProjects } from "../../services/client.api";
 
 export default function HomeClientData() {

@@ -8,153 +8,192 @@ import api from "../../services/api";
 
 export default function HistoricalAlarmsTab() {
 
-  // ===== FILTER INPUT =====
-  const [plantNameInput, setPlantNameInput] = useState("");
-  const [deviceType, setDeviceType] = useState("all");
-  const [snInput, setSnInput] = useState("");
-  const [alarmNameInput, setAlarmNameInput] = useState("");
-  const [alarmIdInput, setAlarmIdInput] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+    // ===== FILTER INPUT =====
+    const [plantNameInput, setPlantNameInput] = useState("");
+    const [deviceType, setDeviceType] = useState("all");
+    const [snInput, setSnInput] = useState("");
+    const [alarmNameInput, setAlarmNameInput] = useState("");
+    const [alarmIdInput, setAlarmIdInput] = useState("");
+    const [startTime, setStartTime] = useState("");
+    const [endTime, setEndTime] = useState("");
 
-  // ===== QUERY =====
-  const [filters, setFilters] = useState<any>({});
+    // ===== QUERY =====
+    const [filters, setFilters] = useState<any>({});
 
-  // ===== DATA =====
-  const [alarms, setAlarms] = useState<Alarm[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+    // ===== DATA =====
+    const [alarms, setAlarms] = useState<Alarm[]>([]);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
-  const pageSize = 20;
+    const pageSize = 20;
 
-  // ===== FETCH API =====
-  const fetchAlarms = async () => {
-    try {
+    // ===== FETCH API =====
+    const fetchAlarms = async () => {
+        try {
 
-      const cleanFilters = Object.fromEntries(
-        Object.entries(filters).filter(([_, v]) => v !== undefined && v !== "")
-      );
+            const cleanFilters = Object.fromEntries(
+                Object.entries(filters).filter(([_, v]) => v !== undefined && v !== "")
+            );
 
-      const res = await api.get("/alarms", {
-        params: {
-          tab: "historical",
-          page,
-          pageSize,
-          ...cleanFilters,
-        },
-      });
+            const res = await api.get("/alarms", {
+                params: {
+                    tab: "historical",
+                    page,
+                    pageSize,
+                    ...cleanFilters,
+                },
+            });
 
-      const data = res.data?.data;
+            const data = res.data?.data;
+            const list = data?.list ?? [];
 
-      setAlarms(data?.list ?? []);
-      setTotalPages(data?.pagination?.totalPages ?? 1);
+            let filtered = list;
 
-    } catch (err) {
-      console.error("Fetch alarm error:", err);
-    }
-  };
+            // ⭐ filter plant name
+            if (plantNameInput) {
+                filtered = filtered.filter((a: any) =>
+                    a.plantName
+                        ?.toLowerCase()
+                        .includes(plantNameInput.toLowerCase())
+                );
+            }
 
-  useEffect(() => {
-    fetchAlarms();
-  }, [page, filters]);
+            // ⭐ filter device type
+            if (deviceType !== "all") {
+                filtered = filtered.filter((a: any) =>
+                    a.deviceType === deviceType
+                );
+            }
 
-  // ===== SEARCH =====
-  const handleSearch = () => {
+            // ⭐ filter SN
+            if (snInput) {
+                filtered = filtered.filter((a: any) =>
+                    a.sn
+                        ?.toLowerCase()
+                        .includes(snInput.toLowerCase())
+                );
+            }
 
-    setPage(1);
+            setAlarms(filtered);
+            setTotalPages(data?.pagination?.totalPages ?? 1);
 
-    const newFilters = {
-      sn: snInput || undefined,
-      q: alarmNameInput || undefined,
-      alarmId: alarmIdInput || undefined,
-      from: startTime ? new Date(startTime).toISOString() : undefined,
-      to: endTime ? new Date(endTime).toISOString() : undefined,
+        } catch (err) {
+            console.error("Fetch alarm error:", err);
+        }
     };
 
-    console.log("Search Filters:", newFilters);
+    useEffect(() => {
+        fetchAlarms();
+    }, [page, filters]);
 
-    setFilters(newFilters);
-  };
+    // ===== SEARCH =====
+    const handleSearch = () => {
 
-  // ===== ENTER SEARCH =====
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
-  };
+        setPage(1);
 
-  const handleReset = () => {
-    setPlantNameInput("");
-    setDeviceType("all");
-    setSnInput("");
-    setAlarmNameInput("");
-    setAlarmIdInput("");
-    setStartTime("");
-    setEndTime("");
+        const newFilters = {
 
-    setFilters({});
-    setPage(1);
-  };
+            sn: snInput.trim() || undefined,
 
-  return (
-    <div className="flex flex-col gap-[18px]">
-      <SearchBox onSearch={handleSearch} onReset={handleReset}>
-        <div className="grid grid-cols-3 gap-4">
+            q: alarmNameInput.trim() || undefined,
 
-          <TextInputFilter
-            label="Plant Name"
-            value={plantNameInput}
-            onChange={setPlantNameInput}
-            onKeyDown={handleKeyDown}
-          />
+            alarmId: alarmIdInput
+                ? Number(alarmIdInput)
+                : undefined,
 
-          <SelectFilter
-            label="Device Type"
-            placeholder="All"
-            value={deviceType}
-            onChange={setDeviceType}
-            options={[
-              { label: "All", value: "all" },
-              { label: "Inverter", value: "INVERTER" },
-              { label: "Logger", value: "LOGGER" },
-            ]}
-          />
+            from: startTime
+                ? new Date(startTime).toISOString()
+                : undefined,
 
-          <TextInputFilter
-            label="SN"
-            value={snInput}
-            onChange={setSnInput}
-            onKeyDown={handleKeyDown}
-          />
+            to: endTime
+                ? new Date(endTime).toISOString()
+                : undefined,
+        };
 
-          <TextInputFilter
-            label="Alarm Name"
-            value={alarmNameInput}
-            onChange={setAlarmNameInput}
-            onKeyDown={handleKeyDown}
-          />
+        console.log("Search Filters:", newFilters);
 
-          <TextInputFilter
-            label="Alarm ID"
-            value={alarmIdInput}
-            onChange={setAlarmIdInput}
-            onKeyDown={handleKeyDown}
-          />
+        setFilters(newFilters);
+    };
 
-          <div className="flex flex-col gap-2">
+    // ===== ENTER SEARCH =====
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") {
+            handleSearch();
+        }
+    };
 
-            <div className="flex gap-4">
+    const handleReset = () => {
+        setPlantNameInput("");
+        setDeviceType("all");
+        setSnInput("");
+        setAlarmNameInput("");
+        setAlarmIdInput("");
+        setStartTime("");
+        setEndTime("");
 
-              <div className="flex flex-col w-full">
-                <span className="text-[16px] font-normal text-green-800">
-                  Occurrence Time Start
-                </span>
+        setFilters({});
+        setPage(1);
+    };
 
-                <input
-                  type="datetime-local"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="h-[39px]
+    return (
+        <div className="flex flex-col gap-[18px]">
+            <SearchBox onSearch={handleSearch} onReset={handleReset}>
+                <div className="grid grid-cols-3 gap-4">
+
+                    <TextInputFilter
+                        label="Plant Name"
+                        value={plantNameInput}
+                        onChange={setPlantNameInput}
+                        onKeyDown={handleKeyDown}
+                    />
+
+                    <SelectFilter
+                        label="Device Type"
+                        placeholder="All"
+                        value={deviceType}
+                        onChange={setDeviceType}
+                        options={[
+                            { label: "All", value: "all" },
+                            { label: "Inverter", value: "INVERTER" },
+                            { label: "Logger", value: "LOGGER" },
+                        ]}
+                    />
+
+                    <TextInputFilter
+                        label="SN"
+                        value={snInput}
+                        onChange={setSnInput}
+                        onKeyDown={handleKeyDown}
+                    />
+
+                    <TextInputFilter
+                        label="Alarm Name"
+                        value={alarmNameInput}
+                        onChange={setAlarmNameInput}
+                        onKeyDown={handleKeyDown}
+                    />
+
+                    <TextInputFilter
+                        label="Alarm ID"
+                        value={alarmIdInput}
+                        onChange={setAlarmIdInput}
+                        onKeyDown={handleKeyDown}
+                    />
+
+                    <div className="flex flex-col gap-2">
+
+                        <div className="flex gap-4">
+
+                            <div className="flex flex-col w-full">
+                                <span className="text-[16px] font-normal text-green-800">
+                                    Occurrence Time Start
+                                </span>
+
+                                <input
+                                    type="datetime-local"
+                                    value={startTime}
+                                    onChange={(e) => setStartTime(e.target.value)}
+                                    className="h-[39px]
                   rounded-sm
                   border border-green-200
                   bg-white
@@ -162,19 +201,19 @@ export default function HistoricalAlarmsTab() {
                   text-[14px]
                   text-green-500
                   font-normal"
-                />
-              </div>
+                                />
+                            </div>
 
-              <div className="flex flex-col w-full">
-                <span className="text-[16px] font-normal text-green-800">
-                  Occurrence Time End
-                </span>
+                            <div className="flex flex-col w-full">
+                                <span className="text-[16px] font-normal text-green-800">
+                                    Occurrence Time End
+                                </span>
 
-                <input
-                  type="datetime-local"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="h-[39px]
+                                <input
+                                    type="datetime-local"
+                                    value={endTime}
+                                    onChange={(e) => setEndTime(e.target.value)}
+                                    className="h-[39px]
                   rounded-sm
                   border border-green-200
                   bg-white
@@ -182,23 +221,23 @@ export default function HistoricalAlarmsTab() {
                   text-[14px]
                   text-green-500
                   font-normal"
-                />
-              </div>
+                                />
+                            </div>
 
-            </div>
-          </div>
+                        </div>
+                    </div>
 
+                </div>
+            </SearchBox>
+
+            <AlarmTable
+                data={alarms}
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                onRefresh={fetchAlarms}
+                showClearedAt
+            />
         </div>
-      </SearchBox>
-
-      <AlarmTable
-        data={alarms}
-        page={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-        onRefresh={fetchAlarms}
-        showClearedAt
-      />
-    </div>
-  );
+    );
 }

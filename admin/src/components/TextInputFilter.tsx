@@ -14,6 +14,7 @@ export default function TextInputFilter({
   value,
   onChange,
   type = "text",
+  onKeyDown,
 }: TextInputFilterProps) {
   return (
     <div className="flex flex-col gap-1 w-full">
@@ -25,6 +26,7 @@ export default function TextInputFilter({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={onKeyDown}
         placeholder={placeholder}
         className="
           w-full h-[39px]
