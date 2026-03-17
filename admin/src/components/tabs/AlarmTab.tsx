@@ -72,7 +72,7 @@ export default function AlarmTab({ plantId }: Props) {
 
           {/* Severity */}
           <div className="flex flex-col min-w-[180px] round-lg">
-            <label className="text-xs font-bold text-gray-500 round-lg">
+            <label className="text-xs font-bold text-green-800 round-lg">
               Alarm Severity
             </label>
             <select
@@ -90,7 +90,7 @@ export default function AlarmTab({ plantId }: Props) {
 
           {/* Status */}
           <div className="flex flex-col min-w-[180px] round-lg">
-            <label className="text-xs font-bold text-gray-500">
+            <label className="text-xs font-bold text-green-800">
               Status
             </label>
             <select
@@ -107,10 +107,10 @@ export default function AlarmTab({ plantId }: Props) {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-lg border overflow-x-auto">
-        <table className="w-full text-sm text-left">
+      <div className="bg-white rounded-lg border border-[#DEE2E6] overflow-x-auto">
+        <table className="w-full font-normal text-green-800 text-start">
 
-          <thead className="bg-gray-50 border-b">
+          <thead className="">
             <tr>
               <th className="px-4 py-3">Alarm Severity</th>
               <th className="px-4 py-3">Plant Name</th>

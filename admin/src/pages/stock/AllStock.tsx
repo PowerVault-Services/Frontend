@@ -235,6 +235,7 @@ export default function AllStock() {
 
             <AddProductModal
                 open={openModal}
+                mode="create"
                 onClose={() => setOpenModal(false)}
                 onSuccess={fetchSummary}
             />

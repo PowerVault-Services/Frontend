@@ -1,21 +1,33 @@
 import TextInputFilter from "./TextInputFilter";
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { getStockMeta, createStockProduct } from "../services/stock.api";
+import { useEffect, useState, type JSX } from "react";
+import { getStockMeta } from "../services/stock.api";
 import type { Category, Unit } from "../services/stock.api";
+import SelectFilter from "./SelectFilter";
 
 interface AddProductModalProps {
-  open: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
+  open: boolean
+  onClose: () => void
+  onSubmit?: (data: any) => Promise<void>
+  onSuccess?: () => void
+  mode?: "create" | "stockIn" | "stockOut"
 }
+type Project = {
+  id: number;
+  name: string;
+};
 
 export default function AddProductModal({
   open,
   onClose,
+  onSubmit,
+  onSuccess,
+  mode = "create"
 }: AddProductModalProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -23,6 +35,8 @@ export default function AddProductModal({
     name: "",
     categoryId: "",
     unitId: "",
+    projectId: "",
+    quantity: ""
   });
 
   useEffect(() => {
@@ -34,12 +48,17 @@ export default function AddProductModal({
   const loadMeta = async () => {
     try {
       const data = await getStockMeta(false);
-      setCategories(data.categories);
-      setUnits(data.units);
+
+      setCategories(data.categories || []);
+      setUnits(data.units || []);
+      setProjects((data.projects || []) as unknown as Project[]);
+
     } catch (err) {
       console.error(err);
     }
   };
+
+
 
   if (!open) return null;
 
@@ -54,21 +73,49 @@ export default function AddProductModal({
         </button>
 
         <h1 className="mb-6 text-center text-xl font-bold text-green-800">
-          เพิ่มสินค้าใหม่
+          {mode === "create" && "เพิ่มสินค้าใหม่"}
+          {mode === "stockIn" && "รับสินค้าเข้า"}
+          {mode === "stockOut" && "เบิกสินค้า"}
         </h1>
 
         <div className="grid grid-cols-2 gap-6">
-          <TextInputFilter
-            label="รหัสสินค้า"
-            value={formData.sku}
-            onChange={(v) => setFormData({ ...formData, sku: v })}
-          />
+          {mode === "create" && (
+            <>
+              <TextInputFilter
+                label="รหัสสินค้า"
+                value={formData.sku}
+                onChange={(v) => setFormData({ ...formData, sku: v })}
+              />
 
-          <TextInputFilter
-            label="ชื่อสินค้า"
-            value={formData.name}
-            onChange={(v) => setFormData({ ...formData, name: v })}
-          />
+              <TextInputFilter
+                label="ชื่อสินค้า"
+                value={formData.name}
+                onChange={(v) => setFormData({ ...formData, name: v })}
+              />
+            </>
+          )}
+
+          {mode !== "create" && (
+            <>
+              <TextInputFilter
+                label="จำนวน"
+                value={formData.quantity}
+                onChange={(v) => setFormData({ ...formData, quantity: v })}
+              />
+
+              <SelectFilter
+                label="ใช้กับโครงการ"
+                value={formData.projectId}
+                onChange={(v) => setFormData({ ...formData, projectId: v })}
+                options={(projects ?? []).map((p) => ({
+                  value: String(p.id),
+                  label: p.name
+                }))}
+              />
+
+            </>
+
+          )}
 
           {/* Category Dropdown */}
           <div className="flex flex-col gap-1">
@@ -122,13 +169,9 @@ export default function AddProductModal({
               try {
                 setLoading(true);
 
-                await createStockProduct({
-                  sku: formData.sku,
-                  name: formData.name,
-                  categoryId: Number(formData.categoryId),
-                  unitId: Number(formData.unitId),
-                });
+                await onSubmit?.(formData)
 
+                onSuccess?.();
                 onClose();
               } catch (err: any) {
                 alert(err.message);

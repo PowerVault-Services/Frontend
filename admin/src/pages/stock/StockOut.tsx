@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getStockOutList, createStockOut } from "../../services/stock.api";
-import AddIcon from "../../assets/icons/Add Circle_line.svg";
+import  MinusIcon  from "../../assets/icons/Minus Circle.svg"
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
 import DataTable, { type Column } from "../../components/table/DataTable";
@@ -8,6 +8,7 @@ import SelectFilter from "../../components/SelectFilter";
 import AddProductModal from "../../components/AddProductModal";
 
 interface StockOut {
+    id: number | string;
     date: string;                 // วันที่ทำรายการ
     productCode: number;          // รหัสสินค้า
     category: string;             // หมวดหมู่
@@ -32,54 +33,63 @@ export default function StockOut() {
 
     const columns: Column<StockOut>[] = [
         {
+            id: "date",
             key: "date",
             label: "วันที่",
             align: "center",
             width: "120px",
         },
         {
+            id: "productCode",
             key: "productCode",
             label: "รหัสสินค้า",
             align: "center",
             width: "120px",
         },
         {
+            id: "category",
             key: "category",
             label: "หมวดหมู่",
             align: "center",
             width: "150px",
         },
         {
+            id: "productName",
             key: "productName",
             label: "ชื่อสินค้า",
             align: "center",
             width: "280px",
         },
         {
+            id: "unit",
             key: "unit",
             label: "หน่วยนับ",
             align: "center",
             width: "100px",
         },
         {
+            id: "stockOut",
             key: "stockOut",
             label: "จ่ายออก",
             align: "center",
             width: "100px",
         },
         {
+            id: "projectType",
             key: "projectType",
             label: "โครงการ",
             align: "center",
             width: "100px",
         },
         {
+            id: "description",
             key: "description",
             label: "รายละเอียด",
             align: "center",
             width: "100px",
         },
         {
+            id: "note",
             key: "note",
             label: "หมายเหตุ",
             align: "center",
@@ -99,7 +109,8 @@ export default function StockOut() {
             const res = await getStockOutList();
 
             // 🔥 ถ้า backend structure ไม่ตรง ให้ map ตรงนี้
-            const mapped = res.map((item: any) => ({
+            const mapped = res.map((item: any, index: number) => ({
+                id: item.id ?? index,
                 date: item.txDate,
                 productCode: item.product?.code,
                 category: item.product?.category,
@@ -131,8 +142,8 @@ export default function StockOut() {
                     onClick={() => setOpenModal(true)}
                     className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5"
                 >
-                    <img src={AddIcon} alt="" />
-                    Add สินค้าใหม่
+                    <img src={MinusIcon} alt="" />
+                    เบิกสินค้า
                 </button>
             </div>
 
@@ -167,25 +178,11 @@ export default function StockOut() {
 
             <AddProductModal
                 open={openModal}
+                mode="stockOut"
                 onClose={() => setOpenModal(false)}
-                onNext={async (formData) => {
-                    try {
-                        await createStockOut({
-                            productId: formData.productId,
-                            quantity: Number(formData.quantity),
-                            txDate: formData.txDate,
-                            project: formData.project,
-                            receiver: formData.receiver,
-                            note: formData.note,
-                        });
-
-                        setOpenModal(false);
-                        await loadData();
-                    } catch (err: any) {
-                        alert(err.message); // insufficient stock: onHand=3
-                    }
+                onSuccess={async () => {
+                    await loadData();
                 }}
-
             />
 
         </div>

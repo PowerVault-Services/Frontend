@@ -161,7 +161,7 @@ export default function ReportMonitor() {
                     onSearch={handleSearch}
                 >
 
-                    <div className="grid grid-cols-3 justify-between gap-2.5">
+                    <div className="grid grid-cols-4 justify-between gap-2.5">
 
                         <TextInputFilter
                             label="Project Name"

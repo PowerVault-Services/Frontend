@@ -31,6 +31,7 @@ export interface Product {
 export interface StockMetaResponse {
   success: boolean;
   data: {
+    projects(projects: any): unknown;
     categories: Category[];
     units: Unit[];
     products: Product[];

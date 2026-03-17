@@ -136,7 +136,7 @@ export default function StockIn() {
                     className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5"
                 >
                     <img src={AddIcon} alt="" />
-                    Add สินค้าใหม่
+                    เพิ่มสินค้า
                 </button>
 
             </div>
@@ -204,7 +204,11 @@ export default function StockIn() {
 
             <AddProductModal
                 open={openModal}
+                mode="stockIn"
                 onClose={() => setOpenModal(false)}
+                onSuccess={async () => {
+                    await fetchStockIn();
+                }}
             />
 
         </div>
