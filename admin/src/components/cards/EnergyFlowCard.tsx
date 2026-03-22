@@ -128,6 +128,7 @@ export default function EnergyFlowCard({
             active={battery !== 0}
             d="M100 170 H130 Q150 170 150 190 V240"
             stroke="#a280db"
+            reverse={battery < 0}
           />
 
           {/* เส้นโค้งขวา: Grid -> Home */}
@@ -135,6 +136,7 @@ export default function EnergyFlowCard({
             active={grid !== 0}
             d="M240 170 H210 Q190 170 190 190 V240"
             stroke="#488fc2"
+            reverse={grid < 0}
           />
 
           {/* เส้นเสริม: Solar -> Grid (ถ้ามีแดดเหลือ) */}

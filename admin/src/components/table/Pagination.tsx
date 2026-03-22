@@ -9,13 +9,10 @@ export default function Pagination({ page, totalPages, onChange }: Props) {
   const pages: (number | string)[] = [];
 
   if (totalPages <= 5) {
-
     for (let i = 1; i <= totalPages; i++) {
       pages.push(i);
     }
-
   } else {
-
     pages.push(1);
 
     if (page > 3) pages.push("...");
@@ -32,33 +29,34 @@ export default function Pagination({ page, totalPages, onChange }: Props) {
     pages.push(totalPages);
   }
 
+  // ✅ helper กันหลุด range
+  const goToPage = (p: number) => {
+    if (p < 1 || p > totalPages) return;
+    if (p === page) return;
+    onChange(p);
+  };
+
   return (
     <div className="flex items-center gap-2">
 
       {/* Prev */}
       <button
         disabled={page === 1}
-        onClick={() => onChange(page - 1)}
-        className="w-9 h-9 flex items-center justify-center border rounded-md bg-white text-gray-400"
+        onClick={() => goToPage(page - 1)}
+        className="w-9 h-9 flex items-center justify-center border rounded-md bg-white text-gray-400 disabled:opacity-50"
       >
         ‹
       </button>
 
       {pages.map((p, i) =>
         p === "..." ? (
-
-          <span
-            key={`ellipsis-${i}`}
-            className="px-2 text-gray-400"
-          >
+          <span key={`ellipsis-${i}`} className="px-2 text-gray-400">
             ...
           </span>
-
         ) : (
-
           <button
-            key={`page-${p}-${i}`}
-            onClick={() => onChange(Number(p))}
+            key={p} // ✅ ใช้ p ตรง ๆ
+            onClick={() => goToPage(Number(p))}
             className={`w-9 h-9 flex items-center justify-center rounded-md border
               ${page === p
                 ? "border-[#356A2E] text-[#356A2E] font-medium bg-white"
@@ -67,15 +65,14 @@ export default function Pagination({ page, totalPages, onChange }: Props) {
           >
             {p}
           </button>
-
         )
       )}
 
       {/* Next */}
       <button
         disabled={page === totalPages}
-        onClick={() => onChange(page + 1)}
-        className="w-9 h-9 flex items-center justify-center border rounded-md bg-white text-gray-400"
+        onClick={() => goToPage(page + 1)}
+        className="w-9 h-9 flex items-center justify-center border rounded-md bg-white text-gray-400 disabled:opacity-50"
       >
         ›
       </button>

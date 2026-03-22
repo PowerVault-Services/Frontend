@@ -13,6 +13,7 @@ import {
 } from "../services/homepage.api";
 
 interface Plant {
+  id: number;
   siteId: number;
   plantCode: string;
   plantName: string;
@@ -31,54 +32,83 @@ interface Plant {
 
 export default function Homepage() {
 
-  const [pvModule, setPvModule] = useState("");
+  // =========================
+  // Filters (แก้ไขใหม่)
+  // =========================
+  const [plantName, setPlantName] = useState("");
+  const [country, setCountry] = useState("");
+  const [deviceSN, setDeviceSN] = useState("");
   const [deviceType, setDeviceType] = useState("");
 
+  // =========================
+  // Data
+  // =========================
   const [plants, setPlants] = useState<Plant[]>([]);
   const [summary, setSummary] = useState<any>(null);
 
   const [loading, setLoading] = useState(true);
 
+  // =========================
+  // Pagination
+  // =========================
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
+  const buildQuery = () => {
+    return [plantName, country, deviceType, deviceSN]
+      .filter(Boolean)
+      .join(" ");
+  };
 
   // =========================
-  // Load API
+  // Load Summary (โหลดครั้งเดียว)
   // =========================
   useEffect(() => {
-
-    async function loadData() {
-
+    async function loadSummary() {
       try {
-
         const summaryRes = await getHomepageSummary();
         setSummary(summaryRes);
-
-        const plantRes = await getHomepagePlants(page, pageSize);
-
-        setPlants(plantRes.list);
-        setTotalItems(plantRes.pagination.total);
-        setTotalPages(plantRes.pagination.totalPages);
-
       } catch (err) {
-
-        console.error("โหลด homepage data ไม่สำเร็จ", err);
-
-      } finally {
-
-        setLoading(false);
-
+        console.error("โหลด summary ไม่สำเร็จ", err);
       }
-
     }
+    loadSummary();
+  }, []);
 
-    loadData();
+  // =========================
+  // Load Plants (รองรับ filter)
+  // =========================
+  async function loadPlants() {
+    try {
+      setLoading(true);
 
-  }, [page, pageSize]);
+      const q = buildQuery();
 
+      const plantRes = await getHomepagePlants(page, pageSize, q);
+
+      setPlants(
+        plantRes.list.map((item: Plant) => ({
+          ...item,
+          id: item.siteId,
+        }))
+      );
+
+      setTotalItems(plantRes.pagination.total);
+      setTotalPages(plantRes.pagination.totalPages);
+
+    } catch (err) {
+      console.error("โหลด plants ไม่สำเร็จ", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // โหลดเมื่อ page เปลี่ยน
+  useEffect(() => {
+    loadPlants();
+  }, [page]);
 
   // =========================
   // Table Columns
@@ -90,7 +120,6 @@ export default function Homepage() {
       key: "status",
       label: "Status",
       render: (value) => {
-
         const color =
           value === "Normal"
             ? "bg-green-500"
@@ -115,6 +144,7 @@ export default function Homepage() {
       id: "address",
       key: "address",
       label: "Address",
+      render: (value) => formatAddress(value),
     },
 
     {
@@ -172,6 +202,19 @@ export default function Homepage() {
 
   ];
 
+  function formatAddress(address: string) {
+    if (!address) return "-";
+
+    // ดึงจังหวัด (คำว่า "จ.")
+    const provinceMatch = address.match(/จ\.?\s*([^\s]+)/);
+    const province = provinceMatch ? provinceMatch[1] : "";
+
+    // ดึงรหัสไปรษณีย์
+    const zipMatch = address.match(/\d{5}/);
+    const zip = zipMatch ? zipMatch[0] : "";
+
+    return `${address.replace(/จ\.[^\s]+/, "").trim()}, ${province} ${zip}`;
+  }
 
   return (
     <div className="w-auto h-auto">
@@ -183,9 +226,7 @@ export default function Homepage() {
 
         <AlarmCard data={summary?.activeAlarms} />
 
-        {/* Notification Alarms */}
-        <div className="max-w-[303px]">
-
+        <div className="max-w-[400px]">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">
               Notification Alarms
@@ -193,56 +234,56 @@ export default function Homepage() {
           </div>
 
           <div className="space-y-3">
-
-            {summary?.notificationAlarms?.map((alarm: any, i: number) => (
-
+            {summary?.notificationAlarms?.slice(0, 4).map((alarm: any, i: number) => (
               <div
                 key={i}
-                className="h-[50px] w-auto border border-[#DEE2E6] px-3.5 py-1.5 rounded-lg"
+                className="min-h-[62px] w-auto border border-[#DEE2E6] px-3.5 py-1.5 rounded-lg"
               >
-
                 <div className="flex justify-between text-sm font-regular">
-
                   <span>{alarm.plantName}</span>
-
                   <span className="text-gray-400">
                     {new Date(alarm.occurredAt).toLocaleTimeString()}
                   </span>
-
                 </div>
 
                 <p className="text-xs text-black">
                   {alarm.detail} ({alarm.inverterName})
                 </p>
-
               </div>
-
             ))}
-
           </div>
-
         </div>
 
       </div>
 
-
       {/* Search */}
       <div className="mt-6">
-
-        <SearchBox>
-
+        <SearchBox
+          onSearch={() => {
+            setPage(1);
+            loadPlants();
+          }}
+          onReset={() => {
+            setPlantName("");
+            setCountry("");
+            setDeviceSN("");
+            setDeviceType("");
+            setPage(1);
+            loadPlants();
+          }}
+        >
           <div className="grid grid-cols-4 gap-4">
 
             <TextInputFilter
               label="Plant Name"
-              value={pvModule}
-              onChange={setPvModule}
+              value={plantName}
+              onChange={setPlantName}
             />
 
             <TextInputFilter
               label="Country/Region"
-              value={pvModule}
-              onChange={setPvModule}
+              value={country}
+              onChange={setCountry}
             />
 
             <SelectFilter
@@ -251,7 +292,7 @@ export default function Homepage() {
               value={deviceType}
               onChange={setDeviceType}
               options={[
-                { label: "All", value: "all" },
+                { label: "All", value: "" },
                 { label: "Inverter", value: "inverter" },
                 { label: "Optimizer", value: "optimizer" },
               ]}
@@ -259,32 +300,25 @@ export default function Homepage() {
 
             <TextInputFilter
               label="Device SN"
-              value={pvModule}
-              onChange={setPvModule}
+              value={deviceSN}
+              onChange={setDeviceSN}
             />
 
           </div>
-
         </SearchBox>
-
       </div>
-
 
       {/* Data Table */}
       <div className="mt-6">
-
         <DataTable<Plant>
           columns={columns}
           data={plants}
           loading={loading}
         />
-
       </div>
-
 
       {/* Pagination */}
       <div className="flex items-center justify-between py-6 text-sm text-gray-500">
-
         <span>
           {(page - 1) * pageSize + 1} to{" "}
           {Math.min(page * pageSize, totalItems)} of {totalItems} items
@@ -295,7 +329,6 @@ export default function Homepage() {
           totalPages={totalPages}
           onChange={setPage}
         />
-
       </div>
 
     </div>

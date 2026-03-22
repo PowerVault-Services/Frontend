@@ -9,7 +9,7 @@ import ProgressBar from "../../components/progress/ProgressBar";
 import ReportPreview from "../../components/ReportPreview";
 
 import { generateCleaningReport } from "../../services/cleaning.api";
-import { saveDraft } from "../../services/draft.api";
+import { saveDraftStep } from "../../services/draft.api";
 
 export default function NewCleaningStep4() {
   const navigate = useNavigate();
@@ -30,12 +30,23 @@ export default function NewCleaningStep4() {
      Generate Report
   ========================= */
   useEffect(() => {
-    console.log("REPORT DATA:", reportData)
     const generateReport = async () => {
-      const jobId = Number(localStorage.getItem("jobId"));
+      const jobIdRaw = localStorage.getItem("jobId");
 
-      if (!jobId) {
+      console.log("🔥 jobId RAW:", jobIdRaw);
+
+      if (!jobIdRaw) {
         alert("ไม่พบ jobId");
+        navigate("/cleaning");
+        return;
+      }
+
+      const jobId = Number(jobIdRaw);
+
+      console.log("🔥 jobId PARSED:", jobId);
+
+      if (isNaN(jobId) || jobId <= 0) {
+        alert("jobId ไม่ถูกต้อง");
         navigate("/cleaning");
         return;
       }
@@ -43,20 +54,27 @@ export default function NewCleaningStep4() {
       try {
         setLoading(true);
 
+        console.log("🔥 STEP4 REQUEST:", { jobId });
+
         const result = await generateCleaningReport(jobId);
 
-        if (!result.success) {
+        console.log("🔥 STEP4 RESPONSE:", result);
+
+        if (!result?.success) {
           throw new Error("Generate report failed");
         }
 
         setReportData(result.data);
 
+      } catch (error: any) {
+        console.error("🔥 STEP4 ERROR FULL:", error);
 
-      } catch (error) {
-        console.error(error);
-        alert("ไม่สามารถสร้างรายงานได้");
-      } finally {
-        setLoading(false);
+        if (error.response) {
+          console.error("🔥 STATUS:", error.response.status);
+          console.error("🔥 DATA:", error.response.data);
+        }
+
+        alert(error.response?.data?.message || "ไม่สามารถสร้างรายงานได้");
       }
     };
 
@@ -88,7 +106,7 @@ export default function NewCleaningStep4() {
         return;
       }
 
-      await saveDraft(Number(jobId), 4);
+      await saveDraftStep(Number(jobId), 4);
 
       alert("บันทึกเรียบร้อยแล้ว");
 

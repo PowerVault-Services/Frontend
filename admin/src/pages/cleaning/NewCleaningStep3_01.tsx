@@ -6,7 +6,7 @@ import UploadFileField from "../../components/UploadFileField";
 import UploadImagePreviewField from "../../components/UploadImagePreviewField";
 
 import { uploadCleaningEvidence } from "../../services/cleaning.api";
-import { saveDraft } from "../../services/draft.api";
+import { saveDraftStep } from "../../services/draft.api";
 
 export default function NewCleaningStep3_01() {
   const navigate = useNavigate();
@@ -24,8 +24,14 @@ export default function NewCleaningStep3_01() {
 
   // แยกเก็บไฟล์ตามประเภท
   const [filesByType, setFilesByType] = useState<Record<string, File[]>>({
-    BEFORE: [],
-    AFTER: [],
+    BEFORE_PANEL: [],
+    DURING_PANEL: [],
+    AFTER_PANEL: [],
+    BEFORE_INVERTER: [],
+    DURING_INVERTER: [],
+    AFTER_INVERTER: [],
+    ZONE_WORK: [],
+    ZONE_CHECKLIST: [],
     CERTIFICATE: [],
     LAYOUT: [],
   });
@@ -49,36 +55,34 @@ export default function NewCleaningStep3_01() {
       return;
     }
 
-    const totalImages =
-      filesByType.BEFORE.length + filesByType.AFTER.length;
+    // ✅ รวมไฟล์ทั้งหมด
+    const allFiles = Object.values(filesByType).flat();
 
-    if (totalImages < 6) {
-      alert("ต้องแนบรูปขั้นต่ำ 6 รูป (ก่อน + หลัง)");
+    if (allFiles.length < 6) {
+      alert("ต้องแนบรูปขั้นต่ำ 6 รูป");
+      return;
+    }
+
+    if (allFiles.length > 30) {
+      alert("ไฟล์รวมต้องไม่เกิน 30");
       return;
     }
 
     try {
       setLoading(true);
 
-      for (const labelType of Object.keys(filesByType)) {
-        const files = filesByType[labelType];
-
-        if (!files.length) continue;
-
-        await uploadCleaningEvidence({
-          jobId,
-          labelType,
-          files,
-        });
-      }
+      await uploadCleaningEvidence({
+        jobId: Number(jobId),
+        files: allFiles, // ✅ ส่งทีเดียว
+        // ❌ ไม่ต้องส่ง labelType
+      });
 
       alert("อัปโหลดสำเร็จ");
-
       navigate("/cleaning/new/step3_02");
 
-    } catch (error) {
-      console.error(error);
-      alert("อัปโหลดไฟล์ไม่สำเร็จ");
+    } catch (error: any) {
+      console.error("🔥 ERROR:", error.response?.data);
+      alert(error.response?.data?.message || "อัปโหลดไฟล์ไม่สำเร็จ");
     } finally {
       setLoading(false);
     }
@@ -95,7 +99,7 @@ export default function NewCleaningStep3_01() {
         return;
       }
 
-      await saveDraft(Number(jobId), 3);
+      await saveDraftStep(Number(jobId), 3);
 
       alert("บันทึกเรียบร้อยแล้ว");
 
@@ -138,34 +142,34 @@ export default function NewCleaningStep3_01() {
             gap-x-[27px]
             gap-y-[27px]"
         >
-          {/* BEFORE */}
           <UploadImagePreviewField
             label="ก่อน - ล้างแผง"
-            onChange={(file) => handleFileChange("BEFORE", file)}
-          />
-          <UploadImagePreviewField
-            label="ก่อน - ทําความสะอาดห้องอินเวอร์เตอร์"
-            onChange={(file) => handleFileChange("BEFORE", file)}
+            onChange={(file) => handleFileChange("BEFORE_PANEL", file)}
           />
 
-          {/* DURING → จัดอยู่ใน BEFORE หรือ AFTER แล้วแต่ backend design */}
           <UploadImagePreviewField
             label="ขณะ - ล้างแผง"
-            onChange={(file) => handleFileChange("BEFORE", file)}
-          />
-          <UploadImagePreviewField
-            label="ขณะ - ทําความสะอาดห้องอินเวอร์เตอร์"
-            onChange={(file) => handleFileChange("BEFORE", file)}
+            onChange={(file) => handleFileChange("DURING_PANEL", file)}
           />
 
-          {/* AFTER */}
           <UploadImagePreviewField
             label="หลัง - ล้างแผง"
-            onChange={(file) => handleFileChange("AFTER", file)}
+            onChange={(file) => handleFileChange("AFTER_PANEL", file)}
           />
+
+          <UploadImagePreviewField
+            label="ก่อน - ทําความสะอาดห้องอินเวอร์เตอร์"
+            onChange={(file) => handleFileChange("BEFORE_INVERTER", file)}
+          />
+
+          <UploadImagePreviewField
+            label="ขณะ - ทําความสะอาดห้องอินเวอร์เตอร์"
+            onChange={(file) => handleFileChange("DURING_INVERTER", file)}
+          />
+
           <UploadImagePreviewField
             label="หลัง - ทําความสะอาดห้องอินเวอร์เตอร์"
-            onChange={(file) => handleFileChange("AFTER", file)}
+            onChange={(file) => handleFileChange("AFTER_INVERTER", file)}
           />
 
           {/* DOCUMENTS */}
@@ -205,8 +209,15 @@ export default function NewCleaningStep3_01() {
 
         {/* Debug Preview */}
         <div className="text-sm text-green-700">
-          BEFORE: {filesByType.BEFORE.length} | AFTER:{" "}
-          {filesByType.AFTER.length}
+          PANEL (B/D/A):{" "}
+          {filesByType.BEFORE_PANEL.length}/
+          {filesByType.DURING_PANEL.length}/
+          {filesByType.AFTER_PANEL.length}
+          <br />
+          INVERTER (B/D/A):{" "}
+          {filesByType.BEFORE_INVERTER.length}/
+          {filesByType.DURING_INVERTER.length}/
+          {filesByType.AFTER_INVERTER.length}
         </div>
       </div>
     </div>

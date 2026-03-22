@@ -12,7 +12,7 @@ import {
 } from "../../services/inspection.api";
 
 import type { InspectionProject } from "../../services/types";
-import { saveDraft } from "../../services/draft.api";
+import { saveDraftStep } from "../../services/draft.api";
 
 function formatPhones(phone?: string | null) {
     if (!phone) return "";
@@ -110,7 +110,7 @@ export default function NewInspectionStep1() {
 
             const jobId = result.data.jobId;
 
-            await saveDraft(jobId, 1);
+            await saveDraftStep(jobId, 1);
 
             const payload = {
                 jobId,

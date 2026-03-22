@@ -4,6 +4,8 @@ import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 
+import { saveDraftStep } from "../../services/draft.api";
+
 
 export default function NewInspectionStep3() {
 

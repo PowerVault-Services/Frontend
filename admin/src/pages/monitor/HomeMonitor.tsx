@@ -227,8 +227,9 @@ export default function HomeMonitor() {
             {/* ขวา */}
             <NewAlarm
               alarmName={latestAlarm?.alarmName ?? "No Alarm"}
-              date={latestAlarm?.occurredAt ?? "-"}
-              time={latestAlarm?.occurredAt ?? "-"}
+              // เอาฟังก์ชัน formatDate และ formatTime มาครอบค่าที่ได้จาก API
+              date={latestAlarm ? formatDate(latestAlarm.occurredAt) : "-"}
+              time={latestAlarm ? formatTime(latestAlarm.occurredAt) : "-"}
             />
           </div>
 

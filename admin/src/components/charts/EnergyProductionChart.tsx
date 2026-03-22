@@ -1,6 +1,6 @@
 import {
   ResponsiveContainer,
-  BarChart,
+  ComposedChart, // เปลี่ยนจาก BarChart เป็น ComposedChart เพื่อผสม Bar กับ Line
   Bar,
   Line,
   XAxis,
@@ -10,27 +10,28 @@ import {
   Legend
 } from "recharts";
 
-interface DataItem {
-  day: number;
-  energy?: number;
-  radiation?: number;
+// ลบ interface Props ที่ไม่ได้ใช้ออกเพื่อให้โค้ดคลีนขึ้น
+interface EnergyProductionProps {
+    data?: any[];
+    year?: number;
+    month?: number;
 }
 
-interface Props {
-  data: DataItem[];
-  year: number;
-  month: number; // 1 - 12
-}
+// ✅ กำหนดค่า Default ป้องกัน undefined
+export default function EnergyProductionChart({ 
+  data = [], 
+  year = new Date().getFullYear(), 
+  month = new Date().getMonth() + 1 
+}: EnergyProductionProps) {
 
-export default function EnergyProductionChart({ data, year, month }: Props) {
-
-  // จำนวนวันในเดือน
+  // ตอนนี้ year และ month จะเป็น number แน่นอนแล้ว (ไม่เป็น undefined)
   const daysInMonth = new Date(year, month, 0).getDate();
 
   // generate day list
   const fullData = Array.from({ length: daysInMonth }, (_, i) => {
     const day = i + 1;
 
+    // ค้นหาข้อมูล (data เป็น [] แน่นอนถ้าไม่ได้ส่งมา ไม่พังแน่นอน)
     const found = data.find((d) => d.day === day);
 
     return {
@@ -53,7 +54,8 @@ export default function EnergyProductionChart({ data, year, month }: Props) {
       </div>
 
       <ResponsiveContainer width="100%" height={320}>
-        <BarChart data={fullData}>
+        {/* เปลี่ยนมาใช้ ComposedChart */}
+        <ComposedChart data={fullData}>
           <CartesianGrid strokeDasharray="3 3" />
 
           <XAxis
@@ -63,13 +65,13 @@ export default function EnergyProductionChart({ data, year, month }: Props) {
 
           <YAxis
             yAxisId="left"
-            label={{ value: "kWh", angle: -90, position: "insideLeft" }}
+            label={{ value: "kWh", angle: -90, position: "insideLeft", dx: -15 }}
           />
 
           <YAxis
             yAxisId="right"
             orientation="right"
-            label={{ value: "Wh/m²", angle: 90, position: "insideRight" }}
+            label={{ value: "Wh/m²", angle: 90, position: "insideRight", dx: 15 }}
           />
 
           <Tooltip />
@@ -91,7 +93,7 @@ export default function EnergyProductionChart({ data, year, month }: Props) {
             dot
             name="Radiation"
           />
-        </BarChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );

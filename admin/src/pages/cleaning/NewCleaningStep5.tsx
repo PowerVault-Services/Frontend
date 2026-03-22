@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 
-import { saveDraft } from "../../services/draft.api";
-
 export default function NewCleaningStep5() {
   const navigate = useNavigate();
 
@@ -51,12 +49,25 @@ export default function NewCleaningStep5() {
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
   }
 
+  function buildEmailPayload(jobId: number) {
+    return {
+      jobId,
+      to: jobData.contactEmail || "",
+      subject: "รายงานการบำรุงรักษาระบบ Solar System",
+      body: `
+      <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+      <p>บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตนำส่งรายงานการเข้าบำรุงรักษาระบบ Solar System</p>
+      <p>โครงการ <b>${jobData.projectName || "-"}</b></p>
+      <p>วันที่ปฏิบัติงาน ${formatThaiDate(jobData.date)}</p>
+      <p>รายละเอียดตามไฟล์แนบ</p>
+    `
+    };
+  }
+
   /* =========================
      Send Email API
   ========================= */
-
   async function handleSendEmail() {
-
     const jobId = localStorage.getItem("jobId");
 
     if (!jobId) {
@@ -64,8 +75,20 @@ export default function NewCleaningStep5() {
       return;
     }
 
-    try {
+    const payload = buildEmailPayload(Number(jobId));
 
+    // ✅ เพิ่ม validation
+    if (!payload.to) {
+      alert("กรุณากรอกอีเมลผู้รับ");
+      return;
+    }
+
+    if (!reportFileUrl) {
+      alert("ยังไม่มีไฟล์รายงาน");
+      return;
+    }
+
+    try {
       setLoading(true);
 
       const response = await fetch("/api/cleaning/step5/send", {
@@ -73,45 +96,27 @@ export default function NewCleaningStep5() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          jobId: Number(jobId),
-          to: "nita290646@gmail.com",
-          subject: "รายงานการบำรุงรักษาระบบ Solar System",
-          body: `
-            <p>เรียน ท่านผู้เกี่ยวข้อง</p>
-            <p>บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตนำส่งรายงานการเข้าบำรุงรักษาระบบ Solar System</p>
-            <p>โครงการ <b>${jobData.projectName || "-"}</b></p>
-            <p>วันที่ปฏิบัติงาน ${formatThaiDate(jobData.date)}</p>
-            <p>รายละเอียดตามไฟล์แนบ</p>
-          `
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
-        throw new Error("Send email failed");
+        const err = await response.json();
+        throw new Error(err.message);
       }
 
       alert("ส่งรายงานเรียบร้อยแล้ว");
-
       navigate("/cleaning/home");
 
-    } catch (error) {
-
+    } catch (error: any) {
       console.error(error);
-      alert("ไม่สามารถส่งอีเมลได้");
-
+      alert(error.message || "ไม่สามารถส่งอีเมลได้");
     } finally {
-
       setLoading(false);
-
     }
-
   }
 
   async function handleSaveDraft() {
-
     try {
-
       const jobId = localStorage.getItem("jobId");
 
       if (!jobId) {
@@ -119,19 +124,23 @@ export default function NewCleaningStep5() {
         return;
       }
 
-      await saveDraft(Number(jobId), 5);
+      const payload = buildEmailPayload(Number(jobId));
+
+      await fetch("/api/cleaning/step5/draft", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
 
       alert("บันทึกเรียบร้อยแล้ว");
-
       navigate("/cleaning");
 
     } catch (err) {
-
       console.error(err);
       alert("Save Draft ไม่สำเร็จ");
-
     }
-
   }
 
   return (

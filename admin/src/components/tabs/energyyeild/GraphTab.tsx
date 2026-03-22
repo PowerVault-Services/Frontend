@@ -1,51 +1,34 @@
 import EnergyProductionChart from "../../charts/EnergyProductionChart";
 import EnergyTrendChart from "../../charts/EnergyTrendChart";
 
-const data = [
-    { day: "01", energy: 5000, radiation: 4500 },
-    { day: "02", energy: 5500, radiation: 4300 },
-    { day: "03", energy: 5200, radiation: 4700 },
-    { day: "04", energy: 4800, radiation: 4200 },
-];
+interface TabProps {
+    data?: any;
+    month?: string;
+}
 
-const productionData = [
-    { day: "01", energy: 4500, radiation: 4300 },
-    { day: "02", energy: 5500, radiation: 5200 },
-    { day: "03", energy: 4800, radiation: 4700 },
-    { day: "04", energy: 3000, radiation: 2900 },
-    { day: "05", energy: 5800, radiation: 5700 }
-];
+export function GraphTab({ data, month }: TabProps) {
+    const yearNum = month ? parseInt(month.split('-')[0]) : new Date().getFullYear();
+    const monthNum = month ? parseInt(month.split('-')[1]) : new Date().getMonth() + 1;
 
-const trendData = [
-    { day: "01", pv: 20, grid: 10 },
-    { day: "02", pv: 25, grid: 12 },
-    { day: "03", pv: 22, grid: 15 },
-    { day: "04", pv: 10, grid: 8 },
-    { day: "05", pv: 24, grid: 14 }
-];
+    // ✅ FIX: ใช้ charts จาก API
+    const apiData = data?.charts?.production || [];
+    const trendData = data?.charts?.trend || [];
 
-const apiData = [
-  { day: 1, energy: 4500, radiation: 4200 },
-  { day: 2, energy: 5300, radiation: 5000 },
-  { day: 5, energy: 6100, radiation: 5900 }
-];
+    if (!data) {
+        return <div className="text-center py-10 text-gray-500">No data</div>;
+    }
 
-export function GraphTab() {
     return (
         <div className="w-full">
-
-            {/* <div className="flex justify-between pb-3.5">
-                <h3 className="text-green-800">Graph</h3>
-            </div> */}
-            <div className="">
+            <div className="flex flex-col gap-8">
                 <EnergyProductionChart
                     data={apiData}
-                    year={2024}
-                    month={7}
+                    year={yearNum}
+                    month={monthNum}
                 />
+
                 <EnergyTrendChart data={trendData} />
             </div>
         </div>
     );
 }
-

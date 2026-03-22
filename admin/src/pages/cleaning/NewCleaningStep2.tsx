@@ -4,6 +4,7 @@ import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 import { saveCleaningStep2Draft, sendCleaningStep2 } from "../../services/cleaning.api";
+import api from "../../services/api";
 
 export default function NewCleaningStep2() {
 
@@ -36,7 +37,6 @@ export default function NewCleaningStep2() {
     const [showConfirm, setShowConfirm] = useState(false);
 
     useEffect(() => {
-
         const raw = localStorage.getItem("cleaning_step1");
 
         if (!raw) return;
@@ -46,17 +46,43 @@ export default function NewCleaningStep2() {
         setFormData({
             projectName: data.projectName || "",
             date: data.date || "",
-            time: data.time || "",
+            time: data.startTime || "",
             remark: data.remark || "",
         });
+    }, []);
 
-        // ✅ check status ตาม job
-        const sent = localStorage.getItem(`cleaning_step2_sent_${data.jobId}`);
+    useEffect(() => {
+        const jobId = localStorage.getItem("jobId");
 
-        if (sent === "true") {
-            setEmailStatus("sent");
+        if (!jobId) return;
+
+        async function loadJob() {
+            try {
+                const res = await api.get(`/cleaning/job/${jobId}`);
+                const data = res.data?.data;
+
+                console.log("🔥 STEP2 API:", data);
+
+                setFormData((prev) => ({
+                    ...prev,
+
+                    // ✅ เอาจาก API จริง
+                    projectName: data?.cleaning?.projectName || prev.projectName,
+
+                    // ❗ API ไม่มี date → ใช้ของเดิม
+                    date: prev.date,
+
+                    time: data?.timeRange?.startTime || prev.time,
+
+                    remark: prev.remark,
+                }));
+
+            } catch (err) {
+                console.error("❌ โหลด Step2 ไม่ได้", err);
+            }
         }
 
+        loadJob();
     }, []);
 
     function formatThaiDate(dateStr: string) {
@@ -79,15 +105,12 @@ export default function NewCleaningStep2() {
     }
 
     async function handleSaveDraft() {
-
         if (loading) return;
 
         try {
-
             setLoading(true);
 
             const raw = localStorage.getItem("cleaning_step1");
-
             if (!raw) {
                 alert("ไม่พบข้อมูล Step1");
                 return;
@@ -103,35 +126,47 @@ export default function NewCleaningStep2() {
             const subject = `ขออนุญาตเข้าบำรุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
 
             const body = `
-เรียน ท่านผู้เกี่ยวข้อง
+                    <div style="margin-top: 40px; max-width: 800px;">
+                        <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+                        
+                        <p><b>เรื่อง: ขออนุญาตแจ้งแผนเข้าบำรุงรักษาระบบ PM Solar System</b></p>
+                        
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตแจ้งแผนงานเข้า PM Solar System โครงการ ${formData.projectName} </b> 
+                            วันที่ ${formatThaiDate(formData.date)} เวลา ${formData.time} ระบบ Solar System โครงการ <b>${formData.projectName}</b> โดยมีรายละเอียดกำหนดการเข้าปฏิบัติงานดังนี้:
+                        </p>
 
-บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตแจ้งแผนงานเข้า PM Solar System
-โครงการ ${formData.projectName}
-วันที่ ${formatThaiDate(formData.date)}
-เวลา ${formData.time}
+                        <p> ${formData.remark} </p>
 
-${formData.remark}
-            `;
+                        <p style="text-indent: 50px;">
+                            จึงเรียนมาเพิ่อพิจารณาอนุมัติ และขออํานวยความสะดวกในการขึ้นหลังคา ระบบนํ้าและการเข้าปฏิบัติงานในพื้นที่ โดยได้แนบเอกสารรายชื่อผู้เข้าปฏิบัติงานพร้อมวุฒิบัตรการอบรมการทํางานบนที่สูงตามเอกสารแนบด้านล่าง
+                        </p>
+                    </div>
+        `;
 
             await saveCleaningStep2Draft({
                 jobId: step1.jobId,
-                to: formData.projectName,
+
+                // ✅ FIX ให้เป็น email จริง
+                to: step1.contactEmail || "test@email.com",
+
                 subject,
                 body,
-                file: uploadedFile
+
+                // ✅ FIX file ต้องเป็น array
+                files: uploadedFile ? [uploadedFile] : [],
+
+                // ✅ optional
+                signatureName: "PowerVault Service"
             });
 
             alert("บันทึก Draft สำเร็จ");
 
         } catch (err) {
-
             console.error(err);
             alert("บันทึก Draft ไม่สำเร็จ");
-
         } finally {
-
             setLoading(false);
-
         }
     }
 
@@ -159,14 +194,22 @@ ${formData.remark}
             const subject = `ขออนุญาตเข้าบำรุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
 
             const body = `
-เรียน ท่านผู้เกี่ยวข้อง
+                    <div style="margin-top: 40px; max-width: 800px;">
+                        <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+                        
+                        <p><b>เรื่อง: ขออนุญาตแจ้งแผนเข้าบำรุงรักษาระบบ PM Solar System</b></p>
+                        
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตแจ้งแผนงานเข้า PM Solar System โครงการ ${formData.projectName} </b> 
+                            วันที่ ${formatThaiDate(formData.date)} เวลา ${formData.time} ระบบ Solar System โครงการ <b>${formData.projectName}</b> โดยมีรายละเอียดกำหนดการเข้าปฏิบัติงานดังนี้:
+                        </p>
 
-บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตแจ้งแผนงานเข้า PM Solar System
-โครงการ ${formData.projectName}
-วันที่ ${formatThaiDate(formData.date)}
-เวลา ${formData.time}
+                        <p> ${formData.remark} </p>
 
-${formData.remark}
+                        <p style="text-indent: 50px;">
+                            จึงเรียนมาเพิ่อพิจารณาอนุมัติ และขออํานวยความสะดวกในการขึ้นหลังคา ระบบนํ้าและการเข้าปฏิบัติงานในพื้นที่ โดยได้แนบเอกสารรายชื่อผู้เข้าปฏิบัติงานพร้อมวุฒิบัตรการอบรมการทํางานบนที่สูงตามเอกสารแนบด้านล่าง
+                        </p>
+                    </div>
             `;
 
             await saveCleaningStep2Draft({
@@ -174,7 +217,7 @@ ${formData.remark}
                 to: "nita290646@gmail.com",
                 subject,
                 body,
-                file: uploadedFile
+                files: uploadedFile ? [uploadedFile] : [],
             });
 
             await sendCleaningStep2(step1.jobId);
@@ -272,8 +315,7 @@ ${formData.remark}
                                     </p>
 
                                     <p className="pt-4 indent-28">
-                                        จึงเรียนมาเพื่อพิจารณาอนุมัติ และขออำนวยความสะดวกในการขึ้นหลังคา
-                                        ระบบน้ำและการเข้าปฏิบัติงานในพื้นที่
+                                        จึงเรียนมาเพิ่อพิจารณาอนุมัติ และขออํานวยความสะดวกในการขึ้นหลังคา ระบบนํ้าและการเข้าปฏิบัติงานในพื้นที่ โดยได้แนบเอกสารรายชื่อผู้เข้าปฏิบัติงานพร้อมวุฒิบัตรการอบรมการทํางานบนที่สูงตามเอกสารแนบด้านล่าง
                                     </p>
                                 </div>
 

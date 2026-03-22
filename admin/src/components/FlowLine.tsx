@@ -4,12 +4,13 @@ interface FlowLineProps {
   d: string;          // path ของเส้น
   active?: boolean;   // สถานะว่ามีการไหลของพลังงานหรือไม่
   stroke?: string;    // สีของเส้นและจุดวิ่ง (Default เป็นสีเทา)
+  reverse?: boolean;
 }
 
-export default function FlowLine({ d, active = false, stroke = "#DEE2E6" }: FlowLineProps) {
+export default function FlowLine({ d, active = false, stroke = "#DEE2E6", reverse = false }: FlowLineProps) {
   // สร้าง ID แบบสุ่มที่ไม่ซ้ำกัน เพื่อป้องกันบั๊กเวลาเรามีหลายๆ เส้นในหน้าเดียวกัน
   // แล้วค่า id ไปซ้ำกันจนจุดวิ่งสลับเส้น
-  const pathId = useId();
+  const pathId = useId().replace(/:/g, "");
 
   return (
     <g>
@@ -32,6 +33,8 @@ export default function FlowLine({ d, active = false, stroke = "#DEE2E6" }: Flow
             dur="1.5s"             // ความเร็วในการวิ่ง (ยิ่งค่าน้อย ยิ่งวิ่งเร็ว เช่น 1s, 0.5s)
             repeatCount="indefinite" // ให้วิ่งวนลูปไปเรื่อยๆ
             calcMode="linear"      // ให้วิ่งด้วยความเร็วคงที่
+            keyTimes="0;1"
+            keyPoints={reverse ? "1;0" : "0;1"}
           >
             {/* mpath จะเป็นตัวบอกให้วงกลมวิ่งเกาะไปตาม id ของเส้นด้านบน */}
             <mpath href={`#${pathId}`} />

@@ -7,8 +7,7 @@ import AlarmTable from "../table/AlarmTable";
 import api from "../../services/api";
 
 export default function HistoricalAlarmsTab() {
-
-    // ===== FILTER INPUT =====
+    // ===== 1. FILTER INPUT STATES =====
     const [plantNameInput, setPlantNameInput] = useState("");
     const [deviceType, setDeviceType] = useState("all");
     const [snInput, setSnInput] = useState("");
@@ -17,66 +16,65 @@ export default function HistoricalAlarmsTab() {
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
 
-    // ===== QUERY =====
+    // ===== 2. QUERY STATE =====
     const [filters, setFilters] = useState<any>({});
 
-    // ===== DATA =====
+    // ===== 3. DATA STATES =====
     const [alarms, setAlarms] = useState<Alarm[]>([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-
     const pageSize = 20;
 
-    // ===== FETCH API =====
+    // ===== 4. FETCH API & SMART FILTER =====
     const fetchAlarms = async () => {
         try {
+            // เตรียม Params ตาม Spec API
+            const apiParams = {
+                tab: "historical",
+                page,
+                pageSize,
+                q: filters.alarmName, // API ใช้ q สำหรับค้นหาชื่อ
+                sn: filters.sn,
+                from: filters.from,
+                to: filters.to,
+                // หมายเหตุ: ไม่ส่ง alarmId ไปที่ API เพราะจากที่เช็ค API คืนค่าว่าง (Backend มีปัญหา)
+            };
 
-            const cleanFilters = Object.fromEntries(
-                Object.entries(filters).filter(([_, v]) => v !== undefined && v !== "")
+            const cleanParams = Object.fromEntries(
+                Object.entries(apiParams).filter(([_, v]) => v !== undefined && v !== "")
             );
 
-            const res = await api.get("/alarms", {
-                params: {
-                    tab: "historical",
-                    page,
-                    pageSize,
-                    ...cleanFilters,
-                },
-            });
-
+            const res = await api.get("/alarms", { params: cleanParams });
             const data = res.data?.data;
-            const list = data?.list ?? [];
+            let list = data?.list ?? [];
 
-            let filtered = list;
+            // ⭐ [FRONTEND FILTER FALLBACK] 
+            // กรองซ้ำด้วยมือเพื่อให้ Search ทำงานได้ครบทุกช่องแม้ Backend จะไม่รองรับ
 
-            // ⭐ filter plant name
-            if (plantNameInput) {
-                filtered = filtered.filter((a: any) =>
-                    a.plantName
-                        ?.toLowerCase()
-                        .includes(plantNameInput.toLowerCase())
+            // 1. กรอง Plant Name (เนื่องจาก API Spec ไม่มีฟิลด์นี้)
+            if (filters.plantName) {
+                list = list.filter((a: any) =>
+                    a.plantName?.toLowerCase().includes(filters.plantName.toLowerCase())
                 );
             }
 
-            // ⭐ filter device type
-            if (deviceType !== "all") {
-                filtered = filtered.filter((a: any) =>
-                    a.deviceType === deviceType
+            // 2. กรอง Alarm ID (แก้ปัญหา API คืนค่าว่างเมื่อส่ง alarmId)
+            if (filters.alarmId) {
+                list = list.filter((a: any) =>
+                    String(a.alarmId).includes(filters.alarmId) ||
+                    String(a.raw?.alarmId).includes(filters.alarmId)
                 );
             }
 
-            // ⭐ filter SN
-            if (snInput) {
-                filtered = filtered.filter((a: any) =>
-                    a.sn
-                        ?.toLowerCase()
-                        .includes(snInput.toLowerCase())
+            // 3. กรอง Device Type
+            if (filters.deviceType && filters.deviceType !== "all") {
+                list = list.filter((a: any) =>
+                    a.deviceType?.toUpperCase() === filters.deviceType.toUpperCase()
                 );
             }
 
-            setAlarms(filtered);
+            setAlarms(list);
             setTotalPages(data?.pagination?.totalPages ?? 1);
-
         } catch (err) {
             console.error("Fetch alarm error:", err);
         }
@@ -86,40 +84,22 @@ export default function HistoricalAlarmsTab() {
         fetchAlarms();
     }, [page, filters]);
 
-    // ===== SEARCH =====
+    // ===== 5. HANDLE SEARCH =====
     const handleSearch = () => {
-
         setPage(1);
-
-        const newFilters = {
-
+        setFilters({
+            plantName: plantNameInput.trim() || undefined,
+            deviceType: deviceType !== "all" ? deviceType : undefined,
             sn: snInput.trim() || undefined,
-
-            q: alarmNameInput.trim() || undefined,
-
-            alarmId: alarmIdInput
-                ? Number(alarmIdInput)
-                : undefined,
-
-            from: startTime
-                ? new Date(startTime).toISOString()
-                : undefined,
-
-            to: endTime
-                ? new Date(endTime).toISOString()
-                : undefined,
-        };
-
-        console.log("Search Filters:", newFilters);
-
-        setFilters(newFilters);
+            alarmName: alarmNameInput.trim() || undefined,
+            alarmId: alarmIdInput.trim() || undefined, // เก็บค่าไว้กรองที่ Frontend
+            from: startTime ? new Date(startTime).toISOString() : undefined,
+            to: endTime ? new Date(endTime).toISOString() : undefined,
+        });
     };
 
-    // ===== ENTER SEARCH =====
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
-            handleSearch();
-        }
+        if (e.key === "Enter") handleSearch();
     };
 
     const handleReset = () => {
@@ -130,7 +110,6 @@ export default function HistoricalAlarmsTab() {
         setAlarmIdInput("");
         setStartTime("");
         setEndTime("");
-
         setFilters({});
         setPage(1);
     };
@@ -139,7 +118,6 @@ export default function HistoricalAlarmsTab() {
         <div className="flex flex-col gap-[18px]">
             <SearchBox onSearch={handleSearch} onReset={handleReset}>
                 <div className="grid grid-cols-3 gap-4">
-
                     <TextInputFilter
                         label="Plant Name"
                         value={plantNameInput}
@@ -147,17 +125,12 @@ export default function HistoricalAlarmsTab() {
                         onKeyDown={handleKeyDown}
                     />
 
-                    <SelectFilter
-                        label="Device Type"
-                        placeholder="All"
-                        value={deviceType}
-                        onChange={setDeviceType}
-                        options={[
-                            { label: "All", value: "all" },
-                            { label: "Inverter", value: "INVERTER" },
-                            { label: "Logger", value: "LOGGER" },
-                        ]}
-                    />
+                    <div className="flex flex-col gap-2">
+                        <span className="text-[16px] font-normal text-green-800">Device Type</span>
+                        <div className="h-[39px] flex items-center rounded-sm border border-green-200 bg-gray-50 px-4 text-gray-400 text-[14px]">
+                            All (Automatic)
+                        </div>
+                    </div>
 
                     <TextInputFilter
                         label="SN"
@@ -181,52 +154,28 @@ export default function HistoricalAlarmsTab() {
                     />
 
                     <div className="flex flex-col gap-2">
-
                         <div className="flex gap-4">
-
                             <div className="flex flex-col w-full">
-                                <span className="text-[16px] font-normal text-green-800">
-                                    Occurrence Time Start
-                                </span>
-
+                                <span className="text-[16px] font-normal text-green-800">Occurrence Time Start</span>
                                 <input
                                     type="datetime-local"
                                     value={startTime}
                                     onChange={(e) => setStartTime(e.target.value)}
-                                    className="h-[39px]
-                  rounded-sm
-                  border border-green-200
-                  bg-white
-                  px-4
-                  text-[14px]
-                  text-green-500
-                  font-normal"
+                                    className="h-[39px] rounded-sm border border-green-200 bg-white px-4 text-[14px] text-green-500 font-normal outline-none focus:border-green-500"
                                 />
                             </div>
 
                             <div className="flex flex-col w-full">
-                                <span className="text-[16px] font-normal text-green-800">
-                                    Occurrence Time End
-                                </span>
-
+                                <span className="text-[16px] font-normal text-green-800">Occurrence Time End</span>
                                 <input
                                     type="datetime-local"
                                     value={endTime}
                                     onChange={(e) => setEndTime(e.target.value)}
-                                    className="h-[39px]
-                  rounded-sm
-                  border border-green-200
-                  bg-white
-                  px-4
-                  text-[14px]
-                  text-green-500
-                  font-normal"
+                                    className="h-[39px] rounded-sm border border-green-200 bg-white px-4 text-[14px] text-green-500 font-normal outline-none focus:border-green-500"
                                 />
                             </div>
-
                         </div>
                     </div>
-
                 </div>
             </SearchBox>
 

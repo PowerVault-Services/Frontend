@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
 import api from "../../services/api";
-import type { Alarm } from "../../services/alarm.api";
 
 type Alarm = {
   alarmId: ReactNode;
@@ -26,6 +25,7 @@ export default function AlarmTab({ plantId }: Props) {
 
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   /* ================= Fetch API ================= */
   useEffect(() => {
@@ -35,12 +35,13 @@ export default function AlarmTab({ plantId }: Props) {
       try {
         setLoading(true);
 
-        const res = await api.get("/alarms", {
+        const res = await api.get("/alarms/export", {
           params: {
             siteId: plantId,
             tab: status === "ACTIVE" ? "active" : "historical",
             severity: severity === "ALL" ? undefined : severity
-          }
+          },
+          responseType: "blob", // ✅ สำคัญมาก: ต้องตั้งเป็น blob เพื่อรับไฟล์
         });
 
         setAlarms(res.data?.data?.list ?? []);
@@ -59,9 +60,7 @@ export default function AlarmTab({ plantId }: Props) {
     console.log("Create inspection for:", alarm);
   };
 
-  if (loading) {
-    return <div className="p-6">Loading alarms...</div>;
-  }
+
 
   return (
     <div className="p-6">

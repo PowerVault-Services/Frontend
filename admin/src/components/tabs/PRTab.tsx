@@ -9,7 +9,6 @@ interface Props {
 }
 
 export default function PRTab({ plantId }: Props) {
-
     const siteId = plantId;
 
     const currentYear = new Date().getFullYear();
@@ -18,50 +17,51 @@ export default function PRTab({ plantId }: Props) {
     const [rows, setRows] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
-    const fetchPR = async () => {
-
-        if (!siteId) return;
-
-        try {
-            setLoading(true);
-
-            const res = await api.get("/monitoring/pr", {
-                params: {
-                    siteId,
-                    granularity: "month",
-                    year: Number(year),
-                },
-            });
-
-            setRows(res.data?.data?.rows ?? []);
-
-        } catch (error) {
-            console.error("Fetch PR error:", error);
-            setRows([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const yearOptions = [
         { label: "2025", value: "2025" },
         { label: "2026", value: "2026" },
+        // อนาคตสามารถเขียนลูป Generate ปีอัตโนมัติได้นะครับ
     ];
 
     useEffect(() => {
+        // ✅ ย้าย fetchPR เข้ามาไว้ในนี้
+        const fetchPR = async () => {
+            if (!siteId) return;
+
+            try {
+                setLoading(true);
+
+                const res = await api.get("/monitoring/pr", {
+                    params: {
+                        siteId,
+                        granularity: "month",
+                        year: Number(year),
+                    },
+                });
+
+                setRows(res.data?.data?.rows ?? []);
+            } catch (error) {
+                console.error("Fetch PR error:", error);
+                setRows([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
         fetchPR();
-    }, [siteId, year]);
+    }, [siteId, year]); // ✅ Dependencies ครบถ้วนและปลอดภัย
 
     return (
         <div className="w-full">
-
-            <SelectFilter
-                label="Statistical Period"
-                placeholder="Select Year"
-                value={year}
-                onChange={(val: any) => setYear(val)}
-                options={yearOptions}
-            />
+            <div className="max-w-[400px]">
+                <SelectFilter
+                    label="Statistical Period"
+                    placeholder="Select Year"
+                    value={year}
+                    onChange={(val: any) => setYear(val)}
+                    options={yearOptions}
+                />
+            </div>
 
             <PRTable
                 data={rows}

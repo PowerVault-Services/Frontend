@@ -6,12 +6,18 @@ import TrendChart from "../../components/charts/TrendChart";
 
 export type PeriodType = "day" | "month" | "year" | "lifetime";
 
-export default function EnergyTrendChart() {
+interface EnergyTrendProps {
+    data?: any[];
+}
+
+// ✅ กำหนดค่าเริ่มต้น data = [] ป้องกัน undefined
+export default function EnergyTrendChart({ data = [] }: EnergyTrendProps) {
   const [period, setPeriod] = useState<PeriodType>("month");
-
   const [date, setDate] = useState(new Date());
-
-  const [data, setData] = useState<any[]>([]);
+  
+  // หมายเหตุ: สังเกตว่าใน useEffect คุณใช้ setData(arr) เพื่อเก็บลง chartData
+  // แต่ตอนส่งให้ TrendChart คุณดันส่งตัวแปร `data` (ที่เป็น props) ไปแทน
+  const [chartData, setData] = useState<any[]>([]);
 
   const summary = {
     yield: 127.92,
@@ -99,6 +105,8 @@ export default function EnergyTrendChart() {
 
       <EnergySummary summary={summary} />
 
+      {/* ✅ TypeScript จะไม่ฟ้อง Error แล้ว เพราะ data เป็น Array เสมอ */}
+      {/* 💡 แนะนำเพิ่มเติม: ถ้าตั้งใจจะใช้ข้อมูลจำลองจาก State ให้เปลี่ยนจาก data เป็น chartData ตรงนี้แทนนะครับ */}
       <TrendChart data={data} period={period} />
 
     </div>

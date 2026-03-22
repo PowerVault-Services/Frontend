@@ -1,4 +1,3 @@
-
 interface Option {
   label: string;
   value: string;
@@ -11,6 +10,7 @@ interface SelectFilterProps {
   onChange: (value: string) => void;
   options: Option[];
   name?: string;
+  disabled?: boolean; // เพิ่มเครื่องหมาย ? เพื่อให้เป็น optional
 }
 
 export default function SelectFilter({
@@ -20,9 +20,10 @@ export default function SelectFilter({
   onChange,
   options,
   name,
+  disabled = false, // กำหนดค่าเริ่มต้นเป็น false
 }: SelectFilterProps) {
   return (
-    <div className="flex flex-col gap-1 w-full relative">
+    <div className={`flex flex-col gap-1 w-full relative ${disabled ? "opacity-60" : ""}`}>
       <label className="text-[16px] font-normal text-green-900">
         {label}
       </label>
@@ -30,17 +31,18 @@ export default function SelectFilter({
       <select
         name={name}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="
+        className={`
           w-full h-[39px]
           rounded-sm
           border border-green-200
-          bg-white
           px-4 pr-10
           text-[14px]
           text-green-500
           font-normal
-        "
+          ${disabled ? "bg-gray-100 cursor-not-allowed" : "bg-white"}
+        `}
       >
         {/* placeholder */}
         <option value="" disabled hidden>

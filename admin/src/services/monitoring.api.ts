@@ -180,3 +180,21 @@ export const getPRData = async (params: {
 
   return res.data.data;
 };
+
+export const getEnergyManagement = async (
+  siteId: number,
+  view: "day" | "month" | "year" | "lifetime" = "day",
+  date?: string
+) => {
+  const res = await api.get(
+    `/monitoring/sites/${siteId}/energy-management`,
+    {
+      params: {
+        view,
+        date,
+      },
+    }
+  );
+
+  return res.data.data;
+};

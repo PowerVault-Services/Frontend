@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-import api from "../services/api";
 import {
   AreaChart,
   Area,
@@ -8,104 +6,22 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  Legend,
 } from "recharts";
 
 interface EnergyChartProps {
-  period: "day" | "month" | "year" | "lifetime";
-  startTime: string;
-  endTime: string;
+  data: any[];
+  view: "day" | "month" | "year" | "lifetime";
 }
 
-const rangeMap: Record<string, string> = {
-  day: "day",
-  month: "month",
-  year: "year",
-  lifetime: "lifetime",
-};
-
-export default function EnergyChart({
-  period,
-  startTime,
-  endTime,
-}: EnergyChartProps) {
-  const [data, setData] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const inverterId = 1;
-
-        const res = await api.get(
-          `/monitoring/inverters/${inverterId}/history`,
-          {
-            params: {
-              metric: "activePower",
-              range: rangeMap[period],
-              ...(period === "day"
-                ? { from: startTime, to: endTime }
-                : {}),
-            },
-          }
-        );
-
-        const series = res.data?.data?.series ?? [];
-
-        let formatted: any[] = [];
-
-        if (period === "day") {
-          const start = new Date(startTime);
-          const end = new Date(endTime);
-
-          const slots: Date[] = [];
-
-          for (
-            let t = new Date(start);
-            t <= end;
-            t.setMinutes(t.getMinutes() + 30)
-          ) {
-            slots.push(new Date(t));
-          }
-
-          const now = new Date();
-
-          formatted = slots.map((slot) => {
-            const found = series.find(
-              (s: any) =>
-                Math.abs(new Date(s.t).getTime() - slot.getTime()) < 60000
-            );
-
-            return {
-              time: slot.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              pv: slot <= now ? found?.v ?? 0 : null,
-            };
-          });
-        } else {
-          formatted = series.map((item: any) => ({
-            time: new Date(item.t).toLocaleDateString(),
-            pv: item.v,
-          }));
-        }
-
-        setData(formatted);
-      } catch (err) {
-        console.error("Energy history error:", err);
-        setData([]);
-      }
-    };
-
-    fetchHistory();   // ⭐ ต้องเรียกตรงนี้
-
-  }, [period, startTime, endTime]);
+export default function EnergyChart({ data, view }: EnergyChartProps) {
 
   return (
     <div className="w-full h-full">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
-          margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+          margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
         >
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
@@ -117,7 +33,17 @@ export default function EnergyChart({
           />
 
           <YAxis
+            yAxisId="left"
             unit=" kW"
+            tick={{ fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            unit="%"
             tick={{ fontSize: 11 }}
             axisLine={false}
             tickLine={false}
@@ -125,15 +51,28 @@ export default function EnergyChart({
 
           <Tooltip />
 
-          <Area
-            type="monotone"
-            dataKey="pv"
-            stroke="#22c55e"
-            fill="#22c55e"
-            fillOpacity={0.25}
-            strokeWidth={2}
-            connectNulls={false}
+          {/* ✅ 2. ใส่ Legend ตรงนี้ กำหนดให้อยู่ด้านล่างและใช้ไอคอนแบบขีด (plainline) */}
+          <Legend
+            verticalAlign="bottom"
+            align="center"
+            iconType="plainline"
+            wrapperStyle={{ paddingTop: "20px", fontSize: "12px" }}
           />
+
+          {/* ✅ 3. ใส่ name="..." เพื่อให้ Legend แสดงชื่อตามนี้ และปรับสีให้ตรงกับรูป */}
+          <Area yAxisId="left" type="monotone" dataKey="pv" name="PV output" stroke="#22c55e" fill="#22c55e" fillOpacity={0.1} />
+
+          <Area yAxisId="left" type="monotone" dataKey="grid" name="Power from grid" stroke="#9ca3af" fill="#9ca3af" fillOpacity={0.1} />
+
+          <Area yAxisId="left" type="monotone" dataKey="battery" name="Battery Charge/discharge power" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} />
+
+          <Area yAxisId="left" type="monotone" dataKey="load" name="Consumption power" stroke="#f97316" fill="#f97316" fillOpacity={0.1} />
+
+          <Area yAxisId="left" type="monotone" dataKey="irradiance" name="Irradiance" stroke="#eab308" fill="#eab308" fillOpacity={0.0} />
+
+          <Area yAxisId="right" type="monotone" dataKey="pr" name="%PR" stroke="#a855f7" fill="#a855f7" fillOpacity={0.0} />
+
+
         </AreaChart>
       </ResponsiveContainer>
     </div>

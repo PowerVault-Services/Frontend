@@ -1,9 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import {
     ArrowLeft,
-    Calendar,
-    ChevronDown,
-    MoreHorizontal,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import api from "../../services/api";
@@ -17,112 +14,60 @@ import {
     ResponsiveContainer,
 } from "recharts";
 
-
 export default function InverterDetail() {
-
     const navigate = useNavigate();
     const { inverterId } = useParams();
 
-    const [chartData, setChartData] = useState<any[]>([]);
-    const [metric, setMetric] = useState("current");
-
-    const [selectedDate, setSelectedDate] = useState(
-        new Date().toISOString().split("T")[0]
-    );
-
+    // ----- Data States -----
     const [data, setData] = useState<any>(null);
     const [stringSnapshot, setStringSnapshot] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-
     const [alarms, setAlarms] = useState<any[]>([]);
 
-    const formatDateTime = (date: string) => {
-        const d = new Date(date);
+    // ----- Graph States -----
+    const [chartData, setChartData] = useState<any[]>([]);
+    const [metric, setMetric] = useState("current");
+    const [selectedDate, setSelectedDate] = useState(
+        new Date().toISOString().split("T")[0]
+    );
+    const [availableStrings, setAvailableStrings] = useState<number[]>([]);
 
-        return {
-            date: d.toLocaleDateString(),
-            time: d.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-            }),
-        };
+    const colors = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#00C49F", "#FFBB28", "#E91E63", "#3F51B5"];
+
+    const metricLabelMap: Record<string, string> = {
+        current: "Current (A)",
+        voltage: "Voltage (V)",
     };
 
-
-    /* ================= Fetch APIs ================= */
-
+    // ================= 1. Fetch Initial Data =================
     useEffect(() => {
         if (!inverterId) return;
 
-        const fetchDetailAndStrings = async () => {
+        const fetchInitialData = async () => {
             try {
-                const [detailRes, stringRes] = await Promise.all([
+                setLoading(true);
+                const [detailRes, stringRes, alarmRes] = await Promise.all([
                     api.get(`/monitoring/inverters/${inverterId}`),
-                    api.get(`/monitoring/inverters/${inverterId}/strings/latest`)
+                    api.get(`/monitoring/inverters/${inverterId}/strings/latest`),
+                    api.get("/alarms", {
+                        params: { tab: "history", inverterId: Number(inverterId), page: 1, pageSize: 10 }
+                    })
                 ]);
 
                 setData(detailRes.data.data);
                 setStringSnapshot(stringRes.data.data);
-
+                setAlarms(alarmRes.data?.data?.list ?? []);
             } catch (error) {
-                console.error("Error fetching inverter detail:", error);
+                console.error("Error fetching data:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        const fetchAlarms = async () => {
-            try {
-                const res = await api.get("/alarms", {
-                    params: {
-                        tab: "history",
-                        inverterId: Number(inverterId),
-                        page: 1,
-                        pageSize: 10
-                    }
-                });
-
-                setAlarms(res.data?.data?.list ?? []);
-
-            } catch (error) {
-                console.error("Error fetching alarms:", error);
-            }
-        };
-
-        fetchDetailAndStrings();
-        fetchAlarms();
-
+        fetchInitialData();
     }, [inverterId]);
 
-
-
-    {
-        alarms.map((alarm, idx) => {
-            const { date, time } = formatDateTime(alarm.occurredAt);
-
-            return (
-                <div
-                    key={alarm.id ?? idx}
-                    className="border-b border-gray-100 pb-2 last:border-0"
-                >
-                    <div className="flex justify-between items-start">
-                        <span className="font-bold text-[#2F4F39] text-sm">
-                            {alarm.alarmName}
-                        </span>
-                        <MoreHorizontal
-                            size={16}
-                            className="text-blue-500 cursor-pointer"
-                        />
-                    </div>
-
-                    <div className="text-xs text-black mt-1">
-                        Date: {date} &nbsp; Time: {time}
-                    </div>
-                </div>
-            );
-        })
-    }
-
+    // ================= 2. Fetch History Graph (Multi-line) =================
     useEffect(() => {
         if (!inverterId) return;
 
@@ -134,406 +79,250 @@ export default function InverterDetail() {
                         params: {
                             date: selectedDate,
                             tzOffsetMinutes: new Date().getTimezoneOffset(),
-                            stringNo: 1
+                            includeDisconnected: false
                         }
                     }
                 );
 
-                const raw = res.data?.data?.seriesByString ?? [];
+                const seriesByString = res.data?.data?.seriesByString ?? [];
+                const stringIds = seriesByString.map((s: any) => s.stringNo);
+                setAvailableStrings(stringIds);
 
-                let formatted: any[] = [];
-
-                if (raw.length > 0) {
-                    const points = raw[0].points ?? [];
-
-                    formatted = points.map((item: any) => ({
-                        time: new Date(item.t).toLocaleTimeString([], {
+                const timeMap: Record<string, any> = {};
+                seriesByString.forEach((series: any) => {
+                    const sKey = `string${series.stringNo}`;
+                    series.points.forEach((p: any) => {
+                        const timeStr = new Date(p.t).toLocaleTimeString([], {
                             hour: "2-digit",
-                            minute: "2-digit"
-                        }),
-                        value: item[metric] ?? 0
-                    }));
-                }
+                            minute: "2-digit",
+                            hour12: false
+                        });
+                        if (!timeMap[timeStr]) timeMap[timeStr] = { time: timeStr };
+                        timeMap[timeStr][sKey] = p[metric] ?? 0;
+                    });
+                });
 
+                const formatted = Object.values(timeMap).sort((a: any, b: any) =>
+                    a.time.localeCompare(b.time)
+                );
                 setChartData(formatted);
-
             } catch (err) {
                 console.error("History error:", err);
+                setChartData([]);
             }
         };
+
         fetchHistory();
-
     }, [inverterId, selectedDate, metric]);
-
-
 
     if (loading) return <div className="p-6">Loading...</div>;
     if (!data) return <div className="p-6">Inverter not found</div>;
 
-    /* ================= Build String Table Data ================= */
-
-    const stringData = Array.from({ length: 20 }, (_, i) => {
-        const apiString = stringSnapshot?.strings?.find(
-            (s: any) => s.stringNo === i + 1
-        );
-
-        return {
-            id: `PV${i + 1}`,
-            status: apiString
-                ? apiString.status.toLowerCase()
-                : "disconnected",
-            voltage: apiString?.voltage ?? "-",
-            current: apiString?.current ?? "-",
-        };
-    });
-
+    // Helper for Status Dots
     const renderStatusDot = (status: string) => {
-        switch (status) {
-            case "normal":
-                return (
-                    <div className="w-4 h-4 rounded-full border-2 border-[#4CAF50] flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
-                    </div>
-                );
-            case "lost":
-                return (
-                    <div className="w-4 h-4 rounded-full border-2 border-[#F44336] flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-[#F44336]" />
-                    </div>
-                );
-            case "disconnected":
-            default:
-                return <div className="w-4 h-4 rounded-full bg-gray-300" />;
-        }
+        const color = status === "normal" ? "#4CAF50" : status === "lost" ? "#F44336" : "#D1D5DB";
+        return (
+            <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center" style={{ borderColor: color }}>
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+            </div>
+        );
     };
 
-    // const metricLabelMap: Record<string, string> = {
-    //     activePower: "Active Power",
-    //     dayEnergy: "Day Energy",
-    //     temperature: "Temperature",
-    //     powerFactor: "Power Factor",
-    // };
-
-    const metricLabelMap: Record<string, string> = {
-        current: "Current (A)",
-        voltage: "Voltage (V)",
+    type StringData = {
+        id: string;
+        status: string;
+        voltage: number | string;
+        current: number | string;
     };
+
+    const stringData: StringData[] =
+        stringSnapshot?.strings?.map((s: any) => ({
+            id: `PV${s.stringNo}`,
+            status: s.status.toLowerCase(),
+            voltage: s.voltage ?? "-",
+            current: s.current ?? "-",
+        })) || [];
 
     return (
         <div className="w-full">
-            {/* ===== Header ===== */}
             <div className="mb-6">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-green-800"
-                >
+                <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-green-800">
                     <ArrowLeft size={20} />
                     <span>Back to Monitoring page</span>
                 </button>
-
-                <h1 className="text-green-800 font-bold mt-6">
-                    {data.name}
-                </h1>
+                <h1 className="text-green-800 font-bold mt-6">{data.name}</h1>
             </div>
 
-            <div className="bg-white p-6">
-
-                {/* ===== Real-Time Device Data Table ===== */}
-                <div className="flex justify-between items-center">
-                    <h5 className="text-green-700">
-                        Real-Time Device Data
-                    </h5>
-                    <div className="flex gap-2 text-sm font-normal">
-                        <div className="flex items-center gap-1">
-                            <span className="w-3 h-3 rounded-full bg-[#4CAF50]"></span> Normal
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <span className="w-3 h-3 rounded-full bg-[#F44336]"></span> Lost
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <span className="w-3 h-3 rounded-full bg-gray-300"></span> Disconnected
-                        </div>
-                    </div>
+            <div className="bg-white p-6 w-full overflow-hidden">
+                <div className="flex justify-between items-center mb-4">
+                    <h5 className="text-green-700 font-bold">Real-Time Device Data</h5>
                 </div>
 
+                {/* ✅ FIXED TABLE */}
+                <div className="w-full overflow-hidden border border-[#DEE2E6] rounded-t-sm mb-6">
+                    <div className="overflow-x-auto max-w-[1550px]">
+                        <table className="min-w-max text-center text-sm border-collapse">
 
-                <div className="overflow-x-auto border border-[#DEE2E6] rounded-t-sm mb-2">
-                    <table className="w-full min-w-[1200px] text-center text-sm border-collapse">
-                        <thead>
-                            <tr className="bg-green-800 text-white font-normal">
-                                <th className="p-2 border-r border-white/20 text-left pl-4 w-32 font-normal">
-                                    String
-                                </th>
-                                {stringData.map((pv) => (
-                                    <th key={pv.id} className="p-2 border-r border-white/20 min-w-[50px] font-normal">
-                                        {pv.id}
+                            <thead className="bg-green-800 text-white">
+                                <tr>
+                                    <th className="sticky left-0 z-20 bg-green-800 w-[150px] p-2 text-left pl-4">
+                                        String
                                     </th>
-                                ))}
-                            </tr>
-                        </thead>
+                                    {stringData.map((pv) => (
+                                        <th key={pv.id} className="w-[70px] p-2">
+                                            {pv.id}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
 
-                        <tbody>
-                            <tr className="border-b border-gray-200 font-normal">
-                                <td className="p-2 text-left pl-4 border-r border-gray-200">
-                                    Status
-                                </td>
-                                {stringData.map((pv, idx) => (
-                                    <td key={idx} className="p-2 border-r border-gray-200">
-                                        <div className="flex justify-center">
-                                            {renderStatusDot(pv.status)}
-                                        </div>
+                            <tbody>
+                                <tr>
+                                    <td className="sticky left-0 bg-white z-10 w-[150px] p-2 text-left pl-4">
+                                        Status
                                     </td>
-                                ))}
-                            </tr>
+                                    {stringData.map((pv, idx) => (
+                                        <td key={idx} className="w-[70px]">
+                                            <div className="flex justify-center">
+                                                {renderStatusDot(pv.status)}
+                                            </div>
+                                        </td>
+                                    ))}
+                                </tr>
 
-                            <tr className="border-b border-gray-200 font-normal">
-                                <td className="p-2 text-left pl-4 border-r border-gray-200">
-                                    Input Voltage (V)
-                                </td>
-                                {stringData.map((pv, idx) => (
-                                    <td key={idx} className="p-2 text-xs border-r border-gray-200">
-                                        {pv.voltage}
+                                <tr>
+                                    <td className="sticky left-0 bg-white z-10 w-[150px] p-2 text-left pl-4">
+                                        Input Voltage (V)
                                     </td>
-                                ))}
-                            </tr>
+                                    {stringData.map((pv, idx) => (
+                                        <td key={idx} className="w-[70px]">
+                                            {pv.voltage}
+                                        </td>
+                                    ))}
+                                </tr>
 
-                            <tr className="border-b border-gray-200">
-                                <td className="p-2 text-left pl-4 border-r border-gray-200">
-                                    Input Current (A)
-                                </td>
-                                {stringData.map((pv, idx) => (
-                                    <td key={idx} className="p-2 text-xs border-r border-gray-200">
-                                        {pv.current}
+                                <tr>
+                                    <td className="sticky left-0 bg-white z-10 w-[150px] p-2 text-left pl-4">
+                                        Input Current (A)
                                     </td>
-                                ))}
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                    {stringData.map((pv, idx) => (
+                                        <td key={idx} className="w-[70px]">
+                                            {pv.current}
+                                        </td>
+                                    ))}
+                                </tr>
+                            </tbody>
 
-                {/* ===== Real-Time Summary ===== */}
-                <div className="grid grid-cols-2 lg:grid-cols-6 border border-[#DEE2E6] mb-6 text-sm">
-                    <div className="bg-green-800 text-white p-3 flex items-center font-normal">
-                        Inverter Status
-                    </div>
-                    <div className="p-3 bg-white border-r border-gray-200 flex items-center">
-                        {data.realtime.status}
-                    </div>
-
-                    <div className="bg-green-800 text-white p-3 flex items-center font-normal">
-                        Daily Energy
-                    </div>
-                    <div className="p-3 bg-white border-r border-gray-200 flex items-center">
-                        {data.realtime.dayEnergy} kWh
-                    </div>
-
-                    <div className="bg-green-800 text-white p-3 flex items-center font-normal">
-                        Total yield
-                    </div>
-                    <div className="p-3 bg-white flex items-center">
-                        {data.realtime.totalYield} kW
-                    </div>
-                    <div className="bg-green-800 text-white p-3 flex items-center font-normal">
-                        Active Power
-                    </div>
-                    <div className="p-3 bg-white flex items-center">
-                        {data.realtime.activePower} kW
-                    </div>
-
-                    <div className="bg-green-800 text-white p-3 flex items-center font-normal">
-                        Output reactive power
-                    </div>
-                    <div className="p-3 bg-white border-r border-gray-200 flex items-center">
-                        {data.realtime.outputReactivePower} kvar
-                    </div>
-
-                    <div className="bg-green-800 text-white p-3 flex items-center font-normal">
-                        Inverter rated power
-                    </div>
-                    <div className="p-3 bg-white flex items-center">
-                        {data.realtime.inverterRatedPower} kW
+                        </table>
                     </div>
                 </div>
 
-                {/* ===== Section 3: Basic Information ===== */}
-                <h5 className="text-green-700 mb-1">Basic Information</h5>
-                <div className="grid grid-cols-2 lg:grid-cols-6 border border-[#DEE2E6] mb-1 text-sm font-normal">
-
-                    {/* 1. Device name */}
-                    <div className="bg-green-800 text-white p-3 flex items-center">
-                        Device name
+                {/* Section 2: Real-Time Summary (3 Columns) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 border-t border-l border-[#DEE2E6] mb-6 text-sm">
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">Inverter Status</div>
+                        <div className="w-1/2 p-3">{data.realtime.status || "Grid Connect"}</div>
                     </div>
-                    <div className="p-3 bg-white border-r border-gray-200 flex items-center">
-                        {data?.name ?? "--"}
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">Daily Energy</div>
+                        <div className="w-1/2 p-3">{data.realtime.dayEnergy} kWh</div>
                     </div>
-
-                    {/* 2. Device type */}
-                    <div className="bg-green-800 text-white p-3 flex items-center">
-                        Device type
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">Total yield</div>
+                        <div className="w-1/2 p-3">{data.realtime.totalYield} kWh</div>
                     </div>
-                    <div className="p-3 bg-white border-r border-gray-200 flex items-center">
-                        Inverter
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">Active Power</div>
+                        <div className="w-1/2 p-3">{data.realtime.activePower} kW</div>
                     </div>
-
-                    {/* 3. SN */}
-                    <div className="bg-green-800 text-white p-3 flex items-center">
-                        SN
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">Output reactive power</div>
+                        <div className="w-1/2 p-3">{data.realtime.outputReactivePower} kvar</div>
                     </div>
-                    <div className="p-3 bg-white flex items-center">
-                        {data?.serialNumber ?? "--"}
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">Inverter rated power</div>
+                        <div className="w-1/2 p-3">{data.realtime.inverterRatedPower} kW</div>
                     </div>
-
-                    {/* 4. Device replacement record */}
-                    <div className="bg-green-800 text-white p-3 border-t border-white/20 flex items-center">
-                        Device replacement record
-                    </div>
-                    <div className="p-3 bg-white border-r border-t border-gray-200 flex items-center">
-                        --
-                    </div>
-
-                    {/* 5. Model */}
-                    <div className="bg-green-800 text-white p-3 border-t border-white/20 flex items-center">
-                        Model
-                    </div>
-                    <div className="p-3 bg-white border-r border-t border-gray-200 flex items-center">
-                        {data?.model ?? "--"}
-                    </div>
-
-                    {/* 6. Software version */}
-                    <div className="bg-green-800 text-white p-3 border-t border-white/20 flex items-center">
-                        Software version
-                    </div>
-                    <div className="p-3 bg-white border-t border-gray-200 flex items-center">
-                        --
-                    </div>
-
                 </div>
 
-                {/* ===== Section 4: Bottom Split (Alarm & Chart) ===== */}
+                {/* Section 3: Basic Information (3 Columns) */}
+                <h5 className="text-green-700 font-bold mb-3">Basic Information</h5>
+                <div className="grid grid-cols-1 md:grid-cols-3 border-t border-l border-[#DEE2E6] mb-8 text-sm">
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">Device name</div>
+                        <div className="w-1/2 p-3">{data?.name || "--"}</div>
+                    </div>
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">Device type</div>
+                        <div className="w-1/2 p-3">Inverter</div>
+                    </div>
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">SN</div>
+                        <div className="w-1/2 p-3">{data?.serialNumber || "--"}</div>
+                    </div>
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">Device replacement record</div>
+                        <div className="w-1/2 p-3">--</div>
+                    </div>
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">Model</div>
+                        <div className="w-1/2 p-3">{data?.model || "--"}</div>
+                    </div>
+                    <div className="flex border-r border-b border-[#DEE2E6]">
+                        <div className="w-1/2 bg-green-800 text-white p-3">Software version</div>
+                        <div className="w-1/2 p-3">{data?.softwareVersion || "--"}</div>
+                    </div>
+                </div>
+
+                {/* Section 4: Alarms & Historical Chart */}
                 <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
-
-                    {/* ================= Left: Alarm List ================= */}
-                    <div className="border border-green-800 rounded-sm p-4 h-full">
-                        <h5 className="font-bold text-green-700 mb-2.5">Alarm</h5>
-
-                        <div className="flex flex-col gap-4 max-h-[400px] overflow-y-auto pr-2">
-                            {alarms.length === 0 && (
-                                <div className="text-sm text-gray-500">
-                                    No active alarms
-                                </div>
-                            )}
-
-                            {alarms.map((alarm, idx) => (
-                                <div
-                                    key={alarm.id ?? idx}
-                                    className="border-b border-gray-100 pb-2 last:border-0"
-                                >
-                                    <div className="flex justify-between items-start">
-                                        <span className="font-bold text-blue-700 text-sm">
-                                            {alarm.alarmName}
-                                        </span>
-                                        {/* <MoreHorizontal
-                                            size={16}
-                                            className="text-blue-500 cursor-pointer"
-                                        /> */}
-                                    </div>
-
-                                    <div className="text-xs text-black mt-1">
-                                        Date:{" "}
-                                        {new Date(alarm.occurredAt).toLocaleDateString()}
-                                        &nbsp; Time:{" "}
-                                        {new Date(alarm.occurredAt).toLocaleTimeString()}
-                                    </div>
+                    <div className="border border-green-800 rounded-sm p-4 h-[450px] flex flex-col">
+                        <h5 className="font-bold text-green-700 mb-4">Alarm</h5>
+                        <div className="flex-1 overflow-y-auto pr-2">
+                            {alarms.length === 0 ? <div className="text-sm text-gray-400">No active alarms</div> : alarms.map((alarm, idx) => (
+                                <div key={alarm.id ?? idx} className="border-b border-gray-100 py-3 last:border-0">
+                                    <div className="font-bold text-blue-700 text-sm">{alarm.alarmName}</div>
+                                    <div className="text-[10px] text-black mt-1">{new Date(alarm.occurredAt).toLocaleString()}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* ================= Right: Chart ================= */}
                     <div className="border border-green-800 rounded-sm p-4">
                         <div className="flex flex-wrap justify-between items-center mb-6 gap-2">
-                            <h5 className="text-green-700 mb-2.5">
-                                Historical Information
-                            </h5>
-
+                            <h5 className="text-green-700">Historical Information</h5>
                             <div className="flex gap-2">
-                                <div className="relative">
-                                    <input
-                                        type="date"
-                                        value={selectedDate}
-                                        onChange={(e) => setSelectedDate(e.target.value)}
-                                        className="border border-gray-300 rounded px-3 py-1.5 text-sm pr-8"
-                                    />
-                                </div>
-
-                                <select
-                                    value={metric}
-                                    onChange={(e) => setMetric(e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-1.5 text-sm min-w-[140px]"
-                                >
+                                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="border border-gray-300 rounded px-3 py-1.5 text-sm" />
+                                <select value={metric} onChange={(e) => setMetric(e.target.value)} className="border border-gray-300 rounded px-3 py-1.5 text-sm">
                                     {Object.entries(metricLabelMap).map(([key, label]) => (
-                                        <option key={key} value={key}>
-                                            {label}
-                                        </option>
+                                        <option key={key} value={key}>{label}</option>
                                     ))}
                                 </select>
-
                             </div>
                         </div>
-
-                        <div className="flex items-center gap-2 mb-2 text-xs text-[#2F4F39]">
-                            <span className="text-lg font-bold">A</span>
-                            <div className="w-8 h-0.5 bg-[#00C49F]"></div>
-                            <span>Single String</span>
+                        <div className="flex flex-wrap items-center gap-4 mb-4 text-[10px] text-gray-500">
+                            {availableStrings.map((sNo, idx) => (
+                                <div key={sNo} className="flex items-center gap-1">
+                                    <div className="w-4 h-0.5" style={{ backgroundColor: colors[idx % colors.length] }}></div>
+                                    <span>PV{sNo} input {metric}</span>
+                                </div>
+                            ))}
                         </div>
-
-                        <div className="h-[300px] w-full min-w-0">
+                        <div className="h-[320px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart
-                                    data={chartData}
-                                    margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
-                                >
-                                    <CartesianGrid
-                                        strokeDasharray="3 3"
-                                        vertical={false}
-                                        stroke="#E5E7EB"
-                                    />
-                                    <XAxis
-                                        dataKey="time"
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fontSize: 12, fill: "#333" }}
-                                        interval={1}
-                                    />
-                                    <YAxis
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fontSize: 12, fill: "#333" }}
-                                        domain={["auto", "auto"]}
-                                    />
-                                    <Tooltip
-                                        contentStyle={{
-                                            borderRadius: "8px",
-                                            border: "none",
-                                            boxShadow:
-                                                "0 2px 10px rgba(0,0,0,0.1)",
-                                        }}
-                                    />
-                                    <Line
-                                        type="monotone"
-                                        dataKey="value"
-                                        stroke="#00C49F"
-                                        strokeWidth={2}
-                                        dot={false}
-                                        activeDot={{ r: 6 }}
-                                    />
+                                <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={40} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} domain={[0, 'auto']} />
+                                    <Tooltip contentStyle={{ borderRadius: "8px", border: "none", fontSize: '11px' }} />
+                                    {availableStrings.map((sNo, idx) => (
+                                        <Line key={sNo} type="monotone" dataKey={`string${sNo}`} name={`PV${sNo}`} stroke={colors[idx % colors.length]} strokeWidth={1.5} dot={false} />
+                                    ))}
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
-
                 </div>
-
             </div>
         </div>
     );

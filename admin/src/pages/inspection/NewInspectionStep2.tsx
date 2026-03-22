@@ -4,7 +4,7 @@ import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 
-import { saveDraft } from "../../services/draft.api";
+import { saveDraftStep } from "../../services/draft.api";
 
 export default function NewInspectionStep2() {
 
@@ -131,7 +131,7 @@ export default function NewInspectionStep2() {
             }
 
             // save step draft
-            await saveDraft(Number(formData.jobId), 2);
+            await saveDraftStep(Number(formData.jobId), 2);
 
             alert("บันทึก Draft สำเร็จ");
 
@@ -205,7 +205,7 @@ export default function NewInspectionStep2() {
             });
 
             // mark step complete
-            await saveDraft(Number(formData.jobId), 2);
+            await saveDraftStep(Number(formData.jobId), 2);
 
             localStorage.setItem(
                 `inspection_step2_sent_${formData.jobId}`,

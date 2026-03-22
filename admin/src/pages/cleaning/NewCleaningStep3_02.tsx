@@ -4,7 +4,7 @@ import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import OperationTable from "../../components/table/OperationTable";
 
-import { saveDraft } from "../../services/draft.api";
+import { saveDraftStep } from "../../services/draft.api";
 import { saveCleaningChecklist } from "../../services/cleaning.api";
 
 interface ChecklistItem {
@@ -112,7 +112,7 @@ export default function NewCleaningStep3_02() {
         return;
       }
 
-      await saveDraft(Number(jobId), 3);
+      await saveDraftStep(Number(jobId), 3);
 
       alert("บันทึกเรียบร้อยแล้ว");
 
