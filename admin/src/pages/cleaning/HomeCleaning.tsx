@@ -11,6 +11,7 @@ import EditIcon from "../../assets/icons/Pen New Square.svg";
 import DeleteIcon from "../../assets/icons/Paper Bin.svg";
 
 import { getCleaningJobs } from "../../services/cleaning.api";
+import { downloadCleaningZip } from "../../services/cleaning.api";
 
 interface Cleaning {
   id: number;
@@ -102,7 +103,8 @@ export default function HomeCleaning() {
 
   useEffect(() => {
     fetchCleaning();
-  }, [page, jobNo, projectType, projectName, systemSize, pvModuleEA, date, status]);
+  }, [page, jobNo, projectType, projectName, systemSize, pvModuleEA, date, status, time]);
+
 
   // ===== HANDLE EDIT (ทำงานจริง: ส่งไปหน้า Step ตาม Status) =====
   const handleEdit = (row: Cleaning) => {
@@ -166,11 +168,6 @@ export default function HomeCleaning() {
 
     // นำทางไปหน้า Step 1
     navigate("/cleaning/new/step1");
-  };
-
-  const handleDownloadZip = () => {
-    if (selectedRows.size === 0) return alert("กรุณาเลือกอย่างน้อย 1 รายการ");
-    console.log("Download jobs:", Array.from(selectedRows));
   };
 
   const statusBadge = (status: string) => {
@@ -241,13 +238,43 @@ export default function HomeCleaning() {
     }
   ];
 
+  const handleResetSearch = () => {
+    setJobNo("");
+    setProjectType("");
+    setProjectName("");
+    setSystemSize("");
+    setPvModuleEA("");
+    setDate("");
+    setTime("");
+    setStatus("");
+
+    setPage(1);
+  };
+
+  const handleSearch = () => {
+    setPage(1); // trigger fetch
+  };
+
+  const handleDownloadZip = () => {
+    if (selectedRows.size === 0) {
+      alert("กรุณาเลือกอย่างน้อย 1 รายการ");
+      return;
+    }
+
+    const ids = Array.from(selectedRows);
+
+    console.log("📦 Download:", ids);
+
+    downloadCleaningZip(ids); // ✅ ตัวนี้แหละสำคัญ
+  };
+
   return (
     <div className="w-full">
       <div className="flex justify-between pb-9">
         <h1 className="text-green-800 text-2xl font-bold">Cleaning</h1>
         <Link to="/cleaning/new/step1">
           <button
-            onClick={handleCreateNew} 
+            onClick={handleCreateNew}
             className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5 hover:bg-green-800">
             <img src={AddIcon} alt="" />
             New Cleaning Job
@@ -255,7 +282,7 @@ export default function HomeCleaning() {
         </Link>
       </div>
 
-      <SearchBox>
+      <SearchBox onReset={handleResetSearch} onSearch={handleSearch}>
         <div className="grid grid-cols-4 gap-2.5">
           <TextInputFilter label="Job No." value={jobNo} onChange={setJobNo} />
           <SelectFilter

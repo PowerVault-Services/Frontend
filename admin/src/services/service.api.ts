@@ -1,5 +1,15 @@
 import api from "./api";
 
+export const getServiceJobs = async (query?: string) => {
+  const res = await api.get(`/service/jobs${query ?? ""}`);
+  return res.data;
+};
+
+export const downloadServiceZip = (jobIds: number[]) => {
+  const ids = jobIds.join(",");
+  window.open(`/api/service/jobs/download-zip?jobIds=${ids}`, "_blank");
+};
+
 export const createServiceStep3Draft = async ({
   jobId,
   reportFile,
@@ -30,7 +40,11 @@ export const createServiceStep3Draft = async ({
     });
   }
 
-  const res = await api.post("/service/step3/draft", formData);
+  const res = await api.post("/service/step3/draft", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
   return res.data;
 };

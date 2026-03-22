@@ -3,6 +3,12 @@ import { useNavigate } from "react-router-dom";
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 
+import { getCleaningReportDownloadUrl } from "../../services/cleaning.api";
+import {
+  saveCleaningStep5Draft,
+  sendCleaningStep5
+} from "../../services/cleaning.api";
+
 export default function NewCleaningStep5() {
   const navigate = useNavigate();
 
@@ -15,8 +21,9 @@ export default function NewCleaningStep5() {
   ];
 
   const [currentStep] = useState(5);
-  const [reportFileUrl, setReportFileUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const jobId = Number(localStorage.getItem("jobId"));
 
   const [jobData, setJobData] = useState<{
     projectName?: string;
@@ -25,11 +32,6 @@ export default function NewCleaningStep5() {
     remark?: string;
     contactEmail?: string;
   }>({});
-
-  useEffect(() => {
-    const fileUrl = localStorage.getItem("cleaning_report");
-    if (fileUrl) setReportFileUrl(fileUrl);
-  }, []);
 
   useEffect(() => {
     const raw = localStorage.getItem("cleaning_step1");
@@ -52,15 +54,16 @@ export default function NewCleaningStep5() {
   function buildEmailPayload(jobId: number) {
     return {
       jobId,
-      to: jobData.contactEmail || "",
-      subject: "รายงานการบำรุงรักษาระบบ Solar System",
+      to: "nita290646@gmail.com",
+      subject: "[ทดสอบระบบ]ขออนุญาตนําส่งรายงานการเข้าบํารุงรักษาระบบ Solar System",
       body: `
-      <p>เรียน ท่านผู้เกี่ยวข้อง</p>
-      <p>บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตนำส่งรายงานการเข้าบำรุงรักษาระบบ Solar System</p>
-      <p>โครงการ <b>${jobData.projectName || "-"}</b></p>
-      <p>วันที่ปฏิบัติงาน ${formatThaiDate(jobData.date)}</p>
-      <p>รายละเอียดตามไฟล์แนบ</p>
-    `
+            <div style="margin-top: 40px; max-width: 800px;">
+              <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+              <p style="text-indent: 50px; margin-top: 20px;">บริษัท พาวเวอร์วอลท์ จํากัด ขออนุญาตนําส่งรายงานการเข้าบํารุงรักษาระบบ Solar System โครงการ ${jobData.projectName || "-"}</p>
+              <p>ในวันที่ ${formatThaiDate(jobData.date)}</p>
+              <p style="text-indent: 50px;">รายละเอียดตามไฟล์แนบ</p>
+            </div>
+          `
     };
   }
 
@@ -68,40 +71,25 @@ export default function NewCleaningStep5() {
      Send Email API
   ========================= */
   async function handleSendEmail() {
-    const jobId = localStorage.getItem("jobId");
-
-    if (!jobId) {
+    if (!jobId || isNaN(jobId)) {
       alert("ไม่พบ jobId");
       return;
     }
 
-    const payload = buildEmailPayload(Number(jobId));
+    const payload = buildEmailPayload(jobId);
 
-    // ✅ เพิ่ม validation
     if (!payload.to) {
       alert("กรุณากรอกอีเมลผู้รับ");
-      return;
-    }
-
-    if (!reportFileUrl) {
-      alert("ยังไม่มีไฟล์รายงาน");
       return;
     }
 
     try {
       setLoading(true);
 
-      const response = await fetch("/api/cleaning/step5/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
+      const res = await sendCleaningStep5(payload);
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message);
+      if (!res.success) {
+        throw new Error("ส่งอีเมลไม่สำเร็จ");
       }
 
       alert("ส่งรายงานเรียบร้อยแล้ว");
@@ -116,30 +104,26 @@ export default function NewCleaningStep5() {
   }
 
   async function handleSaveDraft() {
+    if (!jobId || isNaN(jobId)) {
+      alert("ไม่พบ jobId");
+      return;
+    }
+
+    const payload = buildEmailPayload(jobId);
+
     try {
-      const jobId = localStorage.getItem("jobId");
+      const res = await saveCleaningStep5Draft(payload);
 
-      if (!jobId) {
-        alert("ไม่พบ jobId");
-        return;
+      if (!res.success) {
+        throw new Error("บันทึกไม่สำเร็จ");
       }
-
-      const payload = buildEmailPayload(Number(jobId));
-
-      await fetch("/api/cleaning/step5/draft", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
 
       alert("บันทึกเรียบร้อยแล้ว");
       navigate("/cleaning");
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Save Draft ไม่สำเร็จ");
+      alert(err.message || "Save Draft ไม่สำเร็จ");
     }
   }
 
@@ -211,10 +195,14 @@ export default function NewCleaningStep5() {
               เอกสารรายงานที่แนบไปด้วย
             </label>
 
-            {reportFileUrl ? (
+            {jobId ? (
               <div className="flex items-center gap-3 mt-2 border border-green-800 rounded-lg h-[39px] px-4">
                 <span className="text-sm text-gray-700">Cleaning_Report.pdf</span>
-                <a href={reportFileUrl} target="_blank" className="text-[#2979FF] underline text-sm">
+                <a
+                  href={`/api/cleaning/step4/download/${jobId}`}
+                  target="_blank"
+                  className="text-[#2979FF] underline text-sm"
+                >
                   เปิดดู
                 </a>
               </div>

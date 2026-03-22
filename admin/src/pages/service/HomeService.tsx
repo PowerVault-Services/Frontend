@@ -8,6 +8,11 @@ import AddIcon from "../../assets/icons/Add Circle_line.svg";
 import DataTable, { type Column } from "../../components/table/DataTable";
 import Pagination from "../../components/table/Pagination";
 
+import EditIcon from "../../assets/icons/Pen New Square.svg";
+import DeleteIcon from "../../assets/icons/Paper Bin.svg";
+
+import { getServiceJobs, downloadServiceZip } from "../../services/service.api";
+
 interface Service {
   id: number;
   jobnumber: string;
@@ -18,6 +23,9 @@ interface Service {
   date: string;
   time: string;
   status: string;
+
+  problem?: string; // for filter
+  contractor?: string; // for filter
 }
 
 export default function HomeService() {
@@ -49,18 +57,21 @@ export default function HomeService() {
   const [jobNo, setJobNo] = useState("");
   const [projectType, setProjectType] = useState("");
   const [projectName, setProjectName] = useState("");
+  const [problem, setProblem] = useState("");
+  const [contractor, setContractor] = useState("");
   const [systemSize, setSystemSize] = useState("");
   const [date, setDate] = useState("");
   const [status, setStatus] = useState("");
+  const [time, setTime] = useState("");
 
   // reset page เมื่อ filter เปลี่ยน
   useEffect(() => {
     setPage(1);
-  }, [jobNo, projectType, projectName, systemSize, date, status]);
+  }, [jobNo, projectType, projectName, problem, contractor, systemSize, date, status]);
 
   useEffect(() => {
     fetchServiceJobs();
-  }, [page, jobNo, projectType, projectName, systemSize, date, status]);
+  }, [page, jobNo, projectType, projectName, problem, contractor, systemSize, date, status]);
 
   const fetchServiceJobs = async () => {
 
@@ -80,8 +91,7 @@ export default function HomeService() {
       if (date) params.append("date", date);
       if (status) params.append("status", status);
 
-      const res = await fetch(`/api/service/jobs?${params.toString()}`);
-      const json = await res.json();
+      const json = await getServiceJobs(`?${params.toString()}`);
 
       if (!json.success) return;
 
@@ -96,7 +106,9 @@ export default function HomeService() {
         pvModuleEA: item.pvModuleEA,
         date: item.date?.slice(0, 10),
         time: item.time,
-        status: item.status
+        status: item.status,
+        problem: item.problem,
+        contractor: item.contractor,
       }));
 
       setData(mapped);
@@ -161,6 +173,34 @@ export default function HomeService() {
 
   };
 
+  const handleDownloadZip = () => {
+    if (selectedRows.size === 0) {
+      alert("กรุณาเลือกอย่างน้อย 1 รายการ");
+      return;
+    }
+
+    downloadServiceZip(Array.from(selectedRows));
+  };
+
+  const handleResetSearch = () => {
+    setJobNo("");
+    setProjectType("");
+    setProjectName("");
+    setSystemSize("");
+    setDate("");
+    setTime("");
+    setStatus("");
+    setProblem("");
+    setContractor("");
+
+
+    setPage(1);
+  };
+
+  const handleSearch = () => {
+    setPage(1); // trigger fetch
+  };
+
   const columns: Column<Service>[] = [
 
     {
@@ -210,6 +250,8 @@ export default function HomeService() {
     { id: "jobnumber", key: "jobnumber", label: "Job No.", align: "center" },
     { id: "projectType", key: "projectType", label: "Project Type", align: "center" },
     { id: "projectName", key: "projectName", label: "Project Name", align: "center" },
+    { id: "problem", key: "problem", label: "Problem", align: "center" },
+    { id: "contractor", key: "contractor", label: "Contractor", align: "center" },
     { id: "systemSize", key: "systemSize", label: "System Size (kWp)", align: "center" },
     { id: "date", key: "date", label: "Date", align: "center" },
     { id: "time", key: "time", label: "Time", align: "center" },
@@ -228,22 +270,13 @@ export default function HomeService() {
       label: "Actions",
       align: "center",
       render: (_, row) => (
-        <div className="flex justify-center gap-3">
-
-          <button
-            onClick={() => handleEdit(row)}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            ✏️
+        <div className="flex items-center gap-3 justify-center">
+          <button onClick={() => handleEdit(row)} className="hover:opacity-70 transition-opacity" title="Edit">
+            <img src={EditIcon} alt="Edit" className="w-5 h-5" />
           </button>
-
-          <button
-            onClick={() => handleDelete(row.id)}
-            className="text-red-600 hover:text-red-800"
-          >
-            🗑
+          <button onClick={() => handleDelete(row.id)} className="hover:opacity-70 transition-opacity" title="Delete">
+            <img src={DeleteIcon} alt="Delete" className="w-5 h-5" />
           </button>
-
         </div>
       )
     }
@@ -267,12 +300,9 @@ export default function HomeService() {
 
       </div>
 
-      <SearchBox>
-
-        <div className="grid grid-cols-4 justify-between gap-2.5">
-
+      <SearchBox onReset={handleResetSearch} onSearch={handleSearch}>
+        <div className="grid grid-cols-4 gap-2.5">
           <TextInputFilter label="Job No." value={jobNo} onChange={setJobNo} />
-
           <SelectFilter
             label="Project Type"
             placeholder="All"
@@ -280,17 +310,26 @@ export default function HomeService() {
             onChange={setProjectType}
             options={[
               { label: "All", value: "" },
-              { label: "Solar Farm", value: "Solar Farm" },
-              { label: "Factory", value: "Factory" }
+              { label: "EPC", value: "EPC" },
+              { label: "PPA", value: "PPA" },
             ]}
           />
-
           <TextInputFilter label="Project Name" value={projectName} onChange={setProjectName} />
-
+          <TextInputFilter label="Problem" value={problem} onChange={setProblem} />
+          <SelectFilter
+            label="Contractor"
+            placeholder="All"
+            value={contractor}
+            onChange={setContractor}
+            options={[
+              { label: "All", value: "" },
+              { label: "TK Clean", value: "TK Clean" },
+              { label: "A Plus", value: "A Plus" },
+            ]}
+          />
           <TextInputFilter label="System Size (kWp)" value={systemSize} onChange={setSystemSize} />
-
           <TextInputFilter label="Date" type="date" value={date} onChange={setDate} />
-
+          <TextInputFilter label="Time" type="time" value={time} onChange={setTime} />
           <SelectFilter
             label="Status"
             placeholder="All"
@@ -298,19 +337,17 @@ export default function HomeService() {
             onChange={setStatus}
             options={[
               { label: "All", value: "" },
-              { label: "Draft", value: "DRAFT" },
-              { label: "Assigned", value: "ASSIGNED" },
-              { label: "Completed", value: "COMPLETED" }
+              { label: "Pending", value: "PENDING" },
+              { label: "Completed", value: "COMPLETED" },
+              { label: "Draft", value: "DRAFT" }
             ]}
           />
-
         </div>
-
       </SearchBox>
 
       <div className="flex justify-end mt-[65px]">
 
-        <button
+        <button onClick={handleDownloadZip}
           className="flex items-center px-7 py-3 gap-1.5 bg-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25)] border-2 border-green-700 rounded-md text-xs text-green-700 font-normal"
         >
           <img src={ZipIcon} alt="" />

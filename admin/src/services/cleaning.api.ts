@@ -146,3 +146,12 @@ export const getCleaningJobs = async (query?: string) => {
   const res = await api.get(`/cleaning/jobs${query ?? ""}`);
   return res.data;
 };
+
+export const getCleaningReportDownloadUrl = (jobId: number) => {
+  return `/api/cleaning/step4/download/${jobId}`;
+};
+
+export const downloadCleaningZip = (jobIds: number[]) => {
+  const ids = jobIds.join(",");
+  window.open(`/api/cleaning/jobs/download-zip?jobIds=${ids}`, "_blank");
+};

@@ -33,6 +33,21 @@ function parseEmails(email?: string | null) {
         .filter(Boolean);
 }
 
+function calculateHours(start: string, end: string) {
+    if (!start || !end) return "";
+
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+
+    let totalMin = (eh * 60 + em) - (sh * 60 + sm);
+
+    if (totalMin < 0) totalMin += 24 * 60;
+
+    const hours = totalMin / 60;
+
+    return hours.toString();
+}
+
 export default function NewInspectionStep1() {
 
     const navigate = useNavigate();
@@ -44,9 +59,14 @@ export default function NewInspectionStep1() {
     const [project, setProject] = useState<InspectionProject | null>(null);
 
     const [date, setDate] = useState("");
-    const [time, setTime] = useState("");
+    const [startTime, setStartTime] = useState("");
+    const [endTime, setEndTime] = useState("");
+    const [contractor, setContractor] = useState("");
+    const [problem, setProblem] = useState("");
     const [remark, setRemark] = useState("");
     const [projectType, setProjectType] = useState("");
+
+    const [isManualHours, setIsManualHours] = useState(false);
 
     const steps = [
         { id: 1, label: "กรอกข้อมูล" },
@@ -84,58 +104,67 @@ export default function NewInspectionStep1() {
 
     }, [projectId, projects]);
 
+    useEffect(() => {
+        if (!isManualHours) {
+            const calculated = calculateHours(startTime, endTime);
+            if (calculated) {
+                setShutdownHours(calculated);
+            }
+        }
+    }, [startTime, endTime]);
+
 
     // ==========================
     // Save Draft (ใช้ API)
     // ==========================
-    async function saveStep1Data() {
 
-        if (!projectId) {
-            alert("กรุณาเลือก Project");
-            return;
+    async function handleSaveStep1() {
+        if (!projectId) throw new Error("กรุณาเลือก Project");
+        if (!date || !startTime || !endTime) {
+            throw new Error("กรุณากรอกวันที่และเวลา");
         }
 
-        try {
-
-            const result = await createInspectionStep1({
-                siteId: Number(projectId),
-                projectType,
-                contactPhone: project?.contactPhone ?? "",
-                contactEmail: project?.contactEmail ?? "",
-                workDate: date,
-                workTimeText: time,
-                customerName: project?.projectName ?? "",
-                note: remark,
-            });
-
-            const jobId = result.data.jobId;
-
-            await saveDraftStep(jobId, 1);
-
-            const payload = {
-                jobId,
-                projectId,
-                projectName: project?.projectName,
-                contactEmail: project?.contactEmail,
-                date,
-                time,
-                shutdownHours,
-                remark,
-            };
-
-            localStorage.setItem(
-                "inspection_step1",
-                JSON.stringify(payload)
-            );
-
-            alert("บันทึก Draft สำเร็จ");
-
-        } catch (err) {
-
-            console.error(err);
-            alert("บันทึก Draft ไม่สำเร็จ");
-
+        if (startTime >= endTime) {
+            throw new Error("เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด");
         }
+
+        const currentJobId = localStorage.getItem("jobId");
+
+        const payload = {
+            siteId: Number(projectId),
+            workDate: date,
+            startTime,
+            endTime,
+            contractor,
+            problem,
+        };
+        console.log("🔥 STEP1 payload:", payload);
+
+        const res = await createInspectionStep1(payload);
+
+        const jobId = res.data?.jobId;
+
+        if (!jobId) throw new Error("ไม่พบ jobId");
+
+        localStorage.setItem("jobId", String(jobId));
+
+        localStorage.setItem("inspection_step1", JSON.stringify({
+            jobId,
+            projectId,
+            projectName: project?.projectName,
+            contactEmail: project?.contactEmail,
+            date,
+            startTime,
+            endTime,
+            contractor,
+            problem,
+            remark,
+            projectType,
+        }));
+
+        await saveDraftStep(jobId, 1);
+
+        return jobId;
     }
 
 
@@ -147,7 +176,14 @@ export default function NewInspectionStep1() {
                 <h1 className="text-green-800">New Inspection Job</h1>
 
                 <button
-                    onClick={saveStep1Data}
+                    onClick={async () => {
+                        try {
+                            await handleSaveStep1();
+                            alert("บันทึกเรียบร้อยแล้ว");
+                        } catch (err: any) {
+                            alert(err.message);
+                        }
+                    }}
                     className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
           text-green-700 bg-white border-2 border-green-700 rounded-md"
                 >
@@ -189,7 +225,7 @@ export default function NewInspectionStep1() {
                     </div>
 
                     {/* System Size */}
-                    <div className="col-span-2 w-full">
+                    <div className={FIELD_WIDTH}>
                         <InputField
                             label="System Size (kWp)"
                             value={project?.systemSizeKWp?.toString() ?? ""}
@@ -207,21 +243,30 @@ export default function NewInspectionStep1() {
                     </div>
 
                     {/* Email */}
-                    <div className="flex flex-col gap-1 w-full">
+                    <div className="flex flex-col gap-1 col-span-2">
                         <label className="text-sm text-green-800">Contact Email</label>
 
                         <div
-                            className="min-h-10 p-4 rounded-sm border bg-[#EDEDED] text-[14px]
-              text-green-500 border-green-200 cursor-not-allowed space-y-1"
+                            className="min-h-10 px-4 py-2 flex items-center rounded-sm border bg-[#EDEDED]
+                            text-[14px] text-green-500 border-green-200 cursor-not-allowed"
                         >
-                            {parseEmails(project?.contactEmail).map((email, index) => (
-                                <div key={index} className="break-all">
-                                    {email}
-                                </div>
-                            ))}
+                            {parseEmails(project?.contactEmail).join(", ")}
                         </div>
                     </div>
 
+                    {/* Project Type */}
+                    <div className={FIELD_WIDTH}>
+                        <SelectFilter
+                            label="Project Type"
+                            placeholder="Select"
+                            value={projectType}
+                            onChange={setProjectType}
+                            options={[
+                                { label: "Free", value: "Free" },
+                                { label: "Sale", value: "Sale" },
+                            ]}
+                        />
+                    </div>
 
                     {/* Date */}
                     <div className={FIELD_WIDTH}>
@@ -236,13 +281,11 @@ export default function NewInspectionStep1() {
 
                     {/* Time */}
                     <div className={FIELD_WIDTH}>
-                        <TextInputFilter
-                            label="Time*"
-                            type="time"
-                            placeholder="Select Time"
-                            value={time}
-                            onChange={setTime}
-                        />
+                        <TextInputFilter label="Start Time*" type="time" value={startTime} onChange={setStartTime} />
+                    </div>
+
+                    <div className={FIELD_WIDTH}>
+                        <TextInputFilter label="End Time*" type="time" value={endTime} onChange={setEndTime} />
                     </div>
 
                     {/* จำนวนชั่วโมง */}
@@ -252,37 +295,17 @@ export default function NewInspectionStep1() {
                             type="number"
                             placeholder="เช่น 3"
                             value={shutdownHours}
-                            onChange={setShutdownHours}
+                            onChange={(val) => {
+                                setShutdownHours(val);
+                                setIsManualHours(true); // ✅ สำคัญ
+                            }}
                         />
                     </div>
-
-
-                    {/* Project Type */}
-                    <div className={FIELD_WIDTH}>
-                        <SelectFilter
-                            label="Project Type"
-                            placeholder="Select"
-                            value={projectType}
-                            onChange={setProjectType}
-                            options={[
-                                { label: "Type A", value: "type_a" },
-                                { label: "Type B", value: "type_b" },
-                                { label: "Type C", value: "type_c" },
-                            ]}
-                        />
-                    </div>
-
 
                     {/* Remark */}
-                    <div className="col-span-2 w-full">
-                        <TextInputFilter
-                            label="หมายเหตุ"
-                            placeholder="Text"
-                            value={remark}
-                            onChange={setRemark}
-                        />
+                    <div className={FIELD_WIDTH}>
+                        <TextInputFilter label="หมายเหตุ" value={remark} onChange={setRemark} />
                     </div>
-
 
                 </div>
 
@@ -300,47 +323,12 @@ export default function NewInspectionStep1() {
 
                     <button
                         onClick={async () => {
-
-                            if (!date || !time) {
-                                alert("กรุณาเลือกวันที่และเวลา");
-                                return;
-                            }
-
                             try {
-
-                                const result = await createInspectionStep1({
-                                    siteId: Number(projectId),
-                                    projectType,
-                                    contactPhone: project?.contactPhone ?? "",
-                                    contactEmail: project?.contactEmail ?? "",
-                                    workDate: date,
-                                    workTimeText: time,
-                                    customerName: project?.projectName ?? "",
-                                    note: remark,
-                                });
-
-                                localStorage.setItem("jobId", String(result.data.jobId));
-
-                                const payload = {
-                                    jobId: result.data.jobId,
-                                    projectId,
-                                    projectName: project?.projectName,
-                                    contactEmail: project?.contactEmail,
-                                    date,
-                                    time,
-                                    shutdownHours,
-                                    remark,
-                                };
-
-                                localStorage.setItem("inspection_step1", JSON.stringify(payload));
-
+                                await handleSaveStep1();
                                 navigate("/inspection/new/step2");
-
-                            } catch (err) {
-                                console.error(err);
-                                alert("สร้าง Inspection Job ไม่สำเร็จ");
+                            } catch (err: any) {
+                                alert(err.message);
                             }
-
                         }}
                         className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
                     >

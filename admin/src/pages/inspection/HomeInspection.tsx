@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
@@ -9,6 +10,10 @@ import DataTable, { type Column } from "../../components/table/DataTable";
 import Pagination from "../../components/table/Pagination";
 
 import { getInspectionJobs } from "../../services/inspection.api";
+import { downloadInspectionZip } from "../../services/inspection.api";
+
+import EditIcon from "../../assets/icons/Pen New Square.svg";
+import DeleteIcon from "../../assets/icons/Paper Bin.svg";
 
 interface Inspection {
   id: number;
@@ -23,7 +28,11 @@ interface Inspection {
 
 export default function HomeInspection() {
 
+  const navigate = useNavigate();
+
+
   const [data, setData] = useState<Inspection[]>([]);
+  const [time, setTime] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
 
@@ -72,11 +81,10 @@ export default function HomeInspection() {
       if (date) params.append("date", date);
       if (status) params.append("status", status);
 
-      const res = await getInspectionJobs(`?${params.toString()}`);
-
-      const json = res.data;
-
+      const json = await getInspectionJobs(`?${params.toString()}`);
+      console.log("🔥 inspection list:", json.data);
       const list = json.data ?? [];
+
 
       const mapped: Inspection[] = list.map((item: any) => ({
         id: item.jobId,
@@ -121,25 +129,66 @@ export default function HomeInspection() {
   };
 
   const handleEdit = (row: Inspection) => {
-    console.log("Edit:", row);
+    const inspectionData = {
+      jobId: row.id,
+      jobNo: row.jobnumber,
+      projectName: row.projectName,
+      projectType: row.projectType,
+      systemSizeKWp: row.systemSize,
+      date: row.date,
+      time: row.time,
+      status: row.status,
+    };
+
+    // ✅ ใช้ key ของ inspection
+    localStorage.setItem("inspection_step1", JSON.stringify(inspectionData));
+    localStorage.setItem("jobId", row.id.toString());
+
+    // ✅ mapping ตาม flow จริง
+    switch (row.status) {
+      case "DRAFT":
+        navigate("/inspection/new/step1");
+        break;
+
+      case "SENT":
+        navigate("/inspection/new/step3");
+        break;
+
+      case "COMPLETED":
+        navigate("/inspection/new/step3");
+        break;
+    }
   };
 
-  const handleDelete = (id: number) => {
+  // ===== HANDLE DELETE (ทำงานจริง: ลบจาก State และแจ้งเตือน) =====
+  const handleDelete = async (id: number) => {
+    if (!confirm("คุณต้องการลบรายการนี้ใช่หรือไม่? ข้อมูลที่บันทึกไว้จะหายไป")) return;
 
-    if (!confirm("Delete this record?")) return;
+    try {
+      // หมายเหตุ: ตรงนี้ควรเพิ่มการเรียก API ลบจริง เช่น await deleteCleaningJob(id);
+      setData(prev => prev.filter(r => r.id !== id));
+      setSelectedRows(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      // alert("ลบรายการสำเร็จ");
+    } catch (err) {
+      alert("ไม่สามารถลบข้อมูลได้");
+    }
+  };
 
-    setData(prev => prev.filter(r => r.id !== id));
+  const handleCreateNew = () => {
+    // 🚩 ล้างข้อมูลที่เคยค้างอยู่ทั้งหมด เพื่อให้หน้า Step 1 เปิดมาเป็นฟอร์มว่าง
+    localStorage.removeItem("jobId");
+    localStorage.removeItem("inspection_step1");
+    localStorage.removeItem("siteId");
 
-    setSelectedRows(prev => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-
+    // นำทางไปหน้า Step 1
+    navigate("/inspection/new/step1");
   };
 
   const handleDownloadZip = () => {
-
     if (selectedRows.size === 0) {
       alert("กรุณาเลือกอย่างน้อย 1 รายการ");
       return;
@@ -147,8 +196,9 @@ export default function HomeInspection() {
 
     const ids = Array.from(selectedRows);
 
-    console.log("Download inspection jobs:", ids);
+    console.log("📦 Download inspection:", ids);
 
+    downloadInspectionZip(ids); // ✅ ตัวนี้สำคัญ
   };
 
   const statusBadge = (status: string) => {
@@ -255,22 +305,13 @@ export default function HomeInspection() {
       label: "Actions",
       align: "center",
       render: (_, row) => (
-        <div className="flex justify-center gap-3">
-
-          <button
-            onClick={() => handleEdit(row)}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            ✏️
+        <div className="flex items-center gap-3 justify-center">
+          <button onClick={() => handleEdit(row)} className="hover:opacity-70 transition-opacity" title="Edit">
+            <img src={EditIcon} alt="Edit" className="w-5 h-5" />
           </button>
-
-          <button
-            onClick={() => handleDelete(row.id)}
-            className="text-red-600 hover:text-red-800"
-          >
-            🗑
+          <button onClick={() => handleDelete(row.id)} className="hover:opacity-70 transition-opacity" title="Delete">
+            <img src={DeleteIcon} alt="Delete" className="w-5 h-5" />
           </button>
-
         </div>
       )
     }
@@ -293,7 +334,7 @@ export default function HomeInspection() {
 
       </div>
 
-      <SearchBox>
+      <SearchBox onReset={resetFilters} onSearch={() => setPage(1)}>
 
         <div className="grid grid-cols-4 gap-2.5">
 
@@ -306,17 +347,14 @@ export default function HomeInspection() {
             onChange={setProjectType}
             options={[
               { label: "All", value: "" },
-              { label: "Solar Farm", value: "Solar Farm" },
-              { label: "Factory", value: "Factory" }
+              { label: "EPC", value: "EPC" },
+              { label: "PPA", value: "PPA" },
             ]}
           />
-
           <TextInputFilter label="Project Name" value={projectName} onChange={setProjectName} />
-
           <TextInputFilter label="System Size (kWp)" value={systemSize} onChange={setSystemSize} />
-
           <TextInputFilter label="Date" type="date" value={date} onChange={setDate} />
-
+          <TextInputFilter label="Time" type="time" value={time} onChange={setTime} />
           <SelectFilter
             label="Status"
             placeholder="All"
@@ -329,17 +367,6 @@ export default function HomeInspection() {
               { label: "Completed", value: "COMPLETED" }
             ]}
           />
-
-        </div>
-
-        <div className="flex justify-end gap-3 mt-4">
-
-          <button
-            onClick={resetFilters}
-            className="px-5 py-2 border border-gray-300 rounded-md text-sm"
-          >
-            Reset
-          </button>
 
         </div>
 

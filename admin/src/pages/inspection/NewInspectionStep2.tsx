@@ -5,6 +5,7 @@ import ProgressBar from "../../components/progress/ProgressBar";
 import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 
 import { saveDraftStep } from "../../services/draft.api";
+import { saveInspectionStep2Draft, sendInspectionStep2 } from "../../services/inspection.api";
 
 export default function NewInspectionStep2() {
 
@@ -31,7 +32,8 @@ export default function NewInspectionStep2() {
         projectName: "",
         contactEmail: "",
         date: "",
-        time: "",
+        startTime: "",     // ✅ ใช้ตัวนี้
+        endTime: "",       // ✅ ใช้ตัวนี้
         shutdownHours: "",
         remark: "",
     });
@@ -81,69 +83,97 @@ export default function NewInspectionStep2() {
         return `${day} ${month} ${year}`;
     }
 
+    function calculateHours(start: string, end: string) {
+        if (!start || !end) return "";
+
+        const [sh, sm] = start.split(":").map(Number);
+        const [eh, em] = end.split(":").map(Number);
+
+        const startMin = sh * 60 + sm;
+        const endMin = eh * 60 + em;
+
+        const diff = (endMin - startMin) / 60;
+
+        return diff > 0 ? diff : "";
+    }
+
+    function formatDuration(start: string, end: string) {
+        if (!start || !end) return "";
+
+        const [sh, sm] = start.split(":").map(Number);
+        const [eh, em] = end.split(":").map(Number);
+
+        let totalMin = (eh * 60 + em) - (sh * 60 + sm);
+
+        if (totalMin <= 0) return "";
+
+        const hours = Math.floor(totalMin / 60);
+        const minutes = totalMin % 60;
+
+        if (hours > 0 && minutes > 0) {
+            return `${hours} ชั่วโมง ${minutes} นาที`;
+        }
+
+        if (hours > 0) {
+            return `${hours} ชั่วโมง`;
+        }
+
+        return `${minutes} นาที`;
+    }
+
     // =========================
     // Save Draft
     // =========================
     async function handleSaveDraft() {
-
         if (loading) return;
 
         try {
-
             setLoading(true);
 
             const subject =
-                `ขออนุญาตเข้าตรวจสอบระบบ Solar System โครงการ ${formData.projectName}`;
+                `[ทดสอบระบบ]ขออนุญาตเข้าบํารุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
 
             const body = `
-เรียน ท่านผู้เกี่ยวข้อง
+                    <div style="margin-top: 40px; max-width: 800px;">
+                        <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+                        <p><b>เรื่อง ขออนุญาตแจ้งแผน Inspection ระบบ Solar System ประจําปี 2568</b></p>
 
-บริษัท พาวเวอร์วอลท์ จำกัด ขอแจ้งแผน Inspection ระบบ Solar System
-โครงการ ${formData.projectName}
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            บริษัท พาวเวอร์วอลท์ จํากัด ขออนุญาตแจ้งแผน Inspection ระบบ Solar System ประจําปี 2568 โครงการ
+                            ${formData.projectName} เข้าปฎิบัติงาน ในวันที่ ${formatThaiDate(formData.date)} 
+                            เวลา (Time) ${formData.startTime} - ${formData.endTime}
+                        </p>
 
-วันที่ ${formatThaiDate(formData.date)}
-เวลา ${formData.time}
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            ${formData.remark ? `หมายเหตุ: ${formData.remark}` : ""}
+                        </p>
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            โดยจะขออนุญาตทําการปิดระบบ Solar System ประมาณ ${formData.shutdownHours ||
+                            formatDuration(formData.startTime, formData.endTime)} เพื่อดําเนินการ SMDB Inspection และ Inverter Inspection
+                        </p>
+                        <p style="text-indent: 50px;">
+                            จึงเรียนมาเพิ่อพิจารณาอนุมัติ และขออํานวยความสะดวกในการขึ้นหลังคา ระบบนํ้าและการเข้าปฏิบัติงานในพื้นที่
+                        </p>
+            `;
 
-โดยจะขออนุญาตปิดระบบประมาณ ${formData.shutdownHours} ชม.
-`;
-
-            const form = new FormData();
-
-            form.append("jobId", String(formData.jobId));
-            form.append("to", "nita290646@gmail.com");
-            form.append("subject", subject);
-            form.append("body", body);
-
-            if (uploadedFile) {
-                form.append("attachments", uploadedFile);
-            }
-
-            // save email draft
-            const res = await fetch("/api/inspection/step2/draft", {
-                method: "POST",
-                body: form
+            await saveInspectionStep2Draft({
+                jobId: Number(formData.jobId),
+                to: "nita290646@gmail.com",
+                subject,
+                body,
+                attachments: uploadedFile ? [uploadedFile] : [],
             });
-
-            const json = await res.json();
-
-            if (!json.success) {
-                throw new Error("Save draft failed");
-            }
 
             // save step draft
             await saveDraftStep(Number(formData.jobId), 2);
 
             alert("บันทึก Draft สำเร็จ");
 
-        } catch (err) {
-
-            console.error(err);
-            alert("บันทึก Draft ไม่สำเร็จ");
-
+        } catch (err: any) {
+            console.error("🔥 SAVE DRAFT ERROR:", err);
+            alert(err.message || "บันทึก Draft ไม่สำเร็จ");
         } finally {
-
             setLoading(false);
-
         }
     }
 
@@ -160,66 +190,68 @@ export default function NewInspectionStep2() {
         }
 
         try {
-
             setEmailStatus("sending");
 
             const subject =
-                `ขออนุญาตเข้าตรวจสอบระบบ Solar System โครงการ ${formData.projectName}`;
+                `[ทดสอบระบบ]ขออนุญาตเข้าบํารุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
 
             const body = `
-                    เรียน ท่านผู้เกี่ยวข้อง
+                    <div style="margin-top: 40px; max-width: 800px;">
+                        <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+                        <p><b>เรื่อง ขออนุญาตแจ้งแผน Inspection ระบบ Solar System ประจําปี 2568</b></p>
 
-                    บริษัท พาวเวอร์วอลท์ จำกัด ขอแจ้งแผน Inspection ระบบ Solar System
-                    โครงการ ${formData.projectName}
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            บริษัท พาวเวอร์วอลท์ จํากัด ขออนุญาตแจ้งแผน Inspection ระบบ Solar System ประจําปี 2568 โครงการ
+                            ${formData.projectName} เข้าปฎิบัติงาน ในวันที่ ${formatThaiDate(formData.date)} 
+                            เวลา (Time) ${formData.startTime} - ${formData.endTime}
+                        </p>
 
-                    วันที่ ${formatThaiDate(formData.date)}
-                    เวลา ${formData.time}
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            ${formData.remark ? `หมายเหตุ: ${formData.remark}` : ""}
+                        </p>
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            โดยจะขออนุญาตทําการปิดระบบ Solar System ประมาณ ${formData.shutdownHours ||
+                            formatDuration(formData.startTime, formData.endTime)} เพื่อดําเนินการ SMDB Inspection และ Inverter Inspection
+                        </p>
+                        <p style="text-indent: 50px;">
+                            จึงเรียนมาเพิ่อพิจารณาอนุมัติ และขออํานวยความสะดวกในการขึ้นหลังคา ระบบนํ้าและการเข้าปฏิบัติงานในพื้นที่
+                        </p>
+            `;
 
-                    โดยจะขออนุญาตปิดระบบประมาณ ${formData.shutdownHours} ชม.
-                    `;
-
-            const form = new FormData();
-
-            form.append("jobId", String(formData.jobId));
-            form.append("to", "nita290646@gmail.com");
-            form.append("subject", subject);
-            form.append("body", body);
-
-            if (uploadedFile) {
-                form.append("attachments", uploadedFile);
-            }
-
-            await fetch("/api/inspection/step2/draft", {
-                method: "POST",
-                body: form
+            // ✅ 1. save draft ก่อน
+            await saveInspectionStep2Draft({
+                jobId: Number(formData.jobId),
+                to: "nita290646@gmail.com",
+                subject,
+                body,
+                attachments: uploadedFile ? [uploadedFile] : [],
             });
 
-            await fetch("/api/inspection/step2/send", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    jobId: formData.jobId
-                })
-            });
+            // ✅ 2. send email
+            await sendInspectionStep2(Number(formData.jobId));
 
-            // mark step complete
+            // ✅ mark step complete
             await saveDraftStep(Number(formData.jobId), 2);
 
-            localStorage.setItem(
-                `inspection_step2_sent_${formData.jobId}`,
-                "true"
-            );
+            // ✅ update localStorage
+            localStorage.setItem("inspection_step1", JSON.stringify({
+                jobId: formData.jobId,
+                projectName: formData.projectName,
+                contactEmail: formData.contactEmail,
+                date: formData.date,
+                startTime: formData.startTime,
+                endTime: formData.endTime,
+                shutdownHours: formData.shutdownHours,
+            }));
 
             setEmailStatus("sent");
 
             navigate("/inspection/new/step3");
 
-        } catch (err) {
+        } catch (err: any) {
 
-            console.error(err);
-            alert("ส่งอีเมลไม่สำเร็จ");
+            console.error("🔥 SEND EMAIL ERROR:", err);
+            alert(err.message || "ส่งอีเมลไม่สำเร็จ");
 
             setEmailStatus("idle");
         }
@@ -293,6 +325,7 @@ export default function NewInspectionStep2() {
                                 <div className="pt-4 indent-10">
 
                                     <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+                                    <p>เรื่อง ขออนุญาตแจ้งแผน Inspection ระบบ Solar System ประจําปี 2568</p>
 
                                     <p className="pt-4 indent-28">
                                         บริษัท พาวเวอร์วอลท์ จำกัด
@@ -307,14 +340,24 @@ export default function NewInspectionStep2() {
                                         </span>
                                     </p>
 
+                                    {formData.remark && (
+                                        <p className="pt-4 indent-28">
+                                            หมายเหตุ:{" "}
+                                            <span className="text-[#2196F3] font-semibold">
+                                                {formData.remark}
+                                            </span>
+                                        </p>
+                                    )}
+
                                     <p className="pt-4 indent-28">
                                         โดยจะขออนุญาตทําการปิดระบบ Solar System ประมาณ{" "}
                                         <span className="text-[#2196F3] font-semibold">
-                                            {formData.shutdownHours}
-                                        </span>{" "}
+                                            {formData.shutdownHours ||
+                                                formatDuration(formData.startTime, formData.endTime)}
+                                        </span> {" "}
                                         ชม. เวลา{" "}
                                         <span className="text-[#2196F3] font-semibold">
-                                            {formData.time}
+                                            {formData.startTime} - {formData.endTime}
                                         </span>{" "}
                                         น.
                                     </p>

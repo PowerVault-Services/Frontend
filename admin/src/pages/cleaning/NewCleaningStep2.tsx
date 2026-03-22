@@ -29,7 +29,8 @@ export default function NewCleaningStep2() {
     const [formData, setFormData] = useState({
         projectName: "",
         date: "",
-        time: "",
+        startTime: "",
+        endTime: "",
         remark: "",
     });
 
@@ -46,7 +47,8 @@ export default function NewCleaningStep2() {
         setFormData({
             projectName: data.projectName || "",
             date: data.date || "",
-            time: data.startTime || "",
+            startTime: data.startTime || "",
+            endTime: data.endTime || "",
             remark: data.remark || "",
         });
     }, []);
@@ -65,14 +67,11 @@ export default function NewCleaningStep2() {
 
                 setFormData((prev) => ({
                     ...prev,
-
-                    // ✅ เอาจาก API จริง
                     projectName: data?.cleaning?.projectName || prev.projectName,
-
-                    // ❗ API ไม่มี date → ใช้ของเดิม
                     date: prev.date,
 
-                    time: data?.timeRange?.startTime || prev.time,
+                    startTime: data?.timeRange?.startTime || "",
+                    endTime: data?.timeRange?.endTime || "",
 
                     remark: prev.remark,
                 }));
@@ -104,6 +103,18 @@ export default function NewCleaningStep2() {
         return `${day} ${month} ${year}`;
     }
 
+    function formatTimeRange(start?: string, end?: string) {
+        if (!start && !end) return "";
+
+        const clean = (t?: string) => t?.slice(0, 5); // ตัดวินาทีออก
+
+        if (start && end) {
+            return `${clean(start)} – ${clean(end)} น.`;
+        }
+
+        return `${clean(start || end)} น.`;
+    }
+
     async function handleSaveDraft() {
         if (loading) return;
 
@@ -123,7 +134,7 @@ export default function NewCleaningStep2() {
                 return;
             }
 
-            const subject = `ขออนุญาตเข้าบำรุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
+            const subject = `[ทดสอบระบบ]ขออนุญาตเข้าบำรุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
 
             const body = `
                     <div style="margin-top: 40px; max-width: 800px;">
@@ -133,7 +144,7 @@ export default function NewCleaningStep2() {
                         
                         <p style="text-indent: 50px; margin-top: 20px;">
                             บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตแจ้งแผนงานเข้า PM Solar System โครงการ ${formData.projectName} </b> 
-                            วันที่ ${formatThaiDate(formData.date)} เวลา ${formData.time} ระบบ Solar System โครงการ <b>${formData.projectName}</b> โดยมีรายละเอียดกำหนดการเข้าปฏิบัติงานดังนี้:
+                            วันที่ ${formatThaiDate(formData.date)} เวลา ${formatTimeRange(formData.startTime, formData.endTime)} ระบบ Solar System โครงการ <b>${formData.projectName}</b> โดยมีรายละเอียดกำหนดการเข้าปฏิบัติงานดังนี้:
                         </p>
 
                         <p> ${formData.remark} </p>
@@ -142,7 +153,7 @@ export default function NewCleaningStep2() {
                             จึงเรียนมาเพิ่อพิจารณาอนุมัติ และขออํานวยความสะดวกในการขึ้นหลังคา ระบบนํ้าและการเข้าปฏิบัติงานในพื้นที่ โดยได้แนบเอกสารรายชื่อผู้เข้าปฏิบัติงานพร้อมวุฒิบัตรการอบรมการทํางานบนที่สูงตามเอกสารแนบด้านล่าง
                         </p>
                     </div>
-        `;
+            `;
 
             await saveCleaningStep2Draft({
                 jobId: step1.jobId,
@@ -191,7 +202,7 @@ export default function NewCleaningStep2() {
 
             setEmailStatus("sending");
 
-            const subject = `ขออนุญาตเข้าบำรุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
+            const subject = `[ทดสอบระบบ]ขออนุญาตเข้าบำรุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
 
             const body = `
                     <div style="margin-top: 40px; max-width: 800px;">
@@ -201,7 +212,7 @@ export default function NewCleaningStep2() {
                         
                         <p style="text-indent: 50px; margin-top: 20px;">
                             บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตแจ้งแผนงานเข้า PM Solar System โครงการ ${formData.projectName} </b> 
-                            วันที่ ${formatThaiDate(formData.date)} เวลา ${formData.time} ระบบ Solar System โครงการ <b>${formData.projectName}</b> โดยมีรายละเอียดกำหนดการเข้าปฏิบัติงานดังนี้:
+                            วันที่ ${formatThaiDate(formData.date)} เวลา ${formatTimeRange(formData.startTime, formData.endTime)} ระบบ Solar System โครงการ <b>${formData.projectName}</b> โดยมีรายละเอียดกำหนดการเข้าปฏิบัติงานดังนี้:
                         </p>
 
                         <p> ${formData.remark} </p>
@@ -310,7 +321,7 @@ export default function NewCleaningStep2() {
                                         </span>{" "}
                                         เวลา{" "}
                                         <span className="text-[#2196F3] font-semibold">
-                                            {formData.time}
+                                            {formatTimeRange(formData.startTime, formData.endTime)}
                                         </span>
                                     </p>
 

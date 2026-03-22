@@ -6,6 +6,11 @@ import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 
 import { saveDraftStep } from "../../services/draft.api";
 
+import {
+    saveInspectionStep3Draft,
+    sendInspectionStep3
+} from "../../services/inspection.api";
+
 
 export default function NewInspectionStep3() {
 
@@ -86,7 +91,6 @@ export default function NewInspectionStep3() {
         if (loading) return;
 
         try {
-
             setLoading(true);
 
             const subject =
@@ -103,37 +107,22 @@ export default function NewInspectionStep3() {
 รายละเอียดตามไฟล์แนบ
 `;
 
-            const form = new FormData();
-
-            form.append("jobId", String(jobData.jobId));
-            form.append("to", "nita290646@gmail.com");
-            form.append("subject", subject);
-            form.append("body", body);
-
-            if (reportFile) {
-                form.append("report", reportFile);
-            }
-
-            const res = await fetch("/api/inspection/step3/draft", {
-                method: "POST",
-                body: form
+            await saveInspectionStep3Draft({
+                jobId: Number(jobData.jobId),
+                to: "nita290646@gmail.com",
+                subject,
+                body,
+                report: reportFile,
             });
 
-            const json = await res.json();
-
-            if (!json.success) {
-                throw new Error("Save draft failed");
-            }
+            await saveDraftStep(Number(jobData.jobId), 3);
 
             alert("บันทึก Draft สำเร็จ");
 
-        } catch (err) {
-
-            console.error(err);
-            alert("บันทึก Draft ไม่สำเร็จ");
-
+        } catch (err: any) {
+            console.error("🔥 STEP3 DRAFT ERROR:", err);
+            alert(err.message || "บันทึก Draft ไม่สำเร็จ");
         } finally {
-
             setLoading(false);
         }
     }
@@ -151,50 +140,37 @@ export default function NewInspectionStep3() {
         }
 
         try {
-
             setEmailStatus("sending");
 
             const subject =
-                `รายงาน Inspection ระบบ Solar System โครงการ ${jobData.projectName}`;
+                `[ทดสอบระบบ]ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System ประจําปี 2568 ${jobData.projectName}`;
 
             const body = `
-เรียน ท่านผู้เกี่ยวข้อง
+                <div style="margin-top: 40px; max-width: 800px;">
+                    <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+                    <p>เรื่อง ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System ประจําปี 2568</p>
 
-บริษัท พาวเวอร์วอลท์ จำกัด ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System
-โครงการ ${jobData.projectName}
+                    <p style="text-indent: 50px; margin-top: 20px;">
+                        บริษัท พาวเวอร์วอลท์ จํากัด ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System
+                        ประจําปี 2568 โครงการ ${jobData.projectName} เข้าปฏิบัติงานวันที่ ${formatThaiDate(jobData.date)}
+                    </p>
+                    <p style="text-indent: 50px;"> รายละเอียดตามไฟล์แนบ </p>
+                </div>
+            `;
 
-เข้าปฏิบัติงานวันที่ ${formatThaiDate(jobData.date)}
-
-รายละเอียดตามไฟล์แนบ
-`;
-
-            const form = new FormData();
-
-            form.append("jobId", String(jobData.jobId));
-            form.append("to", "nita290646@gmail.com");
-            form.append("subject", subject);
-            form.append("body", body);
-
-            if (reportFile) {
-                form.append("report", reportFile);
-            }
-
-            // save draft first
-            await fetch("/api/inspection/step3/draft", {
-                method: "POST",
-                body: form
+            // ✅ 1. save draft ก่อน
+            await saveInspectionStep3Draft({
+                jobId: Number(jobData.jobId),
+                to: "nita290646@gmail.com",
+                subject,
+                body,
+                report: reportFile,
             });
 
-            // send email
-            await fetch("/api/inspection/step3/send", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    jobId: jobData.jobId
-                })
-            });
+            // ✅ 2. send
+            await sendInspectionStep3(Number(jobData.jobId));
+
+            await saveDraftStep(Number(jobData.jobId), 3);
 
             localStorage.setItem(
                 `inspection_step3_sent_${jobData.jobId}`,
@@ -205,10 +181,11 @@ export default function NewInspectionStep3() {
 
             navigate("/inspection");
 
-        } catch (err) {
+        } catch (err: any) {
 
-            console.error(err);
-            alert("ส่งรายงานไม่สำเร็จ");
+            console.error("🔥 STEP3 SEND ERROR:", err);
+
+            alert(err.message || "ส่งรายงานไม่สำเร็จ");
 
             setEmailStatus("idle");
         }

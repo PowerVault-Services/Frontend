@@ -75,6 +75,9 @@ export default function NewCleaningStep4() {
         }
 
         alert(error.response?.data?.message || "ไม่สามารถสร้างรายงานได้");
+
+      } finally {
+        setLoading(false); // ✅ สำคัญมาก
       }
     };
 
