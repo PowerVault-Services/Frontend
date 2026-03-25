@@ -33,7 +33,9 @@ export default function InformationTab({ project }: Props) {
           <iframe
             className="w-full h-full"
             loading="lazy"
-            src={`https://www.google.com/maps?q=${project.lat ?? 13.7563},${project.lng ?? 100.5018}&output=embed`}
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+            src={`https://www.google.com/maps?q=${project.latitude},${project.longitude}&output=embed`}
           />
         </div>
 
@@ -45,11 +47,15 @@ export default function InformationTab({ project }: Props) {
         {/* Company Info */}
         <div className="flex flex-col gap-1 w-[740px] p-[19px_17px] border border-green-800 rounded-2xl text-[16px]">
 
-          <p>Company : {project.company ?? "-"}</p>
+          <p>Company : {project.name ?? "-"}</p>
 
           <p>Address : {project.address ?? "-"}</p>
 
-          <p>Location : {project.location ?? "-"}</p>
+          <p>Location : {project.latitude && project.longitude
+            ? `${project.latitude}, ${project.longitude}`
+            : "-"
+          }</p>
+
 
           <p>EPC/PPA : {project.epcPPA ?? "-"}</p>
 
@@ -59,7 +65,10 @@ export default function InformationTab({ project }: Props) {
 
           <p>Warranty Output (%) : {project.warrantyOutput ?? "-"}</p>
 
-          <p>COD Date : {project.codDate ?? "-"}</p>
+          <p>COD Date : {project.gridConnectionDate
+            ? new Date(project.gridConnectionDate).toLocaleDateString("th-TH")
+            : "-"
+          }</p>
 
         </div>
 

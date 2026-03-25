@@ -60,10 +60,7 @@ export default function EnergyManagementCard({
 
       {/* ===== Chart ===== */}
       <div className="flex-1 w-full min-h-0">
-        <EnergyChart
-          data={points} 
-          view={view}
-        />
+        <EnergyChart data={data?.points || data || []} view={view} />
       </div>
     </div>
   );

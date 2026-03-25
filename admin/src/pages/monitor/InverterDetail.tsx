@@ -3,7 +3,6 @@ import {
     ArrowLeft,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import api from "../../services/api";
 import {
     LineChart,
     Line,
@@ -13,6 +12,12 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
+
+import {
+    getInverterDetail,
+    getLatestStrings,
+    getStringHistory
+} from "../../services/monitoring.api";
 
 export default function InverterDetail() {
     const navigate = useNavigate();
@@ -46,17 +51,18 @@ export default function InverterDetail() {
         const fetchInitialData = async () => {
             try {
                 setLoading(true);
-                const [detailRes, stringRes, alarmRes] = await Promise.all([
-                    api.get(`/monitoring/inverters/${inverterId}`),
-                    api.get(`/monitoring/inverters/${inverterId}/strings/latest`),
-                    api.get("/alarms", {
-                        params: { tab: "history", inverterId: Number(inverterId), page: 1, pageSize: 10 }
-                    })
+
+                const [detail, stringSnapshot] = await Promise.all([
+                    getInverterDetail(Number(inverterId)),
+                    getLatestStrings(Number(inverterId)),
                 ]);
 
-                setData(detailRes.data.data);
-                setStringSnapshot(stringRes.data.data);
-                setAlarms(alarmRes.data?.data?.list ?? []);
+                setData(detail);
+                setStringSnapshot(stringSnapshot);
+
+                // 🔴 TEMP: ยังไม่มี API alarm ที่ถูก
+                setAlarms([]);
+
             } catch (error) {
                 console.error("Error fetching data:", error);
             } finally {
@@ -73,18 +79,14 @@ export default function InverterDetail() {
 
         const fetchHistory = async () => {
             try {
-                const res = await api.get(
-                    `/monitoring/inverters/${inverterId}/strings/history`,
-                    {
-                        params: {
-                            date: selectedDate,
-                            tzOffsetMinutes: new Date().getTimezoneOffset(),
-                            includeDisconnected: false
-                        }
-                    }
-                );
+                const data = await getStringHistory(Number(inverterId), {
+                    date: selectedDate,
+                    tzOffsetMinutes: -new Date().getTimezoneOffset(), // 🔥 FIX timezone
+                    includeDisconnected: false,
+                });
 
-                const seriesByString = res.data?.data?.seriesByString ?? [];
+                const seriesByString = data?.seriesByString ?? [];
+
                 const stringIds = seriesByString.map((s: any) => s.stringNo);
                 setAvailableStrings(stringIds);
 

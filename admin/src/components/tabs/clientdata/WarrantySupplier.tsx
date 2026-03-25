@@ -24,7 +24,7 @@ export default function WarrantySupplier({ siteId }: Props) {
 
       const res = await getProjectDetail(siteId);
 
-      const items = res?.data?.warrantySupplierItems ?? [];
+      const items = res?.warrantySupplierItems ?? [];
 
       setRows(items);
 

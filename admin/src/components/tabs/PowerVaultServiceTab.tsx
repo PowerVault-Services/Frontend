@@ -6,6 +6,9 @@ import SelectFilter from "../SelectFilter";
 import DataTable, { type Column } from "../table/DataTable";
 import Pagination from "../table/Pagination";
 
+import EditIcon from "../../assets/icons/Pen New Square.svg";
+import DeleteIcon from "../../assets/icons/Paper Bin.svg";
+
 import { JOB_CONFIG } from "../../configs/jobConfig";
 import {
   getServiceEntries,
@@ -16,11 +19,13 @@ type JobType = "SERVICE" | "CLEANING" | "INSPECTION" | "OM";
 
 interface PowerVaultService {
   id: string;
+  siteId: number;
   projectnumber: string;
   projectName: string;
   systemSize: number;
   job: JobType;
   description: string;
+  endWarranty?: string;
 }
 
 const jobToSlug = (job: string) => job.toLowerCase();
@@ -61,14 +66,15 @@ export default function PowerVaultServiceTab() {
 
       console.log("SERVICE API", res);
 
-      const items = res?.data?.items ?? [];
-      const totalCount = res?.data?.total ?? 0;
+      const items = res?.items ?? [];
+      const totalCount = res?.total ?? 0;
 
       const mapped: PowerVaultService[] = items.map((item: any) => ({
         id: String(item.entryId),
+        siteId: item.siteId, // ✅ เพิ่มบรรทัดนี้
         projectnumber: item.projectNo ?? "-",
         projectName: item.projectName ?? "-",
-        systemSize: item.systemSizeKWp ?? 0,
+        systemSize: Number(item.systemSizeKWp) || 0,
         job: item.job as JobType,
         description: item.description ?? "",
       }));
@@ -85,29 +91,34 @@ export default function PowerVaultServiceTab() {
 
   useEffect(() => {
     fetchData();
-  }, [filters, page]);
+  }, [filters, page, pageSize]);
 
   const goToJobPage = (row: PowerVaultService) => {
-    navigate(`/project/${row.projectnumber}/${jobToSlug(row.job)}`);
+    navigate(`/project/${row.siteId}/${jobToSlug(row.job)}`, {
+      state: {
+        projectName: row.projectName,
+        systemSizeKWp: row.systemSize,
+        endWarranty: row.endWarranty,
+      },
+    });
   };
 
-  const handleDelete = async (id: string) => {
-
-    const confirmDelete = confirm("Delete this entry?");
-
+  /* ================= Delete ================= */
+  const handleDelete = async (id: number) => {
+    const confirmDelete = window.confirm("ต้องการลบรายการนี้หรือไม่?");
     if (!confirmDelete) return;
 
     try {
-
-      await deleteServiceEntry(Number(id));
-
-      fetchData(); // reload table
-
-    } catch (error) {
-
-      console.error("Delete failed", error);
-
+      await deleteServiceEntry(id);
+      alert("ลบสำเร็จ");
+      window.location.reload(); // หรือ refetch จะดีกว่า
+    } catch (err) {
+      alert("ลบไม่สำเร็จ");
     }
+  };
+
+  const handleEdit = (row: PowerVaultService) => {
+    navigate(`/project/edit/${row.siteId}`);
   };
 
   /* ================= Badge Style ================= */
@@ -135,14 +146,19 @@ export default function PowerVaultServiceTab() {
       key: "projectnumber",
       label: "Project No.",
       align: "center",
-      render: (value, row) => (
-        <button
-          onClick={() => goToJobPage(row)}
-          className="text-green-800 underline hover:text-green-900"
-        >
-          {value}
-        </button>
-      ),
+      render: (value, row) => {
+        const raw = String(value ?? "");
+        const displayValue = raw.replace(/^NE=/, "");
+
+        return (
+          <button
+            onClick={() => goToJobPage(row)}
+            className="text-green-800 underline hover:text-green-900"
+          >
+            {displayValue}
+          </button>
+        );
+      },
     },
     {
       id: "projectName",
@@ -161,18 +177,22 @@ export default function PowerVaultServiceTab() {
       key: "job",
       label: "Job",
       align: "center",
-      render: (value) => (
-        <span
-          className={`
-            inline-flex items-center justify-center
-            px-4 py-1 rounded-full
-            text-sm font-medium w-[119px]
-            ${jobBadgeClass(value)}
-          `}
-        >
-          {JOB_CONFIG[value as JobType]?.label ?? value}
-        </span>
-      ),
+      render: (value) => {
+        const key = value as keyof typeof JOB_CONFIG;
+
+        return (
+          <span
+            className={`
+        inline-flex items-center justify-center
+        px-4 py-1 rounded-full
+        text-sm font-medium w-[119px]
+        ${jobBadgeClass(value)}
+      `}
+          >
+            {JOB_CONFIG[key]?.label ?? value}
+          </span>
+        );
+      },
     },
     {
       id: "description",
@@ -182,31 +202,19 @@ export default function PowerVaultServiceTab() {
     },
     {
       id: "actions",
+      key: "siteId",
       label: "Actions",
       align: "center",
       render: (_, row) => (
-        <div className="flex justify-center gap-3">
-
-          {/* EDIT */}
-          <button
-            onClick={() =>
-              navigate(`/service/edit/${row.id}`)
-            }
-            className="text-blue-600 hover:text-blue-800"
-          >
-            ✏️
+        <div className="flex items-center gap-3 justify-center">
+          <button onClick={() => handleEdit(row)} className="hover:opacity-70 transition-opacity" title="Edit">
+            <img src={EditIcon} alt="Edit" className="w-5 h-5" />
           </button>
-
-          {/* DELETE */}
-          <button
-            onClick={() => handleDelete(row.id)}
-            className="text-red-600 hover:text-red-800"
-          >
-            🗑
+          <button onClick={() => handleDelete(row.siteId)} className="hover:opacity-70 transition-opacity" title="Delete">
+            <img src={DeleteIcon} alt="Delete" className="w-5 h-5" />
           </button>
-
         </div>
-      ),
+      )
     }
   ];
 

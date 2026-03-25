@@ -27,7 +27,6 @@ export default function NewServiceStep3() {
     const [loading, setLoading] = useState(false);
 
     const [reportFile, setReportFile] = useState<File | null>(null);
-
     const [images, setImages] = useState<File[]>([]);
 
     const [materialTitle] = useState("");
@@ -35,8 +34,14 @@ export default function NewServiceStep3() {
     const [equipment, setEquipment] = useState("");
     const [amount, setAmount] = useState("");
 
+    // ✅ FIX: ใช้ key ให้ตรงกับ Step2
     const jobIdStr = localStorage.getItem("serviceJobId");
-    const jobId = jobIdStr ? Number(jobIdStr) : null;
+
+    // ✅ FIX: กัน NaN
+    const jobId =
+        jobIdStr && !isNaN(Number(jobIdStr))
+            ? Number(jobIdStr)
+            : null;
 
     async function handleNext() {
 
@@ -65,11 +70,17 @@ export default function NewServiceStep3() {
 
             setLoading(true);
 
-            const metaJson = {
-                category,
-                equipment,
-                amount,
-            };
+            let metaJson: any = {};
+
+            // ✅ FIX: productId ต้องเป็น number
+            if (equipment && amount) {
+                metaJson.items = [
+                    {
+                        productId: Number(equipment),
+                        quantity: Number(amount),
+                    },
+                ];
+            }
 
             await createServiceStep3Draft({
                 jobId,
@@ -83,7 +94,6 @@ export default function NewServiceStep3() {
         } catch (error) {
 
             console.error("Step3 upload error:", error);
-            
             alert("บันทึกข้อมูลไม่สำเร็จ");
 
         } finally {
@@ -103,12 +113,17 @@ export default function NewServiceStep3() {
 
             setLoading(true);
 
-            const metaJson = {
-                materialTitle,
-                category,
-                equipment,
-                amount,
-            };
+            let metaJson: any = {};
+
+            // ✅ FIX: productId เป็น number
+            if (equipment && amount) {
+                metaJson.items = [
+                    {
+                        productId: Number(equipment),
+                        quantity: Number(amount),
+                    },
+                ];
+            }
 
             await createServiceStep3Draft({
                 jobId,
@@ -127,7 +142,6 @@ export default function NewServiceStep3() {
         } finally {
 
             setLoading(false);
-
         }
     }
 
@@ -163,11 +177,9 @@ export default function NewServiceStep3() {
 
                     {/* Upload Images */}
                     <div>
-
                         <p className="text-lg font-medium text-green-800 pb-1.5">
                             รูปภาพ Service
                         </p>
-
                     </div>
 
                     <ImageGalleryUpload
@@ -186,51 +198,8 @@ export default function NewServiceStep3() {
                     />
 
                     <div className="">
-                        <MaterialRequisition/>
+                        <MaterialRequisition />
                     </div>
-                    
-
-                    {/* <div
-                        className="grid
-                        w-[1091px]
-                        grid-cols-2
-                        gap-x-[27px]
-                        gap-y-2.5"
-                    >
-
-                        <SelectFilter
-                            label="หมวดหมู่อุปกรณ์"
-                            placeholder="Select"
-                            value={category}
-                            onChange={setCategory}
-                            options={[
-                                { label: "Type A", value: "type_a" },
-                                { label: "Type B", value: "type_b" },
-                                { label: "Type C", value: "type_c" },
-                            ]}
-                        />
-
-                        <SelectFilter
-                            label="อุปกรณ์"
-                            placeholder="Select"
-                            value={equipment}
-                            onChange={setEquipment}
-                            options={[
-                                { label: "Type A", value: "type_a" },
-                                { label: "Type B", value: "type_b" },
-                                { label: "Type C", value: "type_c" },
-                            ]}
-                        />
-
-                        <TextInputFilter
-                            label="จำนวน"
-                            type="number"
-                            placeholder="เช่น 3"
-                            value={amount}
-                            onChange={setAmount}
-                        />
-
-                    </div> */}
 
                 </div>
 
@@ -259,4 +228,3 @@ export default function NewServiceStep3() {
         </div>
     );
 }
-

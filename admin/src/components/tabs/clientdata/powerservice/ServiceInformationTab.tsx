@@ -1,6 +1,10 @@
 import DocumentIcon from "../../../../assets/icons/Document.svg";
 
-export default function ServiceInformationTab() {
+interface Props {
+  project: any;
+}
+
+export default function ServiceInformationTab({ project }: Props) {
     return (
         <div className="flex justify-center-safe py-[51px] px-8 w-full h-auto">
             <div className="pr-3">

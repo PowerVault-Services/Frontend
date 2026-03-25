@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 
+import { sendServiceStep5, saveServiceStep5Draft } from "../../services/service.api";
+
 export default function NewServiceStep5() {
 
     const navigate = useNavigate();
@@ -32,22 +34,24 @@ export default function NewServiceStep5() {
     }>({});
 
     // =========================
-    // load step1 data
+    // load jobId + step1 data
     // =========================
     useEffect(() => {
 
-        const raw = localStorage.getItem("service_step1");
+        const jobIdStr = localStorage.getItem("serviceJobId");
 
-        if (!raw) {
+        if (!jobIdStr || isNaN(Number(jobIdStr))) {
             navigate("/service/new/step1");
             return;
         }
 
-        const data = JSON.parse(raw);
+        setJobId(Number(jobIdStr));
 
-        setJobId(data.jobId);
+        const raw = localStorage.getItem("service_step1");
 
-        setJobData(data);
+        if (raw) {
+            setJobData(JSON.parse(raw));
+        }
 
     }, []);
 
@@ -62,7 +66,7 @@ export default function NewServiceStep5() {
 
         const data = JSON.parse(raw);
 
-        setReportFileUrl(`http://localhost:3000${data.reportUrl}`);
+        setReportFileUrl(data.reportUrl);
 
     }, []);
 
@@ -76,9 +80,9 @@ export default function NewServiceStep5() {
         const date = new Date(dateStr);
 
         const months = [
-            "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน",
-            "พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม",
-            "กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"
+            "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน",
+            "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม",
+            "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
         ];
 
         return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
@@ -99,55 +103,88 @@ export default function NewServiceStep5() {
             setLoading(true);
 
             const subject =
-                `Service Report โครงการ ${jobData.projectName}`;
+                `[ทดสอบระบบ]ขออนุญาตนําส่งรายงานการเข้า ${jobData.problem}`;
 
             const body = `
-<p>เรียน ท่านผู้เกี่ยวข้อง</p>
+            <div style="margin-top: 40px; max-width: 800px;">
+                <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+                <p><b>เรื่อง ขออนุญาตนําส่งรายงานการเข้า${jobData.problem} โครงการ ${jobData.projectName}</b></p>
 
-<p>
-บริษัท PowerVault ขออนุญาตนำส่งรายงานการเข้า
-<strong>${jobData.problem}</strong>
-โครงการ <strong>${jobData.projectName}</strong>
-</p>
+                <p style="text-indent: 50px; margin-top: 20px;">
+                    บริษัท พาวเวอร์วอลท์ จํากัดขออนุญาตนําส่งรายงานการเข้า ${jobData.problem}
+                    โครงการ ${jobData.projectName} วันที่ ${formatThaiDate(jobData.date)}
+                </p>
 
-<p>
-วันที่ ${formatThaiDate(jobData.date)}
-</p>
+                <p style="text-indent: 50px; margin-top: 20px;">
+                    รายละเอียดตามไฟล์แนบ
+                </p>
+            </div>
+        `;
 
-<p>รายละเอียดตามเอกสารที่แนบมาพร้อมอีเมลนี้</p>
-`;
+            const res = await sendServiceStep5({
+                jobId,
+                to: "nita290646@gmail.com",
+                subject,
+                body
+            });
 
-            const res = await fetch(
-                "http://localhost:3000/api/service/step5/send",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        jobId,
-                        to: "nita290646@gmail.com",
-                        subject,
-                        body
-                    })
-                }
-            );
-
-            const json = await res.json();
-
-            if (!json.success) {
+            if (!res?.success) {
                 throw new Error("send email failed");
             }
 
             alert("ส่งรายงานสำเร็จ");
-
             navigate("/service");
 
         } catch (err) {
 
             console.error(err);
-
             alert("ส่งอีเมลไม่สำเร็จ");
+
+        } finally {
+
+            setLoading(false);
+
+        }
+    }
+
+    // =========================
+    // SAVE DRAFT
+    // =========================
+    async function handleSaveDraft() {
+
+        if (!jobId) {
+            alert("ไม่พบ jobId");
+            return;
+        }
+
+        try {
+
+            setLoading(true);
+
+            const subject =
+                `[Draft] ${jobData.problem || ""}`;
+
+            const body = `
+            <p>${jobData.remark ?? ""}</p>
+        `;
+
+            const res = await saveServiceStep5Draft({
+                jobId,
+                to: "nita290646@gmail.com",
+                subject,
+                body
+            });
+
+            if (!res?.success) {
+                throw new Error("draft failed");
+            }
+
+            alert("บันทึก Draft สำเร็จ");
+
+        } catch (err) {
+
+            console.error(err);
+            alert("บันทึก Draft ไม่สำเร็จ");
 
         } finally {
 
@@ -166,7 +203,7 @@ export default function NewServiceStep5() {
                     New Service Job
                 </h1>
 
-                <button className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
+                <button onClick={handleSaveDraft} className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
                 text-green-700 bg-white border-2 border-green-700 rounded-md">
 
                     <img src={SaveDraftIcon} alt="save draft" />

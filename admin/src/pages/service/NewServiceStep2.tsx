@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadIcon from "../../assets/icons/Cloud Upload.svg";
+import {
+  saveServiceStep2Draft,
+  sendServiceStep2
+} from "../../services/service.api";
 
 export default function NewServiceStep2() {
 
@@ -37,7 +41,6 @@ export default function NewServiceStep2() {
         remark: "",
     });
 
-    // โหลดข้อมูลจาก Step1
     useEffect(() => {
 
         const raw = localStorage.getItem("service_step1");
@@ -81,54 +84,45 @@ export default function NewServiceStep2() {
         return `${day} ${month} ${year}`;
     }
 
-    // ==========================
-    // Save Draft
-    // ==========================
     async function handleSaveDraft() {
 
         if (loading) return;
+
+        if (!formData.jobId) {
+            alert("ไม่พบ jobId");
+            return;
+        }
 
         try {
 
             setLoading(true);
 
             const subject =
-                `แจ้งเข้าแก้ไข ${formData.problem} โครงการ ${formData.projectName}`;
+                `[ทดสอบระบบ]ขออนุญาตแจ้งเข้าแก้ไข ${formData.problem}`;
 
             const body = `
-เรียน ท่านผู้เกี่ยวข้อง
+                <div style="margin-top: 40px; max-width: 800px;">
+                    <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+                    <p><b>เรื่อง แจ้งเข้าแก้ไข ${formData.problem} โครงการ ${formData.projectName}</b></p>
 
-ทางทีมงาน PowerVault ขออนุญาตเข้าดําเนินการ ${formData.problem}
+                    <p style="text-indent: 50px; margin-top: 20px;">
+                        ทางทีมงาน PowerVault ขออนุญาตเข้าดําเนินการ ${formData.problem}
+                    โครงการ ${formData.projectName} วันที่ ${formatThaiDate(formData.date)}
+                    เวลา ${formData.time} น. โดยประมาณ </p>
 
-โครงการ ${formData.projectName}
+                    <p style="text-indent: 50px; margin-top: 20px;">
+                        ${formData.remark ?? ""}
+                    </p>
+                </div>  
+            `;
 
-วันที่ ${formatThaiDate(formData.date)}
-เวลา ${formData.time}
-
-${formData.remark ?? ""}
-`;
-
-            const form = new FormData();
-
-            form.append("jobId", String(formData.jobId));
-            form.append("to", "nita290646@gmail.com");
-            form.append("subject", subject);
-            form.append("body", body);
-
-            if (uploadedFile) {
-                form.append("attachments", uploadedFile);
-            }
-
-            const res = await fetch("/api/service/step2/draft", {
-                method: "POST",
-                body: form
+            await saveServiceStep2Draft({
+                jobId: Number(formData.jobId),
+                to: "nita290646@gmail.com",
+                subject,
+                body,
+                attachments: uploadedFile ? [uploadedFile] : []
             });
-
-            const json = await res.json();
-
-            if (!json.success) {
-                throw new Error("Save draft failed");
-            }
 
             alert("บันทึก Draft สำเร็จ");
 
@@ -143,9 +137,6 @@ ${formData.remark ?? ""}
         }
     }
 
-    // ==========================
-    // Send Email
-    // ==========================
     async function handleSendEmail() {
 
         if (emailStatus === "sending") return;
@@ -155,63 +146,43 @@ ${formData.remark ?? ""}
             return;
         }
 
+        if (!formData.jobId) {
+            alert("ไม่พบ jobId");
+            return;
+        }
+
         try {
 
             setEmailStatus("sending");
 
             const subject =
-                `แจ้งเข้าแก้ไข ${formData.problem} โครงการ ${formData.projectName}`;
+                `[ทดสอบระบบ]ขออนุญาตแจ้งเข้าแก้ไข ${formData.problem}`;
 
             const body = `
-เรียน ท่านผู้เกี่ยวข้อง
+                <div style="margin-top: 40px; max-width: 800px;">
+                    <p>เรียน ท่านผู้เกี่ยวข้อง</p>
+                    <p><b>เรื่อง แจ้งเข้าแก้ไข ${formData.problem}โครงการ ${formData.projectName}</b></p>
 
-ทางทีมงาน PowerVault ขออนุญาตเข้าดําเนินการ ${formData.problem}
+                    <p style="text-indent: 50px; margin-top: 20px;">
+                        ทางทีมงาน PowerVault ขออนุญาตเข้าดําเนินการ ${formData.problem}
+                    โครงการ ${formData.projectName} วันที่ ${formatThaiDate(formData.date)}
+                    เวลา ${formData.time} น. โดยประมาณ </p>
 
-โครงการ ${formData.projectName}
+                    <p style="text-indent: 50px; margin-top: 20px;">
+                        ${formData.remark ?? ""}
+                    </p>
+                </div>  
+            `;
 
-วันที่ ${formatThaiDate(formData.date)}
-เวลา ${formData.time}
-`;
-
-            const form = new FormData();
-
-            form.append("jobId", String(formData.jobId));
-            form.append("to", "nita290646@gmail.com");
-            form.append("subject", subject);
-            form.append("body", body);
-
-            if (uploadedFile) {
-                form.append("attachments", uploadedFile);
-            }
-
-            // save draft ก่อน
-            const draftRes = await fetch("/api/service/step2/draft", {
-                method: "POST",
-                body: form
+            await saveServiceStep2Draft({
+                jobId: Number(formData.jobId),
+                to: "nita290646@gmail.com",
+                subject,
+                body,
+                attachments: uploadedFile ? [uploadedFile] : []
             });
 
-            const draftJson = await draftRes.json();
-
-            if (!draftJson.success) {
-                throw new Error("Draft failed");
-            }
-
-            // send email
-            const sendRes = await fetch("/api/service/step2/send", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    jobId: formData.jobId
-                })
-            });
-
-            const sendJson = await sendRes.json();
-
-            if (!sendJson.success) {
-                throw new Error("Send email failed");
-            }
+            await sendServiceStep2(Number(formData.jobId));
 
             localStorage.setItem(
                 `service_step2_sent_${formData.jobId}`,
@@ -324,7 +295,7 @@ ${formData.remark ?? ""}
                                         <span className="text-[#2196F3] font-semibold">
                                             {formData.time}
                                         </span>{" "}
-                                        น.
+                                        น. โดยประมาณ
                                     </p>
 
                                 </div>

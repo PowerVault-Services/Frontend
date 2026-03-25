@@ -198,3 +198,38 @@ export const getEnergyManagement = async (
 
   return res.data.data;
 };
+
+export const getEnergyFlow = async (siteId: number) => {
+  const res = await api.get(
+    `/monitoring/sites/${siteId}/energy-flow`
+  );
+
+  return res.data.data;
+};
+
+export const getSummaryCards = async (siteId: number) => {
+  const res = await api.get(
+    `/monitoring/sites/${siteId}/summary-cards`
+  );
+
+  return res.data.data;
+};
+
+export const getLatestAlarm = async (params: {
+  siteId?: number;
+  plantCode?: string;
+}) => {
+  const res = await api.get("/monitoring/alarms/latest", {
+    params,
+  });
+
+  return res.data.data;
+};
+
+export const getHomeRealtime = async (siteId: number) => {
+  const res = await api.get(
+    `/monitoring/sites/${siteId}/home-realtime`
+  );
+
+  return res.data.data;
+};

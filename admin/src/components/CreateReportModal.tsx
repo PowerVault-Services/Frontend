@@ -9,11 +9,14 @@ import ServiceIcon from "../assets/icons/service.svg";
 interface Props {
   plantId?: number;
   onClose: () => void;
+  isOpen: boolean;
 }
 
-export default function CreateReportModal({ plantId, onClose }: Props) {
+export default function CreateReportModal({ plantId, isOpen, onClose }: Props) {
+  if (!isOpen) return null;
+  
   const navigate = useNavigate();
-  const [type, setType] = useState<"cleaning" | "inspection" | "service">("cleaning");
+  const [type, setType] = useState<"cleaning" | "inspection" | "service" | "">("");
 
   const handleNext = () => {
   if (type === "cleaning") {
@@ -58,7 +61,7 @@ export default function CreateReportModal({ plantId, onClose }: Props) {
                 checked={type === "cleaning"}
                 onChange={() => setType("cleaning")}
               />
-              <div className="p-5 border-2 border-slate-100 dark:border-slate-800 rounded-2xl peer-checked:border-green-600 peer-checked:bg-green-50 transition-all hover:border-green-500/50 hover:bg-green-100/25 flex gap-4">
+              <div className="p-5 border-2 border-slate-100 dark:border-green-800 rounded-2xl peer-checked:border-green-600 peer-checked:bg-green-50 transition-all hover:border-green-500/50 hover:bg-green-100/25 flex gap-4">
                 <div className="size-12 rounded-xl bg-green-100 flex items-center justify-center text-primary shrink-0">
                   <img src={CleangingIcon} alt="Cleaning Service" />
                 </div>

@@ -7,6 +7,9 @@ import ExportIcon from "../../assets/icons/File Download.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import ReportPreview from "../../components/ReportPreview";
 
+import { generateServiceReport } from "../../services/service.api";
+import { downloadServiceReport } from "../../services/service.api";
+
 export default function NewServiceStep4() {
 
     const navigate = useNavigate();
@@ -34,16 +37,15 @@ export default function NewServiceStep4() {
     // =========================
     useEffect(() => {
 
-        const raw = localStorage.getItem("service_step1");
+        // ✅ FIX: ใช้ key ให้ตรงทุก step
+        const jobIdStr = localStorage.getItem("serviceJobId");
 
-        if (!raw) {
+        if (!jobIdStr || isNaN(Number(jobIdStr))) {
             navigate("/service/new/step1");
             return;
         }
 
-        const data = JSON.parse(raw);
-
-        setJobId(data.jobId);
+        setJobId(Number(jobIdStr));
 
     }, []);
 
@@ -59,35 +61,21 @@ export default function NewServiceStep4() {
             setGenerating(true);
             setError("");
 
-            const res = await fetch(
-                "http://localhost:3000/api/service/step4/generate",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ jobId })
-                }
-            );
+            const json = await generateServiceReport(jobId);
 
-            const json = await res.json();
-
-            if (!json.success) {
+            if (!json?.success) {
                 throw new Error("generate report failed");
             }
 
-            const reportUrl = json.data.reportUrl;
-            const download = `http://localhost:3000${json.data.download}`;
+            const reportUrl = json.data?.reportUrl;
 
             setReportUrl(reportUrl);
-            setDownloadUrl(download);
 
             localStorage.setItem(
                 "service_report",
                 JSON.stringify({
                     jobId,
-                    reportUrl,
-                    download
+                    reportUrl
                 })
             );
 
@@ -106,15 +94,14 @@ export default function NewServiceStep4() {
     // export report
     // =========================
     function handleExport(event: React.MouseEvent<HTMLButtonElement>) {
-
         event.preventDefault();
 
-        if (!downloadUrl) {
-            alert("ยังไม่มีรายงาน กรุณาสร้างรายงานก่อน");
+        if (!jobId) {
+            alert("ไม่พบ jobId");
             return;
         }
 
-        window.open(downloadUrl, "_blank");
+        downloadServiceReport(jobId);
     }
 
     // =========================
@@ -240,4 +227,3 @@ export default function NewServiceStep4() {
         </div>
     );
 }
-

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getMonitoringSites } from "../../services/monitoring.api";
+import { getHomeRealtime, getMonitoringSites } from "../../services/monitoring.api";
 
 import HomeIcon from "../../assets/icons/home.svg";
 import TagNav from "../../components/TagNav";
@@ -8,8 +8,6 @@ import AlarmTab from "../../components/tabs/AlarmTab";
 import PRTab from "../../components/tabs/PRTab";
 import ReportTab from "../../components/tabs/ReportTab";
 import NewAlarm from "../../components/monitor/NewAlarm";
-
-import { getLatestAlarm } from "../../services/alarm.api";
 
 /* ================= Types ================= */
 interface Plant {
@@ -24,7 +22,6 @@ interface Alarm {
   severity: number;
 }
 
-
 /* ================= Component ================= */
 export default function HomeMonitor() {
   const [plants, setPlants] = useState<Plant[]>([]);
@@ -34,9 +31,16 @@ export default function HomeMonitor() {
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const [realtime, setRealtime] = useState<any>(null);
+
+
 
   const [alarms, setAlarms] = useState<Alarm[]>([]);
-  const latestAlarm = alarms[0];
+  const latestAlarm = [...alarms].sort(
+    (a, b) =>
+      new Date(b.occurredAt).getTime() -
+      new Date(a.occurredAt).getTime()
+  )[0];
 
   /* ================= Constants ================= */
   const tabs = [
@@ -46,20 +50,21 @@ export default function HomeMonitor() {
     { id: "Report", label: "Report" },
   ];
 
-  /* ================= Fetch Plants ================= */
   useEffect(() => {
     const fetchPlants = async () => {
       setLoading(true);
       try {
         const res = await getMonitoringSites();
+
         const data = Array.isArray(res) ? res : [];
 
         setPlants(data);
 
-        // เลือก plant แรกครั้งเดียว
+        // auto select ตัวแรก
         if (data.length > 0) {
           setSelectedPlant(data[0]);
         }
+
       } catch (err) {
         console.error("โหลด plant ไม่สำเร็จ:", err);
         setPlants([]);
@@ -71,6 +76,27 @@ export default function HomeMonitor() {
     fetchPlants();
   }, []);
 
+  /* ================= Fetch Plants ================= */
+  useEffect(() => {
+    if (!selectedPlant) return;
+
+    const fetchRealtime = async () => {
+      try {
+        const data = await getHomeRealtime(selectedPlant.id);
+
+        setRealtime(data);
+        setAlarms(data?.alarms ?? []);
+
+      } catch (err) {
+        console.error("โหลด realtime ไม่สำเร็จ", err);
+        setRealtime(null);
+        setAlarms([]);
+      }
+    };
+
+    fetchRealtime();
+  }, [selectedPlant]);
+
   /* ================= Search ================= */
   const filteredPlants = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
@@ -80,16 +106,6 @@ export default function HomeMonitor() {
       p.name.toLowerCase().includes(keyword)
     );
   }, [plants, searchTerm]);
-
-  /* ================= Keep selection valid ================= */
-  useEffect(() => {
-    if (
-      selectedPlant &&
-      !filteredPlants.find((p) => p.id === selectedPlant.id)
-    ) {
-      setSelectedPlant(filteredPlants[0] ?? null);
-    }
-  }, [filteredPlants, selectedPlant]);
 
   /* ================= Render Tab ================= */
   const renderTab = () => {
@@ -127,22 +143,6 @@ export default function HomeMonitor() {
     }
   };
 
-  useEffect(() => {
-    if (!selectedPlant) return;
-
-    const fetchAlarm = async () => {
-      try {
-        const data = await getLatestAlarm(selectedPlant.id);
-        setAlarms(data);
-      } catch (err) {
-        console.error("โหลด alarm ไม่สำเร็จ", err);
-        setAlarms([]);
-      }
-    };
-
-    fetchAlarm();
-  }, [selectedPlant]);
-
   const formatDate = (iso?: string) => {
     if (!iso) return "-";
 
@@ -165,6 +165,8 @@ export default function HomeMonitor() {
       minute: "2-digit",
     });
   };
+
+
 
   /* ================= JSX ================= */
   return (

@@ -159,7 +159,7 @@ export default function AlarmTable({
                 {showClearedAt && (
                   <th className="py-3 px-4 border-r border-white/20">Status</th>
                 )}
-                
+
               </tr>
             </thead>
 
@@ -204,7 +204,18 @@ export default function AlarmTable({
 
                     {!showClearedAt && (
                       <td className="py-3 px-4 items-center justify-center flex"
-                        onClick={() => navigate('/service/new/step1')}
+                        onClick={() =>
+                          navigate('/service/new/step1', {
+                            state: {
+                              projectName: item.plantName,
+                              plantName: item.plantName,
+                              sn: item.sn,
+                              deviceName: item.deviceName,
+                              alarmName: item.alarmName,
+                              alarmId: item.alarmId,
+                            },
+                          })
+                        }
                       >
                         <img src={createicon} alt="" />
                       </td>

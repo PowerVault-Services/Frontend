@@ -1,15 +1,15 @@
 import { useState } from "react";
-import type { Project } from "../../mock/project";
+import type { Project } from "../../types/project";
 import TagNav from "../../components/TagNav";
 import ServiceInformationTab from "../../components/tabs/clientdata/powerservice/ServiceInformationTab";
 import ServicePVLayoutTab from "../../components/tabs/clientdata/powerservice/ServicePVLayoutTab";
 import ServiceStringPVLayoutTab from "../../components/tabs/clientdata/powerservice/ServicePVStringLayoutTab";
 
+type Project = any;
 
 interface Props {
   project: Project;
 }
-
 const homeTags = [
   { id: "Information", label: "Information" },
   { id: "PV Layout", label: "PV Layout" },
@@ -22,11 +22,11 @@ export default function ServiceJob({ project }: Props) {
   const renderTabContent = () => {
     switch (activeProject) {
       case "Information":
-        return <ServiceInformationTab />;
+        return <ServiceInformationTab project={project} />;
       case "PV Layout":
-        return <ServicePVLayoutTab />;
+        return <ServicePVLayoutTab project={project} />;
       case "PV String Layout":
-        return <ServiceStringPVLayoutTab />;
+        return <ServiceStringPVLayoutTab project={project} />;
       default:
         return null;
     }
@@ -42,7 +42,10 @@ export default function ServiceJob({ project }: Props) {
         </h2>
         <h3 className="items-end text-green-700 flex flex-col gap-5">
           <span>Start Warranty : {project.startWarranty}</span>
-          <span>End Warranty : {project.endWarranty}</span>
+          <span>
+            End Warranty :
+            {project?.endWarranty ?? project?.end_warranty ?? "-"}
+          </span>
         </h3>
       </div>
 

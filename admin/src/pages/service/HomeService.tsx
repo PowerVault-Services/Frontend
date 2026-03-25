@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
@@ -12,9 +13,11 @@ import EditIcon from "../../assets/icons/Pen New Square.svg";
 import DeleteIcon from "../../assets/icons/Paper Bin.svg";
 
 import { getServiceJobs, downloadServiceZip } from "../../services/service.api";
+import { deleteServiceJob } from "../../services/service.api";
 
 interface Service {
   id: number;
+  siteId: number;
   jobnumber: string;
   projectType: string;
   projectName: string;
@@ -30,6 +33,8 @@ interface Service {
 
 export default function HomeService() {
 
+  const navigate = useNavigate();
+
   const [data, setData] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
@@ -37,7 +42,7 @@ export default function HomeService() {
   const headerCheckboxRef = useRef<HTMLInputElement>(null);
 
   const [page, setPage] = useState(1);
-  const pageSize = 13;
+  const pageSize = 20;
 
   const [totalItems, setTotalItems] = useState(0);
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -90,6 +95,8 @@ export default function HomeService() {
       if (systemSize) params.append("systemSizeKWp", systemSize);
       if (date) params.append("date", date);
       if (status) params.append("status", status);
+      if (problem) params.append("problem", problem);
+      if (contractor) params.append("contractor", contractor);
 
       const json = await getServiceJobs(`?${params.toString()}`);
 
@@ -99,6 +106,7 @@ export default function HomeService() {
 
       const mapped: Service[] = list.map((item: any) => ({
         id: item.jobId,
+        siteId: item.siteId,
         jobnumber: item.jobNo,
         projectType: item.projectType,
         projectName: item.projectName,
@@ -129,21 +137,58 @@ export default function HomeService() {
   };
 
   const handleEdit = (row: Service) => {
-    console.log("Edit:", row);
+
+    const serviceData = {
+      jobId: row.id,
+      projectId: row.siteId,
+      jobNo: row.jobnumber,
+      projectName: row.projectName,
+      projectType: row.projectType,
+      systemSizeKWp: row.systemSize,
+      pvModuleEA: row.pvModuleEA,
+      date: row.date,
+      time: row.time,
+      status: row.status,
+      problem: row.problem,
+      contractor: row.contractor,
+    };
+
+    // ✅ เก็บข้อมูลเหมือน cleaning
+    localStorage.setItem("service_step1", JSON.stringify(serviceData));
+    localStorage.setItem("jobId", String(row.id));
+
+    // 👉 ไป Step1
+    navigate("/service/new/step1");
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
 
-    if (!confirm("Delete this record?")) return;
+    if (!confirm("คุณต้องการลบรายการนี้ใช่หรือไม่?")) return;
 
-    setData(prev => prev.filter(r => r.id !== id));
+    try {
 
-    setSelectedRows(prev => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
+      await deleteServiceJob(id);
 
+      setData(prev => prev.filter(r => r.id !== id));
+
+      setSelectedRows(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+
+    } catch (err) {
+
+      console.error(err);
+      alert("ลบข้อมูลไม่สำเร็จ");
+
+    }
+
+  };
+
+  const handleCreateNew = () => {
+    localStorage.removeItem("jobId");
+    localStorage.removeItem("service_step1");
   };
 
   const statusBadge = (status: string) => {
@@ -192,7 +237,7 @@ export default function HomeService() {
     setStatus("");
     setProblem("");
     setContractor("");
-
+    setSelectedRows(new Set());
 
     setPage(1);
   };
@@ -271,7 +316,11 @@ export default function HomeService() {
       align: "center",
       render: (_, row) => (
         <div className="flex items-center gap-3 justify-center">
-          <button onClick={() => handleEdit(row)} className="hover:opacity-70 transition-opacity" title="Edit">
+          <button
+            onClick={() => handleEdit(row)}
+            className="hover:opacity-70 transition-opacity"
+            title="Edit"
+          >
             <img src={EditIcon} alt="Edit" className="w-5 h-5" />
           </button>
           <button onClick={() => handleDelete(row.id)} className="hover:opacity-70 transition-opacity" title="Delete">
@@ -292,7 +341,7 @@ export default function HomeService() {
         <h1 className="text-green-800">Service</h1>
 
         <Link to="/service/new/step1">
-          <button className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5">
+          <button onClick={handleCreateNew} className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5">
             <img src={AddIcon} alt="" />
             New Service Job
           </button>
@@ -337,9 +386,11 @@ export default function HomeService() {
             onChange={setStatus}
             options={[
               { label: "All", value: "" },
-              { label: "Pending", value: "PENDING" },
+              { label: "Draft", value: "DRAFT" },
+              { label: "Assigned", value: "ASSIGNED" },
+              { label: "In Progress", value: "IN_PROGRESS" },
               { label: "Completed", value: "COMPLETED" },
-              { label: "Draft", value: "DRAFT" }
+              { label: "Cancelled", value: "CANCELLED" }
             ]}
           />
         </div>

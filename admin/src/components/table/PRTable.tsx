@@ -14,6 +14,7 @@ interface PRRowFromAPI {
   irradiation: Metric;
   production: Metric;
   pr: Metric;
+  month?: string;
 }
 
 interface PRTableProps {
@@ -25,6 +26,8 @@ interface PRTableProps {
   pageSize: number;
   total: number;
   onPageChange: (page: number) => void;
+
+  mode?: "plant" | "month";
 }
 
 export default function PRTable({
@@ -36,6 +39,7 @@ export default function PRTable({
   pageSize,
   total,
   onPageChange,
+  mode = "plant",
 }: PRTableProps) {
   // ===== STATE =====
   const [selectedPlants, setSelectedPlants] = useState<number[]>([]);
@@ -95,13 +99,13 @@ export default function PRTable({
 
       const blob = new Blob([res.data], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
-      
+
       const link = document.createElement("a");
       link.href = url;
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
-      
+
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
@@ -117,30 +121,31 @@ export default function PRTable({
     <div className="relative">
       {/* Export Button Section */}
       <div className="flex justify-end mb-3">
-        <button
-          onClick={handleExport}
-          disabled={isExporting || selectedPlants.length === 0}
-          className={`flex items-center px-7 py-3 gap-1.5 bg-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25)] border-2 rounded-md text-xs font-normal transition-all
-            ${isExporting || selectedPlants.length === 0
-              ? "border-gray-300 text-gray-400 cursor-not-allowed"
-              : "border-green-700 text-green-700 hover:bg-green-50 active:scale-95"
-            }`}
-        >
-          {isExporting ? (
-            <>
-              <div className="w-3 h-3 border-2 border-green-700 border-t-transparent rounded-full animate-spin"></div>
-              <span>Exporting...</span>
-            </>
-          ) : (
-            "Export CSV"
-          )}
-        </button>
+        {mode === "plant" && (
+          <button
+            onClick={handleExport}
+            disabled={isExporting || selectedPlants.length === 0}
+            className={`flex items-center px-7 py-3 gap-1.5 bg-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25)] border-2 rounded-md text-xs font-normal transition-all
+              ${isExporting || selectedPlants.length === 0
+                ? "border-gray-300 text-gray-400 cursor-not-allowed"
+                : "border-green-700 text-green-700 hover:bg-green-50 active:scale-95"
+              }`}
+          >
+            {isExporting ? (
+              <>
+                <div className="w-3 h-3 border-2 border-green-700 border-t-transparent rounded-full animate-spin"></div>
+                <span>Exporting...</span>
+              </>
+            ) : (
+              "Export CSV"
+            )}
+          </button>
+        )}
       </div>
 
       <div
-        className={`border border-gray-200 rounded-t-lg overflow-hidden transition-opacity duration-300 ${
-          loading ? "opacity-40 pointer-events-none" : "opacity-100"
-        }`}
+        className={`border border-gray-200 rounded-t-lg overflow-hidden transition-opacity duration-300 ${loading ? "opacity-40 pointer-events-none" : "opacity-100"
+          }`}
       >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] bg-white border-collapse text-sm">
@@ -149,16 +154,17 @@ export default function PRTable({
               <tr>
                 <th rowSpan={2} className="py-3 px-4 text-center font-normal border-r border-white/20">
                   <div className="flex flex-col items-center gap-1">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 cursor-pointer accent-green-500"
-                      checked={isAllSelected}
-                      onChange={handleSelectAll}
-                    />
+                    {mode === "plant" && (
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        onChange={handleSelectAll}
+                      />
+                    )}
                   </div>
                 </th>
                 <th rowSpan={2} className="py-3 px-4 text-center font-normal border-r border-white/20">
-                  Plant
+                  {mode === "plant" ? "Plant" : "Month"}
                 </th>
                 <th colSpan={3} className="py-3 px-2 text-center font-normal border-r border-white/20">
                   Irradiation (kWh / m2)
@@ -195,15 +201,17 @@ export default function PRTable({
                 data.map((row, idx) => (
                   <tr key={row.id || idx} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                     <td className="py-3 px-4 text-center border-r border-gray-200">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 cursor-pointer accent-green-600"
-                        checked={selectedPlants.includes(row.id)}
-                        onChange={() => togglePlant(row.id)}
-                      />
+                      {mode === "plant" && (
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 cursor-pointer accent-green-600"
+                          checked={selectedPlants.includes(row.id)}
+                          onChange={() => togglePlant(row.id)}
+                        />
+                      )}
                     </td>
                     <td className="py-3 px-4 border-r border-gray-200 font-medium">
-                      {row.plantName}
+                      {mode === "plant" ? row.plantName : row.month}
                     </td>
                     <td className="py-3 px-4 text-center border-r border-gray-200">{formatValue(row.irradiation.actual)}</td>
                     <td className="py-3 px-4 text-center border-r border-gray-200">{formatValue(row.irradiation.forecast)}</td>

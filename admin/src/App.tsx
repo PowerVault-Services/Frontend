@@ -34,12 +34,15 @@ import NewServiceStep5 from "./pages/service/NewServiceStep5";
 import HomeClientData from "./pages/clientdata/HomeClientData";
 import ClientDataDetail from "./pages/clientdata/ClientDataDetail";
 import ProjectJobPage from "./pages/clientdata/ProjectJobPage";
+import CreatePlantPage from "./pages/clientdata/CreatePlantPage";
 
 import AllStock from "./pages/stock/AllStock";
 import StockIn from "./pages/stock/StockIn";
 import StockOut from "./pages/stock/StockOut";
 import PRAddForecast from "./pages/monitor/PRAddForecast";
 import { EnergyYieldReport } from "./pages/monitor/EnergyYieldReport";
+
+import ProjectEditPage from "./pages/clientdata/ProjectEditPage";
 
 
 function App() {
@@ -111,6 +114,8 @@ function App() {
           {/* Client Data */}
           <Route path="/client-data" element={<HomeClientData />} />
           <Route path="/project/:id" element={<ClientDataDetail />} />
+          <Route path="/project/edit/:siteId" element={<ProjectEditPage />} />
+          <Route path="/client/create-plant" element={<CreatePlantPage />} />
 
           {/* Stock*/}
           <Route path="/stock/all" element={<AllStock />} />

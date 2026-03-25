@@ -2,9 +2,15 @@ import type { ForecastTableConfig } from "../../types/forecastTable";
 
 interface ForecastTableProps {
   config: ForecastTableConfig;
+  data: any[]; // 🔥 เพิ่ม
+  onChange: (rows: any[]) => void; // 🔥 เพิ่ม
 }
 
-export default function ForecastTable({ config }: ForecastTableProps) {
+export default function ForecastTable({
+  config,
+  data,
+  onChange,
+}: ForecastTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-[1109px] rounded-lg border border-[#CFCFCF]">

@@ -7,10 +7,13 @@ import OperationTable from "../../components/table/OperationTable";
 import { saveDraftStep } from "../../services/draft.api";
 import { saveCleaningChecklist } from "../../services/cleaning.api";
 
+/* =======================
+   Types
+======================= */
 interface ChecklistItem {
   item: string;
   ok: boolean;
-  remark?: string;
+  remark: string;
 }
 
 export default function NewCleaningStep3_02() {
@@ -28,6 +31,9 @@ export default function NewCleaningStep3_02() {
   const [loading, setLoading] = useState(false);
   const [checklistData, setChecklistData] = useState<ChecklistItem[]>([]);
 
+  /* =======================
+     Summary Generator
+  ======================= */
   const generateSummaryNote = (data: ChecklistItem[]) => {
     const total = data.length;
     const okCount = data.filter((i) => i.ok).length;
@@ -52,8 +58,10 @@ export default function NewCleaningStep3_02() {
     return summary;
   };
 
+  /* =======================
+     Submit Checklist
+  ======================= */
   const handleSubmitChecklist = async () => {
-
     if (loading) return;
 
     const jobId = localStorage.getItem("jobId");
@@ -70,41 +78,44 @@ export default function NewCleaningStep3_02() {
 
     const autoSummary = generateSummaryNote(checklistData);
 
-    try {
+    // ✅ แปลงให้ตรง API ใหม่
+    const payload = {
+      items: checklistData.map((i) => ({
+        title: i.item,
+        status: i.ok ? "done" : "fail",
+        remark: i.remark || "",
+      })),
+    };
 
+    try {
       setLoading(true);
 
       const result = await saveCleaningChecklist({
         jobId: Number(jobId),
-        checklistJson: JSON.stringify(checklistData),
-        step3SummaryNote: autoSummary
+        checklistJson: payload, // ✅ ส่งเป็น object (ไม่ stringify)
+        step3SummaryNote: autoSummary,
       });
 
-      if (!result.success) {
+      if (!result?.success) {
         throw new Error("API Error");
       }
 
       alert("บันทึก Checklist สำเร็จ");
 
       navigate("/cleaning/new/step4", { replace: true });
-
     } catch (error) {
-
       console.error(error);
       alert("เกิดข้อผิดพลาดในการบันทึก");
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
+  /* =======================
+     Save Draft
+  ======================= */
   async function handleSaveDraft() {
-
     try {
-
       const jobId = localStorage.getItem("jobId");
 
       if (!jobId) {
@@ -117,16 +128,15 @@ export default function NewCleaningStep3_02() {
       alert("บันทึกเรียบร้อยแล้ว");
 
       navigate("/cleaning");
-
     } catch (err) {
-
       console.error(err);
       alert("Save Draft ไม่สำเร็จ");
-
     }
-
   }
 
+  /* =======================
+     UI
+  ======================= */
   return (
     <div className="w-full">
       {/* Header */}

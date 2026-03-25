@@ -13,15 +13,70 @@ export default function PRTab({ plantId }: Props) {
 
     const currentYear = new Date().getFullYear();
     const [year, setYear] = useState<string>(String(currentYear));
+    const [yearOptions, setYearOptions] = useState<{ label: string; value: string }[]>([]);
 
     const [rows, setRows] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
-    const yearOptions = [
-        { label: "2025", value: "2025" },
-        { label: "2026", value: "2026" },
-        // อนาคตสามารถเขียนลูป Generate ปีอัตโนมัติได้นะครับ
-    ];
+    useEffect(() => {
+        const fetchYears = async () => {
+            if (!siteId) return;
+
+            try {
+                const res = await api.get("/monitoring/pr", {
+                    params: {
+                        siteId,
+                        granularity: "year", // 🔥 เปลี่ยนเป็น year
+                    },
+                });
+
+                const rows = res.data?.data?.rows ?? [];
+
+                // 👉 สมมุติ API มี field year
+                const years: number[] = rows.map((r: any) => Number(r.year));
+
+                const uniqueYears = Array.from(new Set(years)).sort((a, b) => b - a);
+
+                const options = uniqueYears.map((y) => ({
+                    label: String(y),
+                    value: String(y),
+                }));
+
+                setYearOptions(options);
+
+                // auto select ปีล่าสุด
+                if (options.length > 0) {
+                    setYear(options[0].value);
+                }
+
+            } catch (err) {
+                console.error("fetchYears error:", err);
+            }
+        };
+
+        fetchYears();
+    }, [siteId]);
+
+
+    function transformToMonthly(rows: any[]) {
+        const months = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+
+        return months.map((month, index) => {
+            const m = index + 1;
+
+            const found = rows.find((r: any) => r.month === m);
+
+            return {
+                month,
+                irradiation: found?.irradiation ?? "-",
+                production: found?.production ?? "-",
+                pr: found?.pr ?? "-"
+            };
+        });
+    }
 
     useEffect(() => {
         // ✅ ย้าย fetchPR เข้ามาไว้ในนี้
@@ -39,7 +94,11 @@ export default function PRTab({ plantId }: Props) {
                     },
                 });
 
-                setRows(res.data?.data?.rows ?? []);
+                const raw = res.data?.data?.rows ?? [];
+
+                const transformed = transformToMonthly(raw);
+
+                setRows(transformed);
             } catch (error) {
                 console.error("Fetch PR error:", error);
                 setRows([]);
@@ -56,7 +115,6 @@ export default function PRTab({ plantId }: Props) {
             <div className="max-w-[400px]">
                 <SelectFilter
                     label="Statistical Period"
-                    placeholder="Select Year"
                     value={year}
                     onChange={(val: any) => setYear(val)}
                     options={yearOptions}
@@ -65,8 +123,12 @@ export default function PRTab({ plantId }: Props) {
 
             <PRTable
                 data={rows}
-                year={Number(year)}
                 loading={loading}
+                page={1}
+                pageSize={12}
+                total={rows.length}
+                onPageChange={() => { }}
+                mode="month"
             />
         </div>
     );

@@ -48,19 +48,12 @@ export const getAlarms = async (params?: {
 
 /* ================= GET Latest Alarm ================= */
 
-export const getLatestAlarm = async (
-  siteId: number
-): Promise<Alarm[]> => {
-  const res = await api.get("/alarms", {
-    params: {
-      tab: "active",
-      siteId,
-      page: 1,
-      pageSize: 1,
-    },
-  });
+export const getLatestAlarm = async (siteId: number) => {
+  const res = await api.get(
+    `/monitoring/sites/${siteId}/home-realtime`
+  );
 
-  return res.data?.data?.list ?? [];
+  return res.data.data;
 };
 
 /* ================= GET /api/alarms/:id ================= */

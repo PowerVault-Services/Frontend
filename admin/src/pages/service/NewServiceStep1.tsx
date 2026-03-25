@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import SelectFilter from "../../components/SelectFilter";
 import InputField from "../../components/InputField";
 import TextInputFilter from "../../components/TextInputFilter";
+
+import { saveDraftStep } from "../../services/draft.api";
+import { createServiceStep1, updateServiceStep1 } from "../../services/service.api";
+import { getServiceProjects } from "../../services/service.api";
 
 interface ServiceProject {
     siteId: number;
@@ -79,134 +84,218 @@ export default function NewServiceStep1() {
     const [project, setProject] = useState<ServiceProject | null>(null);
 
     const [date, setDate] = useState("");
-    const [time, setTime] = useState("");
+    const [startTime, setStartTime] = useState("");
+    const [endTime, setEndTime] = useState("");
+
     const [remark, setRemark] = useState("");
     const [remarklocation, setRemarkLocation] = useState("");
     const [problem, setProblem] = useState("");
     const [projectType, setProjectType] = useState("");
 
-    // =========================
-    // Load projects
-    // =========================
+    const [contractor, setContractor] = useState("");
+    const [isEditMode, setIsEditMode] = useState(false);
+
+    const location = useLocation();
+    const navData = location.state as any;
+
+
     useEffect(() => {
+        const savedData = localStorage.getItem("service_step1");
+        if (!savedData) return;
 
-        async function loadProjects() {
+        const parsed = JSON.parse(savedData);
 
-            try {
+        const idFromStorage = parsed.projectId || parsed.siteId;
 
-                const res = await fetch("/api/service/projects");
-
-                const json = await res.json();
-
-                if (!json.success) {
-                    throw new Error("โหลด projects ไม่สำเร็จ");
-                }
-
-                setProjects(json.data);
-
-            } catch (err) {
-
-                console.error(err);
-            }
+        // ✅ set projectId
+        if (idFromStorage && !isNaN(Number(idFromStorage))) {
+            setProjectId(String(idFromStorage));
         }
 
-        loadProjects();
+        // ✅ set form
+        setDate(parsed.date || "");
+        setStartTime(parsed.startTime?.slice(0, 5) || "");
+        setEndTime(parsed.endTime?.slice(0, 5) || "");
+
+        setProblem(parsed.problem || "");
+        setRemark(parsed.remark || "");
+
+        setRemarkLocation(parsed.remarklocation || "");
+        setContractor(parsed.contractor || "");
+        setProjectType(parsed.projectType || "");
+
+        // ✅ edit mode
+        if (parsed.jobId) {
+            localStorage.setItem("jobId", String(parsed.jobId));
+            setIsEditMode(true);
+        }
+
+        // ✅ set project object (สำคัญมาก)
+        if (parsed.projectName) {
+            setProject({
+                siteId: idFromStorage ? Number(idFromStorage) : 0,
+                projectName: parsed.projectName,
+                address: parsed.address,
+                systemSizeKWp: parsed.systemSizeKWp,
+                pvModuleEA: parsed.pvModuleEA,
+                contactPhone: parsed.contactPhone,
+                contactEmail: parsed.contactEmail
+            } as any);
+        }
+
+        if (idFromStorage) {
+            setProjectId(String(idFromStorage)); // 👈 สำคัญ
+        }
 
     }, []);
+
+    useEffect(() => {
+        if (!projectId && project?.projectName && projects.length > 0) {
+
+            const found = projects.find(
+                (p) => p.projectName === project.projectName
+            );
+
+            if (found) {
+                setProjectId(String(found.siteId));
+                setProject(found);
+            }
+        }
+    }, [projects, project, projectId]);
 
     // =========================
     // select project
     // =========================
     useEffect(() => {
 
+        if (!projectId || projects.length === 0) return;
+
         const selected = projects.find(
             (p) => p.siteId === Number(projectId)
         );
 
-        setProject(selected ?? null);
+        if (selected) {
+            setProject(selected);
+        }
 
     }, [projectId, projects]);
 
-    // =========================
-    // Save draft local
-    // =========================
-    function saveStep1Data() {
+    useEffect(() => {
+        const fetchProjects = async () => {
+            const res = await getServiceProjects();
+            if (!res.success) return;
 
-        const payload = {
-            projectId,
-            projectName: project?.projectName ?? "",
-            date,
-            time,
-            problem,
-            remarklocation,
-            remark,
-            projectType
+            setProjects(res.data || []);
         };
 
-        localStorage.setItem("service_step1", JSON.stringify(payload));
-    }
+        fetchProjects();
+    }, []);
+
+    useEffect(() => {
+
+        if (navData?.projectName && projects.length > 0) {
+            const found = projects.find(
+                (p) => p.projectName === navData.projectName
+            );
+
+            if (found) {
+                setProjectId(String(found.siteId));
+                setProject(found);
+                return;
+            }
+        }
+
+        const savedData = localStorage.getItem("service_step1");
+        if (!savedData) return;
+
+        const parsed = JSON.parse(savedData);
+
+        // 👉 อย่างน้อยต้องมีอะไรสักอย่าง เช่น:
+        if (parsed.projectId) {
+            setProjectId(String(parsed.projectId));
+        }
+
+    }, [navData, projects]);
 
     // =========================
     // Create Service Job
     // =========================
-    async function handleNext() {
+    async function handleSaveStep1() {
 
-        if (!projectId) {
-            alert("กรุณาเลือก Project");
-            return;
+        const finalProjectId =
+            projectId || (project?.siteId ? String(project.siteId) : "");
+
+        if (!finalProjectId) throw new Error("กรุณาเลือก Project");
+
+        if (!date || !startTime || !endTime) {
+            throw new Error("กรุณากรอก Date/Time");
         }
 
-        if (!date || !time) {
-            alert("กรุณาเลือกวันที่และเวลา");
-            return;
+        if (startTime >= endTime) {
+            throw new Error("เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด");
         }
 
-        try {
-
-            const res = await fetch("/api/service/step1", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    siteId: Number(projectId),
-                    workDate: date,
-                    workTimeText: time,
-                    note: remark
-                })
-            });
-
-            const json = await res.json();
-
-            if (!json.success) {
-                throw new Error("create job failed");
-            }
-
-            const jobId = json.data.jobId;
-
-            localStorage.setItem("service_jobId", String(jobId));
-
-            const payload = {
-                jobId,
-                projectId,
-                projectName: project?.projectName,
-                contactEmail: project?.contactEmail,
-                date,
-                time,
-                problem,
-                remarklocation,
-                remark
-            };
-
-            localStorage.setItem("service_step1", JSON.stringify(payload));
-
-            navigate("/service/new/step2");
-
-        } catch (err) {
-
-            console.error(err);
-            alert("สร้าง Service Job ไม่สำเร็จ");
+        if (!contractor) {
+            throw new Error("กรุณากรอกผู้รับเหมา");
         }
+
+        const currentJobId = localStorage.getItem("jobId");
+
+        const payload = {
+            siteId: Number(finalProjectId),
+            workDate: date,
+            startTime: startTime.length === 5 ? startTime + ":00" : startTime,
+            endTime: endTime.length === 5 ? endTime + ":00" : endTime,
+            contractor,
+            problem: problem || "-",
+            note: remark || "-",
+        };
+
+        console.log("🔥 SERVICE STEP1:", payload);
+
+        let res;
+
+        if (currentJobId) {
+            // ✅ EDIT MODE
+            res = await updateServiceStep1(Number(currentJobId), payload);
+        } else {
+            // ✅ CREATE
+            res = await createServiceStep1(payload);
+        }
+
+        const jobId = res.data?.jobId || res.jobId;
+
+        if (!jobId) throw new Error("ไม่พบ jobId");
+
+        // ✅ save local (เหมือน cleaning)
+        localStorage.setItem("service_step1", JSON.stringify({
+            jobId,
+            projectId: finalProjectId,
+            siteId: Number(finalProjectId),
+
+            projectName: project?.projectName,
+            address: project?.address,
+            systemSizeKWp: project?.systemSizeKWp,
+            pvModuleEA: project?.pvModuleEA,
+            contactPhone: project?.contactPhone,
+            contactEmail: project?.contactEmail,
+
+            date,
+            startTime,
+            endTime,
+            time: startTime,
+            problem,
+            remarklocation,
+            remark,
+            contractor,
+            projectType,
+        }));
+
+        localStorage.setItem("jobId", String(jobId));
+
+        await saveDraftStep(jobId, 1);
+
+        return jobId;
     }
 
     return (
@@ -220,7 +309,15 @@ export default function NewServiceStep1() {
                 </h1>
 
                 <button
-                    onClick={saveStep1Data}
+                    onClick={async () => {
+                        try {
+                            await handleSaveStep1();
+                            alert("บันทึกเรียบร้อยแล้ว");
+                            navigate("/service");
+                        } catch (err: any) {
+                            alert(err.message);
+                        }
+                    }}
                     className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
                     text-green-700 bg-white border-2 border-green-700 rounded-md"
                 >
@@ -231,7 +328,7 @@ export default function NewServiceStep1() {
             </div>
 
             {/* Form */}
-            <div className="flex flex-col h-[822px] px-28 py-5 gap-y-[58px]
+            <div className="flex flex-col h-auto px-28 py-5 gap-y-[58px]
             bg-white rounded-2xl justify-between items-center">
 
                 <ProgressBar
@@ -244,18 +341,19 @@ export default function NewServiceStep1() {
 
                     {/* Project */}
                     <div className={FIELD_WIDTH}>
-
-                        <SelectFilter
-                            label="Project Name"
-                            placeholder="Select Project"
-                            value={projectId}
-                            onChange={setProjectId}
-                            options={projects.map((p) => ({
-                                label: p.projectName,
-                                value: String(p.siteId)
-                            }))}
-                        />
-
+                        {isEditMode ? (
+                            <InputField label="Project Name" value={project?.projectName ?? ""} disabled />
+                        ) : (
+                            <SelectFilter
+                                label="Project Name"
+                                value={projectId}
+                                onChange={setProjectId}
+                                options={projects.map(p => ({
+                                    label: p.projectName,
+                                    value: String(p.siteId),
+                                }))}
+                            />
+                        )}
                     </div>
 
                     {/* Location */}
@@ -301,6 +399,14 @@ export default function NewServiceStep1() {
                         </div>
                     </div>
 
+                    {/* Project Type */}
+                    <div className={FIELD_WIDTH}>
+                        <SelectFilter key={projectType} label="Project Type" value={projectType} onChange={setProjectType} options={[
+                            { label: "EPC", value: "EPC" },
+                            { label: "PPA", value: "PPA" },
+                        ]} />
+                    </div>
+
                     {/* Problem */}
                     <div className={FIELD_WIDTH}>
                         <TextInputFilter
@@ -323,12 +429,18 @@ export default function NewServiceStep1() {
 
                     {/* Time */}
                     <div className={FIELD_WIDTH}>
-                        <TextInputFilter
-                            label="Time"
-                            type="time"
-                            value={time}
-                            onChange={setTime}
-                        />
+                        <TextInputFilter label="Start Time*" type="time" key={startTime} value={startTime} onChange={setStartTime} />
+                    </div>
+
+                    <div className={FIELD_WIDTH}>
+                        <TextInputFilter label="End Time*" type="time" key={endTime} value={endTime} onChange={setEndTime} />
+                    </div>
+
+                    <div className={FIELD_WIDTH}>
+                        <SelectFilter label="รับเหมา" value={contractor} onChange={setContractor} options={[
+                            { label: "TK Clean", value: "TK Clean" },
+                            { label: "A Plus", value: "A Plus" },
+                        ]} />
                     </div>
 
                     {/* Location Remark */}
@@ -336,25 +448,12 @@ export default function NewServiceStep1() {
                         <TextInputFilter
                             label="บริเวณที่เข้าทำงาน"
                             placeholder="Text"
+                            key={remarklocation}
                             value={remarklocation}
                             onChange={setRemarkLocation}
                         />
                     </div>
 
-                    {/* Project Type */}
-                    <div className={FIELD_WIDTH}>
-                        <SelectFilter
-                            label="Project Type"
-                            placeholder="Select"
-                            value={projectType}
-                            onChange={setProjectType}
-                            options={[
-                                { label: "Type A", value: "type_a" },
-                                { label: "Type B", value: "type_b" },
-                                { label: "Type C", value: "type_c" },
-                            ]}
-                        />
-                    </div>
 
                     {/* Remark */}
                     <div className="col-span-2 w-full">
@@ -365,6 +464,8 @@ export default function NewServiceStep1() {
                             onChange={setRemark}
                         />
                     </div>
+
+
 
                 </div>
 
@@ -380,7 +481,14 @@ export default function NewServiceStep1() {
                     </button>
 
                     <button
-                        onClick={handleNext}
+                        onClick={async () => {
+                            try {
+                                await handleSaveStep1();
+                                navigate("/service/new/step2");
+                            } catch (err: any) {
+                                alert(err.message);
+                            }
+                        }}
                         className="w-[195px] bg-green-700 text-white
                         px-6 py-2.5 rounded-2xl"
                     >

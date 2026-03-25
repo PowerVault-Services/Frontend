@@ -28,13 +28,23 @@ const warrantySections: WarrantyRow[] = [
   { title: "Power Optimizer", items: ["Product Warranty", "Product Warranty"] },
 ];
 
+const categoryMap: Record<string, string> = {
+  "Solar Panels": "SOLAR_PANEL",
+  "Inverter & Monitoring System": "INVERTER",
+  "Inverter & Rapid Shutdown": "INVERTER",
+  "Power Optimizer": "OPTIMIZER",
+};
+
 export default function WarrantyTable({ data = [] }: Props) {
 
-  const findRow = (category: string, itemName: string) => {
+  const findRow = (sectionTitle: string, itemName: string) => {
+
+    const mappedCategory = categoryMap[sectionTitle];
+
     return data.find(
       (row) =>
-        row.category === category &&
-        row.itemName === itemName
+        row.category === mappedCategory &&
+        row.itemName?.toLowerCase().includes(itemName.toLowerCase())
     );
   };
 

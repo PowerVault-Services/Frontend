@@ -1,11 +1,8 @@
 import { useState } from "react";
-import type { Project } from "../../mock/project";
+import type { Project } from "../../types/project";
 import TagNav from "../../components/TagNav";
-import CleaningInformationTab from "../../components/tabs/clientdata/powerservice/ServiceInformationTab";
-import CleaningPVLayoutTab from "../../components/tabs/clientdata/powerservice/ServicePVLayoutTab";
-
-
-
+import CleaningInformationTab from "../../components/tabs/clientdata/powerservice/CleaningInformationTab";
+import CleaningPVLayoutTab from "../../components/tabs/clientdata/powerservice/CleaningPVLayoutTab";
 
 interface Props {
   project: Project;
@@ -22,9 +19,9 @@ export default function CleaningJob({ project }: Props) {
   const renderTabContent = () => {
     switch (activeProject) {
       case "Information":
-        return <CleaningInformationTab />;
+        return <CleaningInformationTab project={project} />;
       case "PV Layout":
-        return <CleaningPVLayoutTab />;
+        return <CleaningPVLayoutTab project={project} />;
       default:
         return null;
     }
@@ -35,12 +32,16 @@ export default function CleaningJob({ project }: Props) {
       {/* Header */}
       <div className="flex flex-row justify-between items-center pb-[18px]">
         <h2 className="text-green-800 flex flex-col gap-5">
-          <span>ข้อมูล : {project.name}</span>
-          <span>Systemsize : {project.systemSize} kWp</span>
+          <span>ข้อมูล : {project.projectName}</span>
+          <span>
+            Systemsize : {project?.systemSizeKWp ?? "-"} kWp
+          </span>
         </h2>
         <h3 className="items-end text-green-700 flex flex-col gap-5">
           <span>Start Warranty : {project.startWarranty}</span>
-          <span>End Warranty : {project.endWarranty}</span>
+          <span>
+            End Warranty : {project?.endWarranty ?? "-"}
+          </span>
         </h3>
       </div>
 

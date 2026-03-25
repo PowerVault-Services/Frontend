@@ -1,5 +1,4 @@
-import React from "react";
-// สมมติว่า FlowLine คือ component ที่คุณสร้างไว้สำหรับทำ animation path
+
 import FlowLine from "../FlowLine"; 
 
 import pvIcon from "../../assets/icons/pv.svg";
@@ -52,7 +51,6 @@ export default function EnergyFlowCard({
   battery,
   load,
 }: EnergyFlowProps) {
-  // กำหนดสีตามมาตรฐานของ card (อ้างอิงจาก style.ts ใน github)
   const colors = {
     pv: "border-[#ff9800] text-[#ff9800]",
     grid: "border-[#488fc2] text-[#488fc2]",
@@ -63,8 +61,6 @@ export default function EnergyFlowCard({
   return (
     <div className="flex items-center justify-center">
       <div className="relative rounded-lg p-2 w-[314px] min-h-[314px] border border-[#DEE2E6]">
-        
-        {/* ================= NODES (จัดวางแบบ Cross) ================= */}
         
         {/* Top: PV (Solar) */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2">

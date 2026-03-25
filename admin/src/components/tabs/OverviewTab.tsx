@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import api from "../../services/api";
 
 import EnergyFlowCard from "../cards/EnergyFlowCard";
 import EnergyManagementCard from "../../components/EnergyManagementCard";
@@ -11,6 +10,13 @@ import MainWeather from "../cards/MainWeather";
 
 import ArrowLeft from "../../assets/icons/Arrow Left.svg";
 import ArrowRight from "../../assets/icons/Arrow Right.svg";
+
+import {
+  getSiteOverview,
+  getEnergyManagement,
+  getEnergyFlow,
+  getSummaryCards,
+} from "../../services/monitoring.api";
 
 /* ================= Types ================= */
 type OverviewResponse = {
@@ -86,32 +92,44 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
       setLoading(true);
 
       try {
-        const [overviewRes, realtimeRes, energyRes] = await Promise.all([
-          api.get(`/monitoring/sites/${plantId}/overview`),
-          api.get(`/monitoring/sites/${plantId}/home-realtime`),
-          api.get(`/monitoring/sites/${plantId}/energy-management`, {
-            params: { view, date },
-          }),
+        const [overview, energy, flow, summary] = await Promise.all([
+          getSiteOverview(plantId),
+          getEnergyManagement(plantId, view, date),
+          getEnergyFlow(plantId),
+          getSummaryCards(plantId),
         ]);
 
-        /* ===== Overview ===== */
-        setData(overviewRes.data?.data);
+        // ===== Overview =====
+        setData(overview);
 
-        /* ===== Energy ===== */
-        setEnergyData(energyRes.data?.data);
+        // ===== Energy =====
+        setEnergyData(energy);
 
-        /* ===== Realtime ===== */
-        const rt = realtimeRes.data?.data || {};
-        setRealtime(rt);
-
-        /* ===== Flow ===== */
-        const flow = rt.energyFlow || {};
+        // ===== Energy Flow =====
+        const flowData = flow?.energyFlow || {};
 
         setFlowData({
-          pv: flow.pv?.powerKw || 0,
-          grid: flow.grid?.signedPowerKw ?? flow.grid?.powerKw ?? 0,
-          battery: flow.battery?.signedPowerKw ?? flow.battery?.powerKw ?? 0,
-          load: flow.load?.powerKw || 0,
+          pv: flowData.pv?.powerKw || 0,
+          grid: flowData.grid?.signedPowerKw ?? flowData.grid?.powerKw ?? 0,
+          battery:
+            flowData.battery?.signedPowerKw ?? flowData.battery?.powerKw ?? 0,
+          load: flowData.load?.powerKw || 0,
+        });
+
+        // ===== Summary =====
+        const rawSummary = summary?.summaryCards;
+
+        const summaryObj = Array.isArray(rawSummary)
+          ? {
+            meter: rawSummary.find((i: any) => i.type === "meter"),
+            battery: rawSummary.find((i: any) => i.type === "battery"),
+            solar: rawSummary.find((i: any) => i.type === "solar"),
+          }
+          : rawSummary;
+
+        setRealtime({
+          summaryCards: summaryObj,
+          supportingData: summary?.supportingData,
         });
 
       } catch (err: any) {
@@ -126,41 +144,41 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
   }, [plantId, view, date]);
 
   /* ================= Refresh ================= */
-  const handleRefresh = async () => {
-    if (!plantId) return;
+  // const handleRefresh = async () => {
+  //   if (!plantId) return;
 
-    try {
-      setLoading(true);
+  //   try {
+  //     setLoading(true);
 
-      await api.post(`/monitoring/sites/${plantId}/refresh`, {
-        mode: "full",
-      });
+  //     // await api.post(`/monitoring/sites/${plantId}/refresh`, {
+  //     //   mode: "full",
+  //     // });
 
-      const [overviewRes, realtimeRes] = await Promise.all([
-        api.get(`/monitoring/sites/${plantId}/overview`),
-        api.get(`/monitoring/sites/${plantId}/home-realtime?refresh=full`),
-      ]);
+  //     // const [overviewRes, realtimeRes] = await Promise.all([
+  //     //   api.get(`/monitoring/sites/${plantId}/overview`),
+  //     //   api.get(`/monitoring/sites/${plantId}/home-realtime?refresh=full`),
+  //     // ]);
 
-      setData(overviewRes.data?.data);
+  //     setData(overviewRes.data?.data);
 
-      const rt = realtimeRes.data?.data || {};
-      setRealtime(rt);
+  //     const rt = realtimeRes.data?.data || {};
+  //     setRealtime(rt);
 
-      const flow = rt.energyFlow || {};
+  //     const flow = rt.energyFlow || {};
 
-      setFlowData({
-        pv: flow.pv?.powerKw || 0,
-        grid: flow.grid?.signedPowerKw ?? flow.grid?.powerKw ?? 0,
-        battery: flow.battery?.signedPowerKw ?? flow.battery?.powerKw ?? 0,
-        load: flow.load?.powerKw || 0,
-      });
+  //     setFlowData({
+  //       pv: flow.pv?.powerKw || 0,
+  //       grid: flow.grid?.signedPowerKw ?? flow.grid?.powerKw ?? 0,
+  //       battery: flow.battery?.signedPowerKw ?? flow.battery?.powerKw ?? 0,
+  //       load: flow.load?.powerKw || 0,
+  //     });
 
-    } catch (err) {
-      console.error("❌ Refresh error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   } catch (err) {
+  //     console.error("❌ Refresh error:", err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   /* ================= Scroll ================= */
   const scroll = (direction: "left" | "right") => {
@@ -250,7 +268,7 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
         <MainMeterCard data={realtime?.summaryCards?.meter} />
         <MainBatteryCard data={realtime?.summaryCards?.battery} />
         <MainSolar data={realtime?.summaryCards?.solar} />
-        <MainWeather data={realtime?.supportingData?.weather} />
+        <MainWeather data={realtime?.supportingData?.weather} /> 
       </div>
 
     </div>

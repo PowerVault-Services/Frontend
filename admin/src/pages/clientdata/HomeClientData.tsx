@@ -7,6 +7,8 @@ import PowerVaultServiceTab from "../../components/tabs/PowerVaultServiceTab";
 import AddIcon from "../../assets/icons/Add Circle_line.svg";
 import { getThailandProjects } from "../../services/client.api";
 
+import CreateReportModal from "../../components/CreateReportModal";
+
 export default function HomeClientData() {
 
     const homeTags = [
@@ -16,52 +18,60 @@ export default function HomeClientData() {
 
     const [activeProject, setActiveProject] = useState<string>("PowerVault (Thailand)");
     const [projects, setProjects] = useState<any[]>([]);
+    const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({
         page: 1,
-        pageSize: 10,
+        pageSize: 100,
         total: 0,
         totalPages: 1
     });
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+    const [filters, setFilters] = useState({
+        projectNo: "",
+        projectName: "",
+        systemSizeKWp: "",
+        endWarranty: "",
+        status: "all",
+    });
 
     // ==============================
     // FETCH PROJECTS FROM API
     // ==============================
-    const fetchProjects = async (page = 1) => {
+    const fetchProjects = async (pageParam = page) => {
         setIsLoading(true);
 
         try {
             const res = await getThailandProjects({
-                page,
-                pageSize: pagination.pageSize,
+                page: pageParam,
+                pageSize: 10,
+
+                // 🔥 เพิ่มทั้งหมดนี้
+                projectNo: filters.projectNo || undefined,
+                projectName: filters.projectName || undefined,
+                systemSizeKWp: filters.systemSizeKWp
+                    ? Number(filters.systemSizeKWp)
+                    : undefined,
+                status: filters.status !== "all" ? filters.status : undefined,
+                endWarrantyBefore: filters.endWarranty || undefined,
             });
 
-            console.log("API Response:", res);
+            const { items, page, pageSize, total } = res.data;
 
-            if (res?.data) {
-                const { items, page, pageSize, total } = res.data;
+            setProjects(items);
 
-                setProjects(
-                    (items || []).map((item: any) => ({
-                        id: item.siteId,
-                        projectNo: item.projectNo,
-                        projectName: item.projectName,
-                        capacityKwp: item.systemSizeKWp,
-                        endWarranty: item.endWarranty,
-                        status: item.status,
-                    }))
-                );
+            setPagination({
+                page,
+                pageSize,
+                total,
+                totalPages: Math.ceil(total / pageSize),
+            });
 
-                setPagination({
-                    page: page || 1,
-                    pageSize: pageSize || 10,
-                    total: total || 0,
-                    totalPages: Math.ceil((total || 0) / (pageSize || 10)),
-                });
-            }
+            setPage(page); // 🔥 sync state
 
         } catch (error) {
-            console.error("Error fetching projects:", error);
+            console.error(error);
         } finally {
             setIsLoading(false);
         }
@@ -73,9 +83,15 @@ export default function HomeClientData() {
     // ==============================
     useEffect(() => {
         if (activeProject === "PowerVault (Thailand)") {
-            fetchProjects(1);
+            fetchProjects(page);
         }
-    }, [activeProject]);
+    }, [activeProject, page]);
+
+    useEffect(() => {
+        if (activeProject === "PowerVault (Thailand)") {
+            fetchProjects(1); // 🔥 reset page
+        }
+    }, [filters]);
 
     // ==============================
     // RENDER TAB CONTENT
@@ -88,7 +104,9 @@ export default function HomeClientData() {
                         data={projects}
                         isLoading={isLoading}
                         pagination={pagination}
-                        onPageChange={fetchProjects}
+                        onPageChange={setPage}
+                        filters={filters}          // 🔥 เพิ่ม
+                        setFilters={setFilters}    // 🔥 เพิ่ม
                     />
                 );
 
@@ -105,12 +123,24 @@ export default function HomeClientData() {
             <div className="flex justify-between pb-9">
                 <h1 className="text-green-800">Client Data</h1>
 
-                <Link to="/service/new/step1">
-                    <button className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5">
+                {activeProject === "PowerVault Service" ? (
+                    // กรณี PowerVault Service: แสดง Modal
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5 hover:bg-green-800 transition-colors"
+                    >
                         <img src={AddIcon} alt="" />
                         New Project
                     </button>
-                </Link>
+                ) : (
+                    // กรณี PowerVault (Thailand): ไปหน้า Step 1 ตามเดิม
+                    <Link to="/client/create-plant">
+                        <button className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5 hover:bg-green-800 transition-colors">
+                            <img src={AddIcon} alt="" />
+                            New Project
+                        </button>
+                    </Link>
+                )}
             </div>
 
             {/* ===== Main Content ===== */}
@@ -129,6 +159,14 @@ export default function HomeClientData() {
                     {renderTabContent()}
                 </div>
             </section>
+            {/* Modal Section */}
+            {isModalOpen && (
+                <CreateReportModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                />
+            )}
         </div>
+
     );
 }

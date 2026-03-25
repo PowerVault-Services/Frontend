@@ -248,7 +248,15 @@ export default function NewCleaningStep1() {
                             <SelectFilter
                                 label="Project Name"
                                 value={projectId}
-                                onChange={setProjectId}
+                                onChange={(val: string) => {
+                                    setProjectId(val);
+
+                                    const found = projects.find(
+                                        (p) => String(p.siteId) === val
+                                    );
+
+                                    setProject(found || null);
+                                }}
                                 options={projects.map(p => ({
                                     label: p.projectName,
                                     value: String(p.siteId),

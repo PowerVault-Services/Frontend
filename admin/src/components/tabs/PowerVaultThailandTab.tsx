@@ -1,21 +1,23 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useMemo } from "react";
 
 import SearchBox from "../SearchBox";
 import TextInputFilter from "../TextInputFilter";
 import SelectFilter from "../SelectFilter";
 import DataTable, { type Column } from "../table/DataTable";
 
-import type { CreateThailandProjectPayload } from "../../services/client.api";
+import EditIcon from "../../assets/icons/Pen New Square.svg";
+import DeleteIcon from "../../assets/icons/Paper Bin.svg";
+
+import { deleteThailandProject } from "../../services/client.api";
+import Pagination from "../table/Pagination";
 
 /* ================= Interface ================= */
 export interface PowerVaultThailand {
-    id: number;
+    siteId: number;
+    systemSizeKWp: number;
     projectNo: string;
     projectName: string;
-    capacityKwp: number;
     status: string;
-    startWarranty?: string | null;
     endWarranty?: string | null;
 }
 
@@ -24,77 +26,56 @@ interface PowerVaultThailandTabProps {
     isLoading: boolean;
     pagination: any;
     onPageChange: (page: number) => void;
+
+    filters: {
+        projectNo: string;
+        projectName: string;
+        systemSizeKWp: string;
+        endWarranty: string;
+        status: string;
+    };
+    setFilters: React.Dispatch<React.SetStateAction<any>>;
 }
 
 export default function PowerVaultThailandTab({
     data,
     isLoading,
     pagination,
-    onPageChange
+    onPageChange,
+    filters,
+    setFilters
 }: PowerVaultThailandTabProps) {
 
     const navigate = useNavigate();
-
-    /* ================= Filter State ================= */
-    const [filters, setFilters] = useState({
-        projectNo: "",
-        projectName: "",
-        capacityKwp: "",
-        endWarranty: "",
-        status: "all",
-    });
+    const { page, pageSize, total, totalPages } = pagination;
 
     /* ================= Safe Date Format ================= */
     const formatDate = (isoString?: string | null) => {
         if (!isoString) return "-";
+
         const date = new Date(isoString);
         if (isNaN(date.getTime())) return "-";
-        return date.toISOString().split("T")[0];
+
+        return date.toLocaleDateString("en-CA");
     };
 
     /* ================= Delete ================= */
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         const confirmDelete = window.confirm("ต้องการลบรายการนี้หรือไม่?");
         if (!confirmDelete) return;
 
-        console.log("Delete project id:", id);
-
-        // TODO: call delete API here
+        try {
+            await deleteThailandProject(id);
+            alert("ลบสำเร็จ");
+            window.location.reload();
+        } catch {
+            alert("ลบไม่สำเร็จ");
+        }
     };
 
-    /* ================= Filtered Data ================= */
-    const filteredData = useMemo(() => {
-        return data.filter((item) => {
-            const matchProjectNo =
-                filters.projectNo === "" ||
-                item.projectNo.toLowerCase().includes(filters.projectNo.toLowerCase());
-
-            const matchProjectName =
-                filters.projectName === "" ||
-                item.projectName.toLowerCase().includes(filters.projectName.toLowerCase());
-
-            const matchCapacity =
-                filters.capacityKwp === "" ||
-                item.capacityKwp === Number(filters.capacityKwp);
-
-            const matchEndWarranty =
-                filters.endWarranty === "" ||
-                (item.endWarranty &&
-                    formatDate(item.endWarranty) === filters.endWarranty);
-
-            const matchStatus =
-                filters.status === "all" ||
-                item.status.toUpperCase() === filters.status;
-
-            return (
-                matchProjectNo &&
-                matchProjectName &&
-                matchCapacity &&
-                matchEndWarranty &&
-                matchStatus
-            );
-        });
-    }, [data, filters]);
+    const handleEdit = (row: PowerVaultThailand) => {
+        navigate(`/project/edit/${row.siteId}`);
+    };
 
     /* ================= Table Columns ================= */
     const columns: Column<PowerVaultThailand>[] = [
@@ -104,15 +85,12 @@ export default function PowerVaultThailandTab({
             label: "Project No.",
             align: "center",
             render: (value, row) => {
-
                 const raw = String(value ?? "");
-
-                // ตัด NE=
                 const displayValue = raw.replace(/^NE=/, "");
 
                 return (
                     <button
-                        onClick={() => navigate(`/project/${row.id}`)}
+                        onClick={() => navigate(`/project/${row.siteId}`)}
                         className="text-green-800 underline hover:text-green-900"
                     >
                         {displayValue}
@@ -127,8 +105,8 @@ export default function PowerVaultThailandTab({
             align: "center"
         },
         {
-            id: "capacityKwp",
-            key: "capacityKwp",
+            id: "systemSizeKWp",
+            key: "systemSizeKWp",
             label: "System Size (kWp)",
             align: "center"
         },
@@ -146,22 +124,17 @@ export default function PowerVaultThailandTab({
             align: "center"
         },
         {
-            id: "action",
-            label: "",
+            id: "actions",
+            key: "siteId",
+            label: "Actions",
             align: "center",
             render: (_, row) => (
-                <div className="flex justify-center gap-3">
-                    <button
-                        onClick={() => navigate(`/project/edit/${row.id}`)}
-                        className="text-blue-600 hover:text-blue-800"
-                    >
-                        ✏️
+                <div className="flex items-center gap-3 justify-center">
+                    <button onClick={() => handleEdit(row)}>
+                        <img src={EditIcon} className="w-5 h-5" />
                     </button>
-                    <button
-                        onClick={() => handleDelete(row.id)}
-                        className="text-red-600 hover:text-red-800"
-                    >
-                        🗑
+                    <button onClick={() => handleDelete(row.siteId)}>
+                        <img src={DeleteIcon} className="w-5 h-5" />
                     </button>
                 </div>
             )
@@ -172,7 +145,8 @@ export default function PowerVaultThailandTab({
     return (
         <div className="flex flex-col gap-[18px]">
             <SearchBox>
-                <div className="grid grid-cols-3 justify-between gap-2.5">
+                <div className="grid grid-cols-3 gap-2.5">
+
                     <TextInputFilter
                         label="Project No."
                         value={filters.projectNo}
@@ -191,9 +165,9 @@ export default function PowerVaultThailandTab({
 
                     <TextInputFilter
                         label="System Size (kWp)"
-                        value={filters.capacityKwp}
+                        value={filters.systemSizeKWp}
                         onChange={(value) =>
-                            setFilters({ ...filters, capacityKwp: value })
+                            setFilters({ ...filters, systemSizeKWp: value })
                         }
                     />
 
@@ -208,7 +182,6 @@ export default function PowerVaultThailandTab({
 
                     <SelectFilter
                         label="Status"
-                        placeholder="All"
                         value={filters.status}
                         onChange={(value) =>
                             setFilters({ ...filters, status: value })
@@ -223,13 +196,29 @@ export default function PowerVaultThailandTab({
             </SearchBox>
 
             <div className="pt-[25px]">
-                <DataTable<PowerVaultThailand>
+                <DataTable
                     columns={columns}
-                    data={filteredData}
+                    data={data.map(item => ({
+                        ...item,
+                        id: item.siteId
+                    }))}
                     loading={isLoading}
+                />
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between py-6 text-sm text-gray-500">
+                <span>
+                    {(page - 1) * pageSize + 1} to{" "}
+                    {Math.min(page * pageSize, total)} of {total} items
+                </span>
+
+                <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    onChange={onPageChange}
                 />
             </div>
         </div>
     );
-
 }

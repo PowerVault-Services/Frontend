@@ -6,11 +6,16 @@ import InformationTab from "../../components/tabs/clientdata/InformationTab";
 import WarrantyDetailTab from "../../components/tabs/clientdata/WarrantyDetailTab";
 import ForecastDetailTab from "../../components/tabs/forecast/ForecastDetailTab";
 import OtherTable from "../../components/table/OtherTable";
+import LayoutTab from "../../components/tabs/clientdata/LayoutTab";
 
-import { getThailandProjects } from "../../services/client.api";
+import { getProjectDetail } from "../../services/client.api";
+
 
 export default function ClientDataDetail() {
+
     const { id } = useParams();
+    const siteId = Number(id);
+
     const [project, setProject] = useState<any>(null);
     const [loading, setLoading] = useState(false);
 
@@ -25,29 +30,19 @@ export default function ClientDataDetail() {
 
     const [activeProject, setActiveProject] = useState<string>("Information");
 
-    // ================= FETCH DETAIL FROM SAME SOURCE AS HOME =================
     useEffect(() => {
-        if (!id) return;
+        if (!siteId) return;
 
         const fetchDetail = async () => {
             try {
                 setLoading(true);
+                const res = await getProjectDetail(siteId);
 
-                const res = await getThailandProjects({
-                    page: 1,
-                    pageSize: 1000, // ดึงมาเยอะพอสำหรับหา id
-                });
+                console.log("Data from Detail API:", res); // 👈 เพิ่มบรรทัดนี้
 
-                if (res?.data?.items) {
-                    const found = res.data.items.find(
-                        (item: any) => item.siteId === Number(id)
-                    );
-
-                    setProject(found || null);
-                }
-
+                setProject(res);
             } catch (error) {
-                console.error("โหลดรายละเอียดโครงการไม่สำเร็จ:", error);
+                console.error(error);
                 setProject(null);
             } finally {
                 setLoading(false);
@@ -55,74 +50,70 @@ export default function ClientDataDetail() {
         };
 
         fetchDetail();
-    }, [id]);
+    }, [siteId]);
 
-    // ================= RENDER TAB =================
     const renderTabContent = () => {
         switch (activeProject) {
             case "Information":
                 return <InformationTab project={project} />;
+
             case "Warranty Detail":
                 return <WarrantyDetailTab project={project} />;
+
+            case "Layout Rooftop":
+                return <LayoutTab siteId={siteId} type="PV_LAYOUT" />;
+
+            case "Layout PV String":
+                return <LayoutTab siteId={siteId} type="PV_STRING_LAYOUT" />;
+
             case "Forecast":
                 return <ForecastDetailTab project={project} />;
+
             case "Other":
                 return <OtherTable project={project} />;
+
             default:
                 return null;
         }
     };
 
-    // ================= LOADING =================
-    if (loading) {
-        return <div className="p-10">กำลังโหลดข้อมูล...</div>;
-    }
-
-    // ================= NOT FOUND =================
-    if (!project) {
-        return <div className="p-10">ไม่พบข้อมูลโครงการ</div>;
-    }
+    if (loading) return <div className="p-10">กำลังโหลดข้อมูล...</div>;
+    if (!project) return <div className="p-10">ไม่พบข้อมูลโครงการ</div>;
 
     return (
         <div className="w-full">
             <div className="flex flex-row justify-between">
+
                 <h1 className="pb-9 text-green-800 flex flex-col gap-8">
-                    <span>ข้อมูล : {project?.projectName?.trim() || "-"}</span>
-                    <span>
-                        Systemsize :{" "}
-                        {project?.systemSizeKWp !== undefined &&
-                        project?.systemSizeKWp !== null
-                            ? Number(project.systemSizeKWp).toLocaleString()
-                            : "-"}{" "}
-                        kWp
-                    </span>
+                    <span>ข้อมูล : {project.name}</span>
+                    <span>Systemsize : {project.capacityKWp} kWp</span>
                 </h1>
 
-                <h2 className="items-end pb-9 text-green-700 flex flex-col gap-8">
-                    <span>
-                        Start Warranty :{" "}
-                        {project?.startWarranty || "-"}
-                    </span>
+                <h2 className="text-green-700 flex flex-col gap-8">
+                    <span>Start Warranty :{" "}
+                        {project?.warrantyStart
+                            ? new Date(project.warrantyStart).toLocaleDateString("en-CA")
+                            : "-"}</span>
                     <span>
                         End Warranty :{" "}
-                        {project?.endWarranty || "-"}
+                        {project?.warrantyEnd
+                            ? new Date(project.warrantyEnd).toLocaleDateString("en-CA")
+                            : "-"}
                     </span>
                 </h2>
+
             </div>
 
-            <section className="min-w-0">
-                <div className="flex items-center justify-between w-auto">
-                    <TagNav
-                        items={homeTags}
-                        activeId={activeProject}
-                        onChange={setActiveProject}
-                    />
-                </div>
+            <TagNav
+                items={homeTags}
+                activeId={activeProject}
+                onChange={setActiveProject}
+            />
 
-                <div className="border border-green-800 bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px]">
-                    {renderTabContent()}
-                </div>
-            </section>
+            <div className="border border-green-800 bg-white rounded-b-lg px-[27px] py-[13px] min-h-[700px]">
+                {renderTabContent()}
+            </div>
+
         </div>
     );
 }

@@ -1,27 +1,23 @@
 import api from "./api";
+import type { Project } from "../types/project";
 
 /* =========================
    Types
 ========================= */
-
 export interface ThailandProject {
-    id: number;
+    siteId: number;
     projectNo: string;
     projectName: string;
-    capacityKwp: number;
+    systemSizeKWp: number;
     status: string;
-    startWarranty?: string;
     endWarranty?: string;
 }
 
 export interface ThailandProjectListResponse {
-    list: ThailandProject[];
-    pagination: {
-        page: number;
-        pageSize: number;
-        total: number;
-        totalPages: number;
-    };
+    page: number;
+    pageSize: number;
+    total: number;
+    items: ThailandProject[];
 }
 
 export interface CreateThailandProjectPayload {
@@ -48,8 +44,9 @@ export const getThailandProjects = async (params?: {
     pageSize?: number;
     projectNo?: string;
     projectName?: string;
-    capacityKwp?: number;
+    systemSizeKWp?: number;
     status?: string;
+    endWarrantyBefore?: string;
 }) => {
 
     const res = await api.get("/client-data/thailand/projects", {
@@ -57,8 +54,8 @@ export const getThailandProjects = async (params?: {
     });
 
     return res.data as {
-        success?: boolean
-        data: ThailandProjectListResponse
+        success: boolean;
+        data: ThailandProjectListResponse;
     };
 };
 
@@ -73,7 +70,7 @@ export const createThailandProject = async (
             payload
         );
 
-        return res.data;
+        return res.data.data;
 
     } catch (error: any) {
 
@@ -86,17 +83,34 @@ export const createThailandProject = async (
     }
 };
 
+export const deleteThailandProject = async (siteId: number) => {
+    const res = await api.delete(
+        `/client-data/thailand/projects/${siteId}`
+    );
+    return res.data.data;
+};
+
+export const updateThailandProject = async (
+    siteId: number,
+    payload: Partial<{
+        projectName: string;
+        status: string;
+    }>
+) => {
+    const res = await api.put(
+        `/client-data/thailand/projects/${siteId}`,
+        payload
+    );
+    return res.data.data;
+};
+
 /* =========================
    Project Detail
 ========================= */
 
-export const getProjectDetail = async (siteId: number) => {
-
-    const res = await api.get(
-        `/client-data/projects/${siteId}`
-    );
-
-    return res.data;
+export const getProjectDetail = async (siteId: number): Promise<Project> => {
+  const res = await api.get(`/client-data/projects/${siteId}`);
+  return res.data.data;
 };
 
 /* =========================
@@ -117,7 +131,7 @@ export const getServiceEntries = async (params?: {
         { params }
     );
 
-    return res.data;
+    return res.data.data;
 };
 
 export const createServiceEntry = async (payload: {
@@ -131,7 +145,7 @@ export const createServiceEntry = async (payload: {
         payload
     );
 
-    return res.data;
+    return res.data.data;
 };
 
 export const updateServiceEntry = async (
@@ -144,7 +158,7 @@ export const updateServiceEntry = async (
         data
     );
 
-    return res.data;
+    return res.data.data;
 };
 
 export const deleteServiceEntry = async (
@@ -155,7 +169,7 @@ export const deleteServiceEntry = async (
         `/client-data/service/entries/${entryId}`
     );
 
-    return res.data;
+    return res.data.data;
 };
 
 
@@ -299,23 +313,18 @@ export const uploadLayout = async (
    Forecast (PVsyst)
 ========================= */
 
-export const updateForecastPvsyst = async (
-    siteId: number,
-    rows: {
-        month: number;
-        globalKwhM2: number;
-        eGridKwh: number;
-        prRatio: number;
-    }[]
+export const saveForecastPVsyst = async (
+  siteId: number,
+  rows: any[]
 ) => {
+  const res = await api.put(
+    `/client-data/projects/${siteId}/forecast/pvsyst`,
+    {
+      rows, // backend รองรับ alias อยู่แล้ว
+    }
+  );
 
-    const res = await api.put(
-        `/client-data/projects/${siteId}/forecast/pvsyst`,
-        { rows }
-    );
-
-    return res.data;
-
+  return res.data;
 };
 
 
@@ -390,4 +399,15 @@ export const deleteOtherRow = async (
 
     return res.data;
 
+};
+
+export const getProjectById = async (siteId: number) => {
+  return api.get(`/client-data/projects/${siteId}`);
+};
+
+export const generateForecastDefaults = async (siteId: number) => {
+  const res = await api.post(
+    `/client-data/projects/${siteId}/forecast/defaults`
+  );
+  return res.data.data;
 };

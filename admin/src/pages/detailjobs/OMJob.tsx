@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Project } from "../../mock/project";
+import type { Project } from "../../types/project";
 import TagNav from "../../components/TagNav";
 
 import OMInformationTab from "../../components/tabs/clientdata/powerservice/ServiceInformationTab";

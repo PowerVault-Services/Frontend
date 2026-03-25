@@ -91,7 +91,7 @@ export const uploadCleaningEvidence = async ({
 
 export const saveCleaningChecklist = async (payload: {
   jobId: number;
-  checklistJson: string;
+  checklistJson: any;
   step3SummaryNote: string;
 }) => {
   const res = await api.post("/cleaning/step3/checklist", payload);
@@ -155,3 +155,4 @@ export const downloadCleaningZip = (jobIds: number[]) => {
   const ids = jobIds.join(",");
   window.open(`/api/cleaning/jobs/download-zip?jobIds=${ids}`, "_blank");
 };
+
