@@ -110,7 +110,7 @@ export default function ClientDataDetail() {
                 onChange={setActiveProject}
             />
 
-            <div className="border border-green-800 bg-white rounded-b-lg px-[27px] py-[13px] min-h-[700px]">
+            <div className="border border-green-800 bg-white rounded-b-lg px-[27px] py-[13px] min-h-[0px]">
                 {renderTabContent()}
             </div>
 

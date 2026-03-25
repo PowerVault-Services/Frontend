@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Project } from "../../types/project";
+
 import TagNav from "../../components/TagNav";
 import ServiceInformationTab from "../../components/tabs/clientdata/powerservice/ServiceInformationTab";
 import ServicePVLayoutTab from "../../components/tabs/clientdata/powerservice/ServicePVLayoutTab";
@@ -10,6 +10,7 @@ type Project = any;
 interface Props {
   project: Project;
 }
+
 const homeTags = [
   { id: "Information", label: "Information" },
   { id: "PV Layout", label: "PV Layout" },
@@ -19,18 +20,30 @@ const homeTags = [
 export default function ServiceJob({ project }: Props) {
   const [activeProject, setActiveProject] = useState<string>("Information");
 
+  const siteId = project?.id;
+
   const renderTabContent = () => {
     switch (activeProject) {
       case "Information":
         return <ServiceInformationTab project={project} />;
+
       case "PV Layout":
-        return <ServicePVLayoutTab project={project} />;
+        return <ServicePVLayoutTab siteId={siteId} type="PV_LAYOUT" />;
+
       case "PV String Layout":
-        return <ServiceStringPVLayoutTab project={project} />;
+        return (
+          <ServiceStringPVLayoutTab
+            siteId={siteId}
+            type="PV_STRING_LAYOUT"
+          />
+        );
+
       default:
         return null;
     }
   };
+
+  if (!project) return null;
 
   return (
     <div className="space-y-6">
@@ -38,13 +51,25 @@ export default function ServiceJob({ project }: Props) {
       <div className="flex flex-row justify-between items-center pb-[18px]">
         <h2 className="text-green-800 flex flex-col gap-5">
           <span>ข้อมูล : {project.name}</span>
-          <span>Systemsize : {project.systemSize} kWp</span>
-        </h2>
-        <h3 className="items-end text-green-700 flex flex-col gap-5">
-          <span>Start Warranty : {project.startWarranty}</span>
           <span>
-            End Warranty :
-            {project?.endWarranty ?? project?.end_warranty ?? "-"}
+            Systemsize :{" "}
+            {project.systemSize ?? project.capacityKWp ?? 0} kWp
+          </span>
+        </h2>
+
+        <h3 className="items-end text-green-700 flex flex-col gap-5">
+          <span>
+            Start Warranty :{" "}
+            {project.startWarranty !== "-"
+              ? new Date(project.startWarranty).toLocaleDateString("en-CA")
+              : "-"}
+          </span>
+
+          <span>
+            End Warranty :{" "}
+            {project.endWarranty !== "-"
+              ? new Date(project.endWarranty).toLocaleDateString("en-CA")
+              : "-"}
           </span>
         </h3>
       </div>
@@ -59,7 +84,6 @@ export default function ServiceJob({ project }: Props) {
           />
         </div>
 
-        {/* Content Box */}
         <div className="border border-green-800 bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px]">
           {renderTabContent()}
         </div>

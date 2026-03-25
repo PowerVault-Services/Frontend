@@ -1,52 +1,54 @@
 import { useEffect, useState } from "react";
 import { getProjectDetail } from "../../../../services/client.api";
 
+interface Props {
+  siteId: number;
+  type: string;
+}
 
-export default function InspectionPVStringLayoutTab() {
+export default function InspectionPVStringLayoutTab({ siteId, type }: Props) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
-    const [imageUrl, setImageUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!siteId) return;
 
-    useEffect(() => {
-        async function fetchLayout() {
-            try {
-                const siteIdStr = localStorage.getItem("siteId");
-                if (!siteIdStr) return;
+    async function fetchLayout() {
+      try {
+        const data = await getProjectDetail(siteId);
 
-                const siteId = Number(siteIdStr);
+        const layouts = data.layouts || [];
 
-                const data = await getProjectDetail(siteId);
+        const layout = layouts.find(
+          (l: { type: string }) => l.type === type
+        );
 
-                const layouts = data.layouts || [];
-
-                const layout = layouts.find(
-                    (l: { type: string }) => l.type === "PV_STRING_LAYOUT"
-                );
-
-                if (layout?.fileUrl) {
-                    setImageUrl("http://localhost:3000" + layout.fileUrl);
-                }
-
-            } catch (err) {
-                console.error("โหลด PV String Layout ไม่สำเร็จ", err);
-            }
+        if (layout?.fileUrl) {
+          setImageUrl("http://localhost:3000" + layout.fileUrl);
+        } else {
+          setImageUrl(null);
         }
+      } catch (err) {
+        console.error("โหลด PV String Layout ไม่สำเร็จ", err);
+        setImageUrl(null);
+      }
+    }
 
-        fetchLayout();
-    }, []);
+    fetchLayout();
+  }, [siteId, type]);
 
-    return (
-        <div className="flex justify-center-safe py-[51px] px-8 w-full h-auto">
-            <div>
-                {imageUrl ? (
-                    <img
-                        src={imageUrl}
-                        alt="PV String Layout"
-                        className="max-w-full max-h-full object-contain"
-                    />
-                ) : (
-                    "img"
-                )}
-            </div>
-        </div>
-    );
+  return (
+    <div className="flex justify-center-safe py-[51px] px-8 w-full h-auto">
+      <div>
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt="PV String Layout"
+            className="max-w-full max-h-full object-contain"
+          />
+        ) : (
+          <span className="text-gray-400">ไม่มีรูป PV String Layout</span>
+        )}
+      </div>
+    </div>
+  );
 }

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import type { Project } from "../../types/project";
 import TagNav from "../../components/TagNav";
 import CleaningInformationTab from "../../components/tabs/clientdata/powerservice/CleaningInformationTab";
 import CleaningPVLayoutTab from "../../components/tabs/clientdata/powerservice/CleaningPVLayoutTab";
+
+type Project = any;
 
 interface Props {
   project: Project;
@@ -32,15 +33,25 @@ export default function CleaningJob({ project }: Props) {
       {/* Header */}
       <div className="flex flex-row justify-between items-center pb-[18px]">
         <h2 className="text-green-800 flex flex-col gap-5">
-          <span>ข้อมูล : {project.projectName}</span>
+          <span>ข้อมูล : {project.name}</span>
           <span>
-            Systemsize : {project?.systemSizeKWp ?? "-"} kWp
+            Systemsize :{" "}
+            {project.systemSize ?? project.capacityKWp ?? 0} kWp
           </span>
         </h2>
         <h3 className="items-end text-green-700 flex flex-col gap-5">
-          <span>Start Warranty : {project.startWarranty}</span>
           <span>
-            End Warranty : {project?.endWarranty ?? "-"}
+            Start Warranty :{" "}
+            {project.startWarranty !== "-"
+              ? new Date(project.startWarranty).toLocaleDateString("en-CA")
+              : "-"}
+          </span>
+
+          <span>
+            End Warranty :{" "}
+            {project.endWarranty !== "-"
+              ? new Date(project.endWarranty).toLocaleDateString("en-CA")
+              : "-"}
           </span>
         </h3>
       </div>

@@ -1,28 +1,32 @@
-export interface Project {
+export interface ApiProject {
+  id: number;
   siteId: number;
   projectNo: string;
   projectName: string;
   systemSizeKWp: number;
-  status?: string;
 
-  // optional fields (detail API)
-  startWarranty?: string;
-  endWarranty?: string;
-  company?: string;
-  address?: string;
-  panelBrand?: string;
-  panelPowerW?: number;
-  latitude?: number;
-  longitude?: number;
+  warrantyStart?: string;
+  warrantyEnd?: string;
 
   layouts?: {
     id: number;
     type: "PV_LAYOUT" | "PV_STRING_LAYOUT";
     fileUrl: string;
   }[];
+}
 
-  forecastMonthlyRows?: any[];
-  forecastRows?: any[];
-  forecast?: any[];
-  rows?: any[];
+export interface ProjectUI {
+  id: number;
+
+  name: string;
+  systemSize: number;
+
+  startWarranty: string;
+  endWarranty: string;
+
+  layouts?: {
+    id: number;
+    type: "PV_LAYOUT" | "PV_STRING_LAYOUT";
+    fileUrl: string;
+  }[];
 }

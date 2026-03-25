@@ -10,7 +10,7 @@ interface MainMeterType {
 }
 
 interface MainMeterCardProps {
-  data?: MainMeterType; // ✅ รับ data ตรงกับที่ส่งมา
+  data?: MainMeterType;
 }
 
 /* ================= Status Color ================= */
@@ -19,23 +19,23 @@ const statusDotColor: Record<string, string> = {
   Disconnect: "bg-[#E54848]",
 };
 
+const powerStatusColor: Record<string, string> = {
+  Normal: "bg-green-500",
+  Warning: "bg-[#F68B34]",
+};
+
 /* ================= Component ================= */
 export default function MainMeter({ data }: MainMeterCardProps) {
   // ✅ กัน undefined
-  if (!data) {
-    return (
-      <div className="w-full h-48 border border-[#DEE2E6] rounded-lg p-2.5 flex items-center justify-center text-gray-400 text-sm">
-        No Data
-      </div>
-    );
-  }
 
   const {
     voltage = 0,
     current = 0,
     power = 0,
     status = "Disconnect",
-  } = data;
+  } = data || {};
+
+  const isNoData = !data;
 
   return (
     <div className="w-full h-48 border border-[#DEE2E6] rounded-lg p-2.5">
@@ -49,19 +49,19 @@ export default function MainMeter({ data }: MainMeterCardProps) {
         {/* Voltage */}
         <div className="flex items-center">
           <span className="w-[103px] text-green-900 font-bold">Voltage</span>
-          <span>{voltage}</span>
+          <span>{isNoData ? "0 V" : `${voltage} V`}</span>
         </div>
 
         {/* Current */}
         <div className="flex items-center">
           <span className="w-[103px] text-green-900 font-bold">Current</span>
-          <span>{current}</span>
+          <span>{isNoData ? "0 A" : `${current} A`}</span>
         </div>
 
         {/* Power */}
         <div className="flex items-center">
           <span className="w-[103px] text-green-900 font-bold">Power</span>
-          <span>{power}</span>
+          <span>{isNoData ? "0 W" : `${power} W`}</span>
         </div>
 
         {/* Status */}
@@ -70,11 +70,10 @@ export default function MainMeter({ data }: MainMeterCardProps) {
 
           <span className="flex items-center gap-[5px]">
             <span
-              className={`w-2 h-2 rounded-full ${
-                statusDotColor[status] || "bg-gray-400"
-              }`}
+              className={`w-2 h-2 rounded-full ${isNoData ? "bg-gray-300" : statusDotColor[status] || "bg-gray-400"
+                }`}
             />
-            {status}
+            {isNoData ? "No Data" : status}
           </span>
         </div>
       </div>

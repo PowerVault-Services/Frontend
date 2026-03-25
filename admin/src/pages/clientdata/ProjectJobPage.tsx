@@ -1,87 +1,74 @@
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+
+import { mapProject } from "../../utils/mapProject";
 
 import {
-    JOB_ROUTE_MAP,
-    type JobRouteKey,
+  JOB_CONFIG,
+  JOB_ROUTE_MAP,
+  type JobRouteKey,
 } from "../../configs/jobConfig";
 
 import { getProjectDetail } from "../../services/client.api";
+import JobPage from "../../pages/clientdata/JobPage";
 
-import CleaningJob from "../../pages/detailjobs/CleaningJob";
-import InspectionJob from "../../pages/detailjobs/InspectionJob";
-import ServiceJob from "../../pages/detailjobs/ServiceJob";
-import OMJob from "../../pages/detailjobs/OMJob";
-
-type Project = any;
+import type { ProjectUI } from "../../types/project";
 
 export default function ProjectJobPage() {
+  const location = useLocation();
+  const extra = (location.state as any) || {};
 
-    const location = useLocation();
-    const extra = location.state as any;
-    const { projectId, job } = useParams<{
-        projectId: string;
-        job: string;
-    }>();
+  const { projectId, job } = useParams<{
+    projectId: string;
+    job: string;
+  }>();
 
-    const [project, setProject] = useState<Project | null>(null);
-    const [loading, setLoading] = useState(true);
+  const [project, setProject] = useState<ProjectUI | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    const jobKey =
-        job && job.toLowerCase() in JOB_ROUTE_MAP
-            ? JOB_ROUTE_MAP[job.toLowerCase() as JobRouteKey]
-            : undefined;
+  // ✅ map route → jobKey
+  const jobKey =
+    job && job.toLowerCase() in JOB_ROUTE_MAP
+      ? JOB_ROUTE_MAP[job.toLowerCase() as JobRouteKey]
+      : undefined;
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                if (!projectId) return;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (!projectId) return;
 
-                const data = await getProjectDetail(Number(projectId));
+        const data = await getProjectDetail(Number(projectId));
 
-                // ✅ map ตรงนี้ (สำคัญ)
-                const mapped: Project = {
-                    ...data,
+        // ✅ ใช้ mapper กลาง
+        const mapped = mapProject(data, extra);
 
-                    // ✅ ดึงจาก table ถ้า API ไม่มี
-                    projectName: data.projectName ?? extra?.projectName,
+        setProject(mapped);
+      } catch (err) {
+        console.error("โหลด project ไม่สำเร็จ", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-                    systemSizeKWp:
-                        data.systemSizeKWp ??
-                        data.systemSize ??
-                        extra?.systemSizeKWp ??
-                        0,
+    fetchData();
+  }, [projectId]);
 
-                    endWarranty:
-                        data.endWarranty ??
-                        data.end_warranty ??
-                        extra?.endWarranty,
-                };
+  // 🔄 loading
+  if (loading) return <div>Loading...</div>;
 
-                setProject(mapped);
-            } catch (err) {
-                console.error("โหลด project ไม่สำเร็จ", err);
-            } finally {
-                setLoading(false);
-            }
-        };
+  // ❌ invalid
+  if (!project || !jobKey) {
+    return <div>Not found</div>;
+  }
 
-        fetchData();
-    }, [projectId]);
+  // ✅ config
+  const config = JOB_CONFIG[jobKey];
 
-    if (loading) return <div>Loading...</div>;
-
-    if (!project || !jobKey) {
-        return <div>Not found</div>;
-    }
-
-    return (
-        <div>
-            {jobKey === "Service" && <ServiceJob project={project} />}
-            {jobKey === "Cleaning" && <CleaningJob project={project} />}
-            {jobKey === "Inspection" && <InspectionJob project={project} />}
-            {jobKey === "OM" && <OMJob project={project} />}
-        </div>
-    );
+  return (
+    <JobPage
+      project={project}
+      config={config}
+      jobKey={jobKey}
+    />
+  );
 }

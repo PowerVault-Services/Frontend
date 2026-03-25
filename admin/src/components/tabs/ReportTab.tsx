@@ -6,8 +6,6 @@ interface Props {
     plantId?: number;
 }
 
-
-
 export default function ReportTab({ plantId }: Props) {
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -29,6 +27,7 @@ export default function ReportTab({ plantId }: Props) {
             {openCreate && (
                 <CreateReportModal
                     plantId={plantId}
+                    isOpen={openCreate} 
                     onClose={() => setOpenCreate(false)}
                 />
             )}

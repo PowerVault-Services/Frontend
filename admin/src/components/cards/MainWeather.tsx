@@ -26,21 +26,14 @@ const powerStatusColor: Record<string, string> = {
 
 /* ================= Component ================= */
 export default function MainWeather({ data }: MainWeatherCardProps) {
-  // ✅ กัน crash
-  if (!data) {
-    return (
-      <div className="w-full h-48 border border-[#DEE2E6] rounded-lg p-2.5 flex items-center justify-center text-gray-400 text-sm">
-        No Data
-      </div>
-    );
-  }
-
   const {
     wind = 0,
     temp = 0,
     powerstatus = "Normal",
     status = "Disconnect",
-  } = data;
+  } = data || {};
+
+  const hasData = !!data;
 
   return (
     <div className="w-full h-48 border border-[#DEE2E6] rounded-lg p-2.5">
@@ -56,7 +49,9 @@ export default function MainWeather({ data }: MainWeatherCardProps) {
           <span className="w-[103px] text-green-900 font-bold">
             Wind
           </span>
-          <span>{wind} m/s</span>
+          <span className={hasData ? "text-black" : "text-gray-400"}>
+            {hasData ? `${wind} m/s` : "0 m/s"}
+          </span>
         </div>
 
         {/* Temp */}
@@ -64,7 +59,9 @@ export default function MainWeather({ data }: MainWeatherCardProps) {
           <span className="w-[103px] text-green-900 font-bold">
             Temp
           </span>
-          <span>{temp} °C</span>
+          <span className={hasData ? "text-black" : "text-gray-400"}>
+            {hasData ? `${temp} °C` : "0 °C"}
+          </span>
         </div>
 
         {/* Power Status */}
@@ -79,7 +76,9 @@ export default function MainWeather({ data }: MainWeatherCardProps) {
                 powerStatusColor[powerstatus] || "bg-gray-400"
               }`}
             />
-            {powerstatus}
+            <span className={hasData ? "text-black" : "text-gray-400"}>
+              {hasData ? powerstatus : "No Data"}
+            </span>
           </span>
         </div>
 
@@ -95,7 +94,9 @@ export default function MainWeather({ data }: MainWeatherCardProps) {
                 statusDotColor[status] || "bg-gray-400"
               }`}
             />
-            {status}
+            <span className={hasData ? "text-black" : "text-gray-400"}>
+              {hasData ? status : "No Data"}
+            </span>
           </span>
         </div>
       </div>
