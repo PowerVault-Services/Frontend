@@ -11,6 +11,7 @@ import {
     sendInspectionStep3
 } from "../../services/inspection.api";
 
+import { handleQueueOrSync } from "../../utils/taskQueue";
 
 export default function NewInspectionStep3() {
 
@@ -174,7 +175,11 @@ export default function NewInspectionStep3() {
             });
 
             // ✅ 2. send
-            await sendInspectionStep3(Number(jobData.jobId));
+            await handleQueueOrSync(
+                sendInspectionStep3(Number(jobData.jobId)),
+                "email-sending",
+                () => { }
+            );
 
             await saveDraftStep(Number(jobData.jobId), 3);
 

@@ -10,6 +10,8 @@ import ReportPreview from "../../components/ReportPreview";
 import { generateServiceReport } from "../../services/service.api";
 import { downloadServiceReport } from "../../services/service.api";
 
+import { handleQueueOrSync } from "../../utils/taskQueue";
+
 export default function NewServiceStep4() {
 
     const navigate = useNavigate();
@@ -32,6 +34,9 @@ export default function NewServiceStep4() {
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState("");
 
+    const [progress, setProgress] = useState(0);
+    const [status, setStatus] = useState<"waiting" | "active" | "done">("waiting");
+
     // =========================
     // load jobId
     // =========================
@@ -53,39 +58,38 @@ export default function NewServiceStep4() {
     // generate report
     // =========================
     async function generateReport() {
-
         if (!jobId) return;
 
         try {
-
             setGenerating(true);
             setError("");
+            setStatus("waiting");
 
-            const json = await generateServiceReport(jobId);
+            const result = await handleQueueOrSync(
+                generateServiceReport(jobId),
+                "report-generation",
+                (res) => res,
+                (p) => {
+                    setProgress(p);
+                    setStatus("active");
+                }
+            );
 
-            if (!json?.success) {
-                throw new Error("generate report failed");
-            }
-
-            const reportUrl = json.data?.reportUrl;
+            const reportUrl = result?.fileUrl || result?.reportUrl;
 
             setReportUrl(reportUrl);
 
             localStorage.setItem(
                 "service_report",
-                JSON.stringify({
-                    jobId,
-                    reportUrl
-                })
+                JSON.stringify({ jobId, reportUrl })
             );
 
-        } catch (err) {
+            setStatus("done");
 
+        } catch (err) {
             console.error(err);
             setError("สร้างรายงานไม่สำเร็จ กรุณาลองใหม่");
-
         } finally {
-
             setGenerating(false);
         }
     }
@@ -223,6 +227,12 @@ export default function NewServiceStep4() {
                 </div>
 
             </div>
+            {generating && (
+                <div className="h-[500px] flex items-center justify-center border rounded-lg text-gray-500">
+                    {status === "waiting" && "กำลังรอคิว..."}
+                    {status === "active" && `กำลังสร้างรายงาน ${progress}%`}
+                </div>
+            )}
 
         </div>
     );

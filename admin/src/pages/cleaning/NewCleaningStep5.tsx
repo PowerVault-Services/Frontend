@@ -7,6 +7,7 @@ import {
   saveCleaningStep5Draft,
   sendCleaningStep5
 } from "../../services/cleaning.api";
+import { handleQueueOrSync } from "../../utils/taskQueue";
 
 export default function NewCleaningStep5() {
   const navigate = useNavigate();
@@ -98,11 +99,11 @@ export default function NewCleaningStep5() {
     try {
       setLoading(true);
 
-      const res = await sendCleaningStep5(payload);
-
-      if (!res.success) {
-        throw new Error("ส่งอีเมลไม่สำเร็จ");
-      }
+      await handleQueueOrSync(
+        sendCleaningStep5(payload),
+        "email-sending",
+        () => { }
+      );
 
       alert("ส่งรายงานเรียบร้อยแล้ว");
       navigate("/cleaning/home");

@@ -6,6 +6,8 @@ import ProgressBar from "../../components/progress/ProgressBar";
 import { sendServiceStep5, saveServiceStep5Draft } from "../../services/service.api";
 import { getServiceJobStatus } from "../../services/service.api";
 
+import { handleQueueOrSync } from "../../utils/taskQueue";
+
 export default function NewServiceStep5() {
 
     const navigate = useNavigate();
@@ -144,16 +146,16 @@ export default function NewServiceStep5() {
             </div>
         `;
 
-            const res = await sendServiceStep5({
-                jobId,
-                to: "nita290646@gmail.com",
-                subject,
-                body
-            });
-
-            if (!res?.success) {
-                throw new Error("send email failed");
-            }
+            await handleQueueOrSync(
+                sendServiceStep5({
+                    jobId,
+                    to: "nita290646@gmail.com",
+                    subject,
+                    body
+                }),
+                "email-sending",
+                () => { }
+            );
 
             alert("ส่งรายงานสำเร็จ");
             navigate("/service");
@@ -197,10 +199,6 @@ export default function NewServiceStep5() {
                 subject,
                 body
             });
-
-            if (!res?.success) {
-                throw new Error("draft failed");
-            }
 
             alert("บันทึก Draft สำเร็จ");
 

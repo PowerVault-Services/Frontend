@@ -11,6 +11,14 @@ import ReportPreview from "../../components/ReportPreview";
 import { generateCleaningReport } from "../../services/cleaning.api";
 import { saveDraftStep } from "../../services/draft.api";
 
+import { handleQueueOrSync } from "../../utils/taskQueue";
+
+interface CleaningReportResponse {
+  success: boolean;
+  download?: string;
+  [key: string]: any;
+}
+
 export default function NewCleaningStep4() {
   const navigate = useNavigate();
 
@@ -25,6 +33,7 @@ export default function NewCleaningStep4() {
   const [currentStep] = useState(4);
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<any>(null);
+  const [progress, setProgress] = useState(0);
 
   /* =========================
      Generate Report
@@ -56,7 +65,12 @@ export default function NewCleaningStep4() {
 
         console.log("🔥 STEP4 REQUEST:", { jobId });
 
-        const result = await generateCleaningReport(jobId);
+        const result = await handleQueueOrSync(
+          generateCleaningReport(jobId),
+          "report-generation",
+          (res) => res,
+          (p) => { console.log("progress:", p); }
+        ) as CleaningReportResponse;
 
         console.log("🔥 STEP4 RESPONSE:", result);
 
@@ -64,7 +78,7 @@ export default function NewCleaningStep4() {
           throw new Error("Generate report failed");
         }
 
-        setReportData(result.data);
+        setReportData(result);
 
       } catch (error: any) {
         console.error("🔥 STEP4 ERROR FULL:", error);
@@ -194,6 +208,33 @@ export default function NewCleaningStep4() {
         </div>
 
       </div>
+      {loading && (
+        <div className="fixed top-5 right-5 z-[100] w-80 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-green-800">
+                กำลังสร้างรายงาน...
+              </span>
+              <span className="text-xs font-bold text-green-600">
+                {progress}%
+              </span>
+            </div>
+
+            {/* Progress Bar Background */}
+            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              {/* Progress Line */}
+              <div
+                className="bg-green-600 h-full transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            <p className="text-[11px] text-slate-400 mt-2">
+              กรุณารอสักครู่ ระบบกำลังประมวลผลข้อมูล
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

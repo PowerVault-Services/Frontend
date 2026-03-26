@@ -7,6 +7,8 @@ import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 import { saveDraftStep } from "../../services/draft.api";
 import { saveInspectionStep2Draft, sendInspectionStep2 } from "../../services/inspection.api";
 
+import { handleQueueOrSync } from "../../utils/taskQueue";
+
 export default function NewInspectionStep2() {
 
     const navigate = useNavigate();
@@ -231,7 +233,11 @@ export default function NewInspectionStep2() {
             });
 
             // ✅ 2. send email
-            await sendInspectionStep2(Number(formData.jobId));
+            await handleQueueOrSync(
+                sendInspectionStep2(Number(formData.jobId)),
+                "email-sending",
+                () => { }
+            );
 
             // ✅ mark step complete
             await saveDraftStep(Number(formData.jobId), 2);

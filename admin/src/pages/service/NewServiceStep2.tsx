@@ -8,6 +8,8 @@ import {
     sendServiceStep2
 } from "../../services/service.api";
 
+import { handleQueueOrSync } from "../../utils/taskQueue";
+
 export default function NewServiceStep2() {
 
     const navigate = useNavigate();
@@ -185,13 +187,15 @@ export default function NewServiceStep2() {
                 attachments: uploadedFile ? [uploadedFile] : []
             });
 
-            await sendServiceStep2(Number(formData.jobId));
+            await handleQueueOrSync(
+                sendServiceStep2(Number(formData.jobId)),
+                "email-sending",
+                () => { }
+            );
 
             localStorage.setItem(
                 `service_step2_sent_${formData.jobId}`,
                 "true",
-
-
             );
 
             setEmailStatus("sent");

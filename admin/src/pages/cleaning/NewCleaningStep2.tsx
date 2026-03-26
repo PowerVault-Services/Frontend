@@ -5,6 +5,7 @@ import ProgressBar from "../../components/progress/ProgressBar";
 import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 import { saveCleaningStep2Draft, sendCleaningStep2 } from "../../services/cleaning.api";
 import api from "../../services/api";
+import { handleQueueOrSync } from "../../utils/taskQueue";
 
 export default function NewCleaningStep2() {
 
@@ -227,7 +228,11 @@ export default function NewCleaningStep2() {
                 files: uploadedFile ? [uploadedFile] : [],
             });
 
-            await sendCleaningStep2(step1.jobId);
+            await handleQueueOrSync(
+                sendCleaningStep2(step1.jobId),
+                "email-sending",
+                () => { },
+            );
 
             // mark ว่าส่งแล้ว
             localStorage.setItem("cleaning_step2_sent", "true");
