@@ -49,7 +49,7 @@ export default function Sidebar() {
           {/* -------- ส่วนบน : โลโก้ + เมนู -------- */}
           <div className="flex flex-col w-full">
             <div className="w-full h-auto">
-              <img src={logo} alt="Logo" className="w-[277px] max-w-[277px]" />
+              <img src={logo} alt="Logo" className="w-[277px] max-w-[277px] cursor-pointer" onClick={() => navigate("/")}/>
             </div>
 
             <div className="mt-4 flex flex-col w-full">

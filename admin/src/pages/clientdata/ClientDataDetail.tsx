@@ -1,18 +1,23 @@
 import { useParams } from "react-router-dom";
-import { PROJECTS } from "../../mock/project";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TagNav from "../../components/TagNav";
 
 import InformationTab from "../../components/tabs/clientdata/InformationTab";
 import WarrantyDetailTab from "../../components/tabs/clientdata/WarrantyDetailTab";
 import ForecastDetailTab from "../../components/tabs/forecast/ForecastDetailTab";
 import OtherTable from "../../components/table/OtherTable";
+import LayoutTab from "../../components/tabs/clientdata/LayoutTab";
+
+import { getProjectDetail } from "../../services/client.api";
 
 
-export default function ProjectDetail() {
+export default function ClientDataDetail() {
+
     const { id } = useParams();
+    const siteId = Number(id);
 
-    const project = PROJECTS.find(p => p.id === id);
+    const [project, setProject] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
 
     const homeTags = [
         { id: "Information", label: "Information" },
@@ -25,54 +30,90 @@ export default function ProjectDetail() {
 
     const [activeProject, setActiveProject] = useState<string>("Information");
 
+    useEffect(() => {
+        if (!siteId) return;
+
+        const fetchDetail = async () => {
+            try {
+                setLoading(true);
+                const res = await getProjectDetail(siteId);
+
+                console.log("Data from Detail API:", res); // 👈 เพิ่มบรรทัดนี้
+
+                setProject(res);
+            } catch (error) {
+                console.error(error);
+                setProject(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDetail();
+    }, [siteId]);
+
     const renderTabContent = () => {
         switch (activeProject) {
             case "Information":
-                return <InformationTab />;
+                return <InformationTab project={project} />;
+
             case "Warranty Detail":
-                return <WarrantyDetailTab />;
+                return <WarrantyDetailTab project={project} />;
+
+            case "Layout Rooftop":
+                return <LayoutTab siteId={siteId} type="PV_LAYOUT" />;
+
+            case "Layout PV String":
+                return <LayoutTab siteId={siteId} type="PV_STRING_LAYOUT" />;
+
             case "Forecast":
-                return <ForecastDetailTab />;
+                return <ForecastDetailTab project={project} />;
+
             case "Other":
-                return <OtherTable />;
+                return <OtherTable project={project} />;
+
             default:
                 return null;
         }
     };
 
-    if (!project) {
-        return <div className="p-10">ไม่พบข้อมูลโครงการ</div>;
-    }
+    if (loading) return <div className="p-10">กำลังโหลดข้อมูล...</div>;
+    if (!project) return <div className="p-10">ไม่พบข้อมูลโครงการ</div>;
 
     return (
         <div className="w-full">
             <div className="flex flex-row justify-between">
+
                 <h1 className="pb-9 text-green-800 flex flex-col gap-8">
                     <span>ข้อมูล : {project.name}</span>
-                    <span>Systemsize : {project.systemSize} kWp</span>
+                    <span>Systemsize : {project.capacityKWp} kWp</span>
                 </h1>
-                <h2 className="items-end pb-9 text-green-700 flex flex-col gap-8">
-                    <span>Start Warranty : {project.startWarranty}</span>
-                    <span>End Warranty : {project.endWarranty}</span>
+
+                <h2 className="text-green-700 flex flex-col gap-8">
+                    <span>Start Warranty :{" "}
+                        {project?.warrantyStart
+                            ? new Date(project.warrantyStart).toLocaleDateString("en-CA")
+                            : "-"}</span>
+                    <span>
+                        End Warranty :{" "}
+                        {project?.warrantyEnd
+                            ? new Date(project.warrantyEnd).toLocaleDateString("en-CA")
+                            : "-"}
+                    </span>
                 </h2>
+
             </div>
 
-            {/* ===== Main Content ===== */}
-            <section className="min-w-0">
-                {/* Tabs */}
-                <div className="flex items-center justify-between w-auto">
-                    <TagNav
-                        items={homeTags}
-                        activeId={activeProject}
-                        onChange={setActiveProject}
-                    />
-                </div>
+            <TagNav
+                items={homeTags}
+                activeId={activeProject}
+                onChange={setActiveProject}
+            />
 
-                {/* Content Box */}
-                <div className="border border-green-800 bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px]">
-                    {renderTabContent()}
-                </div>
-            </section>
+            <div className="border border-green-800 bg-white rounded-b-lg px-[27px] py-[13px] min-h-[800px] h-auto">
+                {renderTabContent()}
+            </div>
+
         </div>
     );
 }

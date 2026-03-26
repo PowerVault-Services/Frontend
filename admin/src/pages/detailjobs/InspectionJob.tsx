@@ -1,15 +1,16 @@
 import { useState } from "react";
-import type { Project } from "../../mock/project";
 import TagNav from "../../components/TagNav";
 
 import InspectionInformationTab from "../../components/tabs/clientdata/powerservice/InspectionInformationTab";
 import InspectionPVLayoutTab from "../../components/tabs/clientdata/powerservice/InspectionPVLayoutTab";
 import InspectionPVStringLayoutTab from "../../components/tabs/clientdata/powerservice/InspectionPVStringLayoutTab";
 
+type Project = any;
 
 interface Props {
   project: Project;
 }
+
 
 const homeTags = [
   { id: "Information", label: "Information" },
@@ -23,15 +24,17 @@ export default function InspectionJob({ project }: Props) {
   const renderTabContent = () => {
     switch (activeProject) {
       case "Information":
-        return <InspectionInformationTab />;
+        return <InspectionInformationTab project={project} />;
       case "PV Layout":
-        return <InspectionPVLayoutTab />;
+        return <InspectionPVLayoutTab siteId={siteId} type="PV_LAYOUT" />;
       case "PV String Layout":
-        return <InspectionPVStringLayoutTab />;
+        return <InspectionPVStringLayoutTab siteId={siteId} type="PV_STRING_LAYOUT" />;
       default:
         return null;
     }
   };
+
+  const siteId = project?.id;
 
   return (
     <div className="space-y-6">
@@ -39,11 +42,25 @@ export default function InspectionJob({ project }: Props) {
       <div className="flex flex-row justify-between items-center pb-[18px]">
         <h2 className="text-green-800 flex flex-col gap-5">
           <span>ข้อมูล : {project.name}</span>
-          <span>Systemsize : {project.systemSize} kWp</span>
+          <span>
+            Systemsize :{" "}
+            {project.systemSize ?? project.capacityKWp ?? 0} kWp
+          </span>
         </h2>
         <h3 className="items-end text-green-700 flex flex-col gap-5">
-          <span>Start Warranty : {project.startWarranty}</span>
-          <span>End Warranty : {project.endWarranty}</span>
+          <span>
+            Start Warranty :{" "}
+            {project.startWarranty !== "-"
+              ? new Date(project.startWarranty).toLocaleDateString("en-CA")
+              : "-"}
+          </span>
+
+          <span>
+            End Warranty :{" "}
+            {project.endWarranty !== "-"
+              ? new Date(project.endWarranty).toLocaleDateString("en-CA")
+              : "-"}
+          </span>
         </h3>
       </div>
 

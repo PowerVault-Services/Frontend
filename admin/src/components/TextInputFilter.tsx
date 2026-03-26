@@ -5,6 +5,8 @@ interface TextInputFilterProps {
   value: string;
   onChange: (value: string) => void;
   type?: "text" | "date" | "time" | "number";
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
 }
 
 export default function TextInputFilter({
@@ -13,6 +15,8 @@ export default function TextInputFilter({
   value,
   onChange,
   type = "text",
+  onKeyDown,
+  disabled = false,
 }: TextInputFilterProps) {
   return (
     <div className="flex flex-col gap-1 w-full">
@@ -24,7 +28,9 @@ export default function TextInputFilter({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={onKeyDown}
         placeholder={placeholder}
+        disabled={disabled}
         className="
           w-full h-[39px]
           rounded-sm

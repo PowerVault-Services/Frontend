@@ -8,7 +8,11 @@ const WarrantyTags = [
   { id: "Warranty for Customer", label: "Warranty for Customer" },
 ];
 
-export default function WarrantyDetailTab() {
+interface Props {
+  project: any;
+}
+
+export default function WarrantyDetailTab({ project }: Props) {
 
   const [activeProject, setActiveProject] = useState<string>("Warranty with Supplier");
 

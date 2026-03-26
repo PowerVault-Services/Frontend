@@ -1,97 +1,240 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type React from "react";
-import html2pdf from "html2pdf.js";
+
 
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ExportIcon from "../../assets/icons/File Download.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import ReportPreview from "../../components/ReportPreview";
 
+import { generateCleaningReport } from "../../services/cleaning.api";
+import { saveDraftStep } from "../../services/draft.api";
+
+import { handleQueueOrSync } from "../../utils/taskQueue";
+
+interface CleaningReportResponse {
+  success: boolean;
+  download?: string;
+  [key: string]: any;
+}
+
 export default function NewCleaningStep4() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const steps = [
-        { id: 1, label: "กรอกข้อมูล" },
-        { id: 2, label: "ส่งอีเมลแจ้งแผน" },
-        { id: 3, label: "แนบรูปภาพ" },
-        { id: 4, label: "รายงาน" },
-        { id: 5, label: "ส่งรายงาน" },
-    ];
+  const steps = [
+    { id: 1, label: "กรอกข้อมูล" },
+    { id: 2, label: "ส่งอีเมลแจ้งแผน" },
+    { id: 3, label: "แนบรูปภาพ" },
+    { id: 4, label: "รายงาน" },
+    { id: 5, label: "ส่งรายงาน" },
+  ];
 
-    const [currentStep] = useState(4);
+  const [currentStep] = useState(4);
+  const [loading, setLoading] = useState(false);
+  const [reportData, setReportData] = useState<any>(null);
+  const [progress, setProgress] = useState(0);
 
-    function handleExport(event: React.MouseEvent<HTMLButtonElement>) {
-        event.preventDefault();
+  /* =========================
+     Generate Report
+  ========================= */
+  useEffect(() => {
+    const generateReport = async () => {
+      const jobIdRaw = localStorage.getItem("jobId");
 
-        const element = document.getElementById("report-preview");
-        if (!element) {
-            alert("ไม่พบตัวอย่างรายงาน");
-            return;
+      console.log("🔥 jobId RAW:", jobIdRaw);
+
+      if (!jobIdRaw) {
+        alert("ไม่พบ jobId");
+        navigate("/cleaning");
+        return;
+      }
+
+      const jobId = Number(jobIdRaw);
+
+      console.log("🔥 jobId PARSED:", jobId);
+
+      if (isNaN(jobId) || jobId <= 0) {
+        alert("jobId ไม่ถูกต้อง");
+        navigate("/cleaning");
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        console.log("🔥 STEP4 REQUEST:", { jobId });
+
+        const result = await handleQueueOrSync(
+          generateCleaningReport(jobId),
+          "report-generation",
+          (res) => res,
+          (p) => { console.log("progress:", p); }
+        ) as CleaningReportResponse;
+
+        console.log("🔥 STEP4 RESPONSE:", result);
+
+        if (!result?.success) {
+          throw new Error("Generate report failed");
         }
 
-        const opt = {
-            margin: 0,
-            filename: "Cleaning_Report.pdf",
-            image: { type: "jpeg", quality: 1 },
-            html2canvas: { scale: 3, useCORS: true },
-            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-        };
+        setReportData(result);
 
-        html2pdf().set(opt).from(element).save();
+      } catch (error: any) {
+        console.error("🔥 STEP4 ERROR FULL:", error);
+
+        if (error.response) {
+          console.error("🔥 STATUS:", error.response.status);
+          console.error("🔥 DATA:", error.response.data);
+        }
+
+        alert(error.response?.data?.message || "ไม่สามารถสร้างรายงานได้");
+
+      } finally {
+        setLoading(false); // ✅ สำคัญมาก
+      }
+    };
+
+    generateReport();
+  }, [navigate]);
+
+  /* =========================
+     Download PDF
+  ========================= */
+  function handleDownloadReport(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+
+    if (!reportData?.download) {
+      alert("ไม่พบไฟล์รายงาน");
+      return;
     }
 
+    window.open(reportData.download, "_blank");
+  }
 
-    return (
-        <div className="w-full">
-            {/* Header */}
-            <div className="flex justify-between pb-9">
-                <h1 className="text-green-800">New Cleaning Job</h1>
+  async function handleSaveDraft() {
 
-                <button className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
-          text-green-700 bg-white border-2 border-green-700 rounded-md">
-                    <img src={SaveDraftIcon} alt="save draft" />
-                    Save Draft
-                </button>
+    try {
+
+      const jobId = localStorage.getItem("jobId");
+
+      if (!jobId) {
+        alert("ไม่พบ jobId");
+        return;
+      }
+
+      await saveDraftStep(Number(jobId), 4);
+
+      alert("บันทึกเรียบร้อยแล้ว");
+
+      navigate("/cleaning");
+
+    } catch (err) {
+
+      console.error(err);
+      alert("Save Draft ไม่สำเร็จ");
+
+    }
+
+  }
+
+  return (
+    <div className="w-full">
+
+      {/* Header */}
+      <div className="flex justify-between pb-9">
+        <h1 className="text-green-800">New Cleaning Job</h1>
+
+        <button
+          onClick={handleSaveDraft}
+          className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
+          text-green-700 bg-white border-2 border-green-700 rounded-md"
+        >
+          <img src={SaveDraftIcon} alt="save draft" />
+          Save Draft
+        </button>
+      </div>
+
+      {/* Form */}
+      <div className="flex flex-col h-[822px] px-28 py-5 gap-y-[58px] bg-white rounded-2xl items-center justify-between">
+
+        <ProgressBar steps={steps} currentStep={currentStep} />
+
+        {/* Content */}
+        <div className="w-[1095px]">
+
+          <div className="flex justify-between mb-1">
+            <h2 className="text-green-800">ตัวอย่างรายงาน</h2>
+
+            <button
+              onClick={handleDownloadReport}
+              disabled={!reportData || loading}
+              className="flex items-center justify-center w-[171px] h-10 px-5 py-3 text-[12px] gap-x-1
+              text-green-700 bg-white border-2 border-green-600 rounded-md disabled:opacity-50"
+            >
+              <img src={ExportIcon} alt="export" />
+              Download PDF
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-20 text-green-700">
+              กำลังสร้างรายงาน...
             </div>
+          ) : (
+            <ReportPreview data={reportData} />
+          )}
 
-            {/* Form */}
-            <div className="flex flex-col h-[822px] px-28 py-5 gap-y-[58px] bg-white rounded-2xl items-center justify-between">
-                <ProgressBar steps={steps} currentStep={currentStep} />
-
-                {/* Content */}
-                <div className="w-[1095px]">
-                    <div className="flex justify-between mb-1">
-                        <h2 className="text-green-800">ตัวอย่างรายงาน</h2>
-
-                        <button
-                            onClick={handleExport}
-                            className="flex items-center justify-center w-[171px] h-10 px-5 py-3 text-[12px] gap-x-1
-              text-green-700 bg-white border-2 border-green-600 rounded-md"
-                        >
-                            <img src={ExportIcon} alt="export" />
-                            Export file
-                        </button>
-                    </div>
-
-                    <ReportPreview data={[]} />
-                </div>
-
-                {/* Footer */}
-                <div className="flex w-full max-w-[1095px] justify-between">
-                    <button
-                        onClick={() => navigate("/cleaning/new/step3_02")}
-                        className="w-[195px] border border-green-600 text-green-600 px-6 py-2.5 rounded-2xl">
-                        ก่อนหน้า
-                    </button>
-
-                    <button
-                        onClick={() => navigate("/cleaning/new/step5")}
-                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl">
-                        ถัดไป
-                    </button>
-                </div>
-            </div>
         </div>
-    );
+
+        {/* Footer */}
+        <div className="flex w-full max-w-[1095px] justify-between">
+
+          <button
+            onClick={() => navigate("/cleaning/new/step3_02")}
+            className="w-[195px] border border-green-600 text-green-600 px-6 py-2.5 rounded-2xl"
+          >
+            ก่อนหน้า
+          </button>
+
+          <button
+            onClick={() => navigate("/cleaning/new/step5")}
+            disabled={!reportData}
+            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl disabled:opacity-50"
+          >
+            ถัดไป
+          </button>
+
+        </div>
+
+      </div>
+      {loading && (
+        <div className="fixed top-5 right-5 z-[100] w-80 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-green-800">
+                กำลังสร้างรายงาน...
+              </span>
+              <span className="text-xs font-bold text-green-600">
+                {progress}%
+              </span>
+            </div>
+
+            {/* Progress Bar Background */}
+            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              {/* Progress Line */}
+              <div
+                className="bg-green-600 h-full transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            <p className="text-[11px] text-slate-400 mt-2">
+              กรุณารอสักครู่ ระบบกำลังประมวลผลข้อมูล
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

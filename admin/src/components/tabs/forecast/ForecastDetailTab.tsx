@@ -8,15 +8,20 @@ const ForecastTags = [
   { id: "Warranty Energy Output", label: "Warranty Energy Output" },
 ];
 
-export default function ForecastDetailTab() {
+interface Props {
+  project: any;
+}
+
+
+export default function ForecastDetailTab({ project }: Props) {
   const [activeTab, setActiveTab] = useState("PVsyst");
 
   const renderTab = () => {
     switch (activeTab) {
       case "PVsyst":
-        return <PVsystTab />;
+        return <PVsystTab siteId={project?.siteId} />
       case "Warranty Energy Output":
-        return <WarrantyEnergy />;
+        return <WarrantyEnergy siteId={project?.siteId} />;
       default:
         return null;
     }

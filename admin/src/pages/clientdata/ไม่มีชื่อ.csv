@@ -1,0 +1,8 @@
+column_name,data_type,full_data_type,is_nullable
+id,int,int,NO
+jobno,nvarchar,nvarchar(50),NO
+contactR,nvarchar,nvarchar(20),YES
+receiveupdate,datetime,datetime,YES
+contactD,nvarchar,nvarchar(20),YES
+deliveryupdate,datetime,datetime,YES
+updateby,nvarchar,nvarchar(20),YES

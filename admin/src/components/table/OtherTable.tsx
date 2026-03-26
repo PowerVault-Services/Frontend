@@ -10,9 +10,13 @@ interface OtherRow {
     remark: string;
 }
 
+interface Props {
+  project: any;
+}
+
 const PAGE_SIZE = 5;
 
-export default function OtherTable() {
+export default function OtherTable({ project }: Props) {
     const [rows, setRows] = useState<OtherRow[]>([]);
     const [editingRow, setEditingRow] = useState<OtherRow | null>(null);
     const [currentPage, setCurrentPage] = useState(1);

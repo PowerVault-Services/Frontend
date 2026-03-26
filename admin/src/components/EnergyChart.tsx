@@ -5,37 +5,74 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  CartesianGrid,
+  Legend,
 } from "recharts";
 
 interface EnergyChartProps {
-  period: "day" | "month" | "year" | "lifetime";
+  data: any[];
+  view: "day" | "month" | "year" | "lifetime";
 }
 
-const data = [
-  { time: "00:00", pv: 1.8 },
-  { time: "04:00", pv: 1.5 },
-  { time: "08:00", pv: 2.6 },
-  { time: "12:00", pv: 3.0 },
-  { time: "16:00", pv: 2.4 },
-  { time: "20:00", pv: 1.7 },
-  { time: "24:00", pv: 2.8 },
-];
+export default function EnergyChart({ data, view }: EnergyChartProps) {
 
-export default function EnergyChart({}: EnergyChartProps) {
   return (
-    <div style={{ width: "100%", height: 260 }}>
-      <ResponsiveContainer>
-        <AreaChart data={data}>
-          <XAxis dataKey="time" tick={{ fontSize: 11 }} />
-          <YAxis unit=" kW" tick={{ fontSize: 11 }} />
-          <Tooltip />
-          <Area
-            type="monotone"
-            dataKey="pv"
-            stroke="#22c55e"
-            fill="#22c55e"
-            fillOpacity={0.25}
+    <div className="w-full h-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart
+          data={data}
+          margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+
+          <XAxis
+            dataKey="time"
+            tick={{ fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
           />
+
+          <YAxis
+            yAxisId="left"
+            unit=" kW"
+            tick={{ fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            unit="%"
+            tick={{ fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <Tooltip />
+
+          {/* ✅ 2. ใส่ Legend ตรงนี้ กำหนดให้อยู่ด้านล่างและใช้ไอคอนแบบขีด (plainline) */}
+          <Legend
+            verticalAlign="bottom"
+            align="center"
+            iconType="plainline"
+            wrapperStyle={{ paddingTop: "20px", fontSize: "12px" }}
+          />
+
+          {/* ✅ 3. ใส่ name="..." เพื่อให้ Legend แสดงชื่อตามนี้ และปรับสีให้ตรงกับรูป */}
+          <Area yAxisId="left" type="monotone" dataKey="pv" name="PV output" stroke="#22c55e" fill="#22c55e" fillOpacity={0.1} />
+
+          <Area yAxisId="left" type="monotone" dataKey="grid" name="Power from grid" stroke="#9ca3af" fill="#9ca3af" fillOpacity={0.1} />
+
+          <Area yAxisId="left" type="monotone" dataKey="battery" name="Battery Charge/discharge power" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} />
+
+          <Area yAxisId="left" type="monotone" dataKey="load" name="Consumption power" stroke="#f97316" fill="#f97316" fillOpacity={0.1} />
+
+          <Area yAxisId="left" type="monotone" dataKey="irradiance" name="Irradiance" stroke="#eab308" fill="#eab308" fillOpacity={0.0} />
+
+          <Area yAxisId="right" type="monotone" dataKey="pr" name="%PR" stroke="#a855f7" fill="#a855f7" fillOpacity={0.0} />
+
+
         </AreaChart>
       </ResponsiveContainer>
     </div>
