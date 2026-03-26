@@ -17,6 +17,13 @@ export interface ApiProject {
 
 export interface ProjectUI {
   id: number;
+  projectName: string;
+  status: string;
+
+  forecastMonthlyRows?: any[];
+  forecastRows?: any[];
+  forecast?: any[];
+  rows?: any[];
 
   name: string;
   systemSize: number;

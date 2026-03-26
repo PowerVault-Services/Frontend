@@ -19,20 +19,19 @@ export default function ProjectEditPage() {
   });
 
   /* ================= Load Data ================= */
-
   const fetchDetail = async () => {
     if (!siteId) return;
 
     setLoading(true);
 
     try {
+      // res ตัวนี้คือ Type 'ProjectUI' เรียบร้อยแล้วตามที่ประกาศใน API
       const res = await getProjectDetail(Number(siteId));
 
-      const data = res?.data;
-
+      // ✅ แก้ไข: ใช้ res ได้เลย ไม่ต้องเข้าถึง .data
       setForm({
-        projectName: data?.projectName ?? "",
-        status: data?.status ?? "ACTIVE",
+        projectName: res?.projectName ?? "",
+        status: res?.status ?? "ACTIVE",
       });
 
     } catch (err) {

@@ -1,5 +1,5 @@
 import api from "./api";
-import type { Project } from "../types/project";
+import type { ProjectUI } from "../types/project";
 
 /* =========================
    Types
@@ -108,7 +108,7 @@ export const updateThailandProject = async (
    Project Detail
 ========================= */
 
-export const getProjectDetail = async (siteId: number): Promise<Project> => {
+export const getProjectDetail = async (siteId: number): Promise<ProjectUI> => {
   const res = await api.get(`/client-data/projects/${siteId}`);
   return res.data.data;
 };

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// ลบ FormInput ออกจาก lucide-react เพราะเราจะสร้างเองด้านล่าง
 import { ArrowLeft } from "lucide-react";
+
+import { createClientPlant } from "../../services/client-data.api";
 
 export default function CreatePlantPage() {
     const navigate = useNavigate();
@@ -41,12 +42,60 @@ export default function CreatePlantPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+
         try {
-            console.log("Submitting:", formData);
+
+            // 🔥 map form → backend payload
+            const payload = {
+                projectNo: formData.projectNo,
+                projectName: formData.projectName,
+                companyName: formData.company,
+                ecpPpa: formData.epcPpa,
+                type: formData.type,
+                address: formData.address,
+                locationProvince: formData.province,
+
+                freeOmText: formData.freeOmYears && formData.freeOmFreq
+                    ? `${formData.freeOmYears} Years / ${formData.freeOmFreq} Times`
+                    : undefined,
+
+                warrantyOutputPct: formData.warrantyOutput
+                    ? Number(formData.warrantyOutput)
+                    : undefined,
+
+                codDate: formData.codDate || undefined,
+
+                solarPanel: formData.solarPanel,
+                panelBrand: formData.panelBrand,
+                panelSizeW: formData.panelSizeW
+                    ? Number(formData.panelSizeW)
+                    : undefined,
+
+                salePerson: formData.salePerson,
+                siteEngineer: formData.siteEngineer,
+                installationContractor: formData.installationContractor,
+                workEntryConditions: formData.workConditions,
+
+                contactEmail: formData.customerEmail,
+                contactPhone: formData.telephone,
+            };
+
+            // 🔥 CALL API
+            await createClientPlant(payload);
+
             alert("สร้างโปรเจคสำเร็จ!");
             navigate("/client-data");
-        } catch (error) {
+
+        } catch (error: any) {
+
             console.error(error);
+
+            if (error.message?.includes("already exists")) {
+                alert("Project No ซ้ำ");
+            } else {
+                alert("เกิดข้อผิดพลาด");
+            }
+
         } finally {
             setIsLoading(false);
         }

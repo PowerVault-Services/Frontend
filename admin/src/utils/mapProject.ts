@@ -53,5 +53,7 @@ export function mapProject(data: any, extra?: any) {
     contactPhone: data.contactPhone ?? "-",
 
     imageUrl: data.imageUrl ?? null,
+    projectName: data.name || data.projectName,
+    status: data.status || "ACTIVE",
   };
 }

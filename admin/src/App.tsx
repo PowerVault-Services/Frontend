@@ -35,6 +35,7 @@ import HomeClientData from "./pages/clientdata/HomeClientData";
 import ClientDataDetail from "./pages/clientdata/ClientDataDetail";
 import ProjectJobPage from "./pages/clientdata/ProjectJobPage";
 import CreatePlantPage from "./pages/clientdata/CreatePlantPage";
+import NewClientService from "./pages/clientdata/NewClientService";
 
 import AllStock from "./pages/stock/AllStock";
 import StockIn from "./pages/stock/StockIn";
@@ -116,6 +117,7 @@ function App() {
           <Route path="/project/:id" element={<ClientDataDetail />} />
           <Route path="/project/edit/:siteId" element={<ProjectEditPage />} />
           <Route path="/client/create-plant" element={<CreatePlantPage />} />
+          <Route path="/client-data/service/new" element={<NewClientService />} />
 
           {/* Stock*/}
           <Route path="/stock/all" element={<AllStock />} />

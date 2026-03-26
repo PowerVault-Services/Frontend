@@ -7,7 +7,7 @@ import PowerVaultServiceTab from "../../components/tabs/PowerVaultServiceTab";
 import AddIcon from "../../assets/icons/Add Circle_line.svg";
 import { getThailandProjects } from "../../services/client.api";
 
-import CreateReportModal from "../../components/CreateReportModal";
+import CreateServiceJobModal from "../../components/CreateServiceJobModal";
 
 export default function HomeClientData() {
 
@@ -161,7 +161,7 @@ export default function HomeClientData() {
             </section>
             {/* Modal Section */}
             {isModalOpen && (
-                <CreateReportModal
+                <CreateServiceJobModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                 />
