@@ -1,5 +1,6 @@
-import { useState } from "react";
-import AddIcon from "../../assets/icons/Add Circle.svg";
+import { useEffect, useState } from "react";
+import { getStockOutList, createStockOut } from "../../services/stock.api";
+import  MinusIcon  from "../../assets/icons/Minus Circle.svg"
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
 import DataTable, { type Column } from "../../components/table/DataTable";
@@ -7,6 +8,7 @@ import SelectFilter from "../../components/SelectFilter";
 import AddProductModal from "../../components/AddProductModal";
 
 interface StockOut {
+    id: number | string;
     date: string;                 // วันที่ทำรายการ
     productCode: number;          // รหัสสินค้า
     category: string;             // หมวดหมู่
@@ -24,61 +26,70 @@ interface StockOut {
 }
 
 
-export default function StockIn() {
-    const [data] = useState<StockOut[]>([]);
-    const [loading] = useState(true);
+export default function StockOut() {
+    const [data, setData] = useState<StockOut[]>([]);
+    const [loading, setLoading] = useState(true);
     const [openModal, setOpenModal] = useState(false);
 
     const columns: Column<StockOut>[] = [
         {
+            id: "date",
             key: "date",
             label: "วันที่",
             align: "center",
             width: "120px",
         },
         {
+            id: "productCode",
             key: "productCode",
             label: "รหัสสินค้า",
             align: "center",
             width: "120px",
         },
         {
+            id: "category",
             key: "category",
             label: "หมวดหมู่",
             align: "center",
             width: "150px",
         },
         {
+            id: "productName",
             key: "productName",
             label: "ชื่อสินค้า",
             align: "center",
             width: "280px",
         },
         {
+            id: "unit",
             key: "unit",
             label: "หน่วยนับ",
             align: "center",
             width: "100px",
         },
         {
+            id: "stockOut",
             key: "stockOut",
             label: "จ่ายออก",
             align: "center",
             width: "100px",
         },
         {
+            id: "projectType",
             key: "projectType",
             label: "โครงการ",
             align: "center",
             width: "100px",
         },
         {
+            id: "description",
             key: "description",
             label: "รายละเอียด",
             align: "center",
             width: "100px",
         },
         {
+            id: "note",
             key: "note",
             label: "หมายเหตุ",
             align: "center",
@@ -86,6 +97,40 @@ export default function StockIn() {
             render: (value) => value || "-",
         },
     ];
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const res = await getStockOutList();
+
+            // 🔥 ถ้า backend structure ไม่ตรง ให้ map ตรงนี้
+            const mapped = res.map((item: any, index: number) => ({
+                id: item.id ?? index,
+                date: item.txDate,
+                productCode: item.product?.code,
+                category: item.product?.category,
+                projectType: item.project,
+                productName: item.product?.name,
+                unit: item.product?.unit,
+                stockOut: item.outQty,
+                remainingStock: item.onHand,
+                note: item.note,
+                description: item.description,
+            }));
+
+            setData(mapped);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
 
     return (
@@ -97,8 +142,8 @@ export default function StockIn() {
                     onClick={() => setOpenModal(true)}
                     className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5"
                 >
-                    <img src={AddIcon} alt="" />
-                    Add สินค้าใหม่
+                    <img src={MinusIcon} alt="" />
+                    เบิกสินค้า
                 </button>
             </div>
 
@@ -133,10 +178,10 @@ export default function StockIn() {
 
             <AddProductModal
                 open={openModal}
+                mode="stockOut"
                 onClose={() => setOpenModal(false)}
-                onNext={() => {
-                    // logic ขั้นต่อไป
-                    setOpenModal(false);
+                onSuccess={async () => {
+                    await loadData();
                 }}
             />
 

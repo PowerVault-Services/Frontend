@@ -11,7 +11,6 @@ import InverterDetail from "./pages/monitor/InverterDetail"
 import AlarmMonitor from "./pages/monitor/AlarmMonitor";
 import PRMonitor from "./pages/monitor/PRMonitor";
 import ReportMonitor from "./pages/monitor/ReportMonitor";
-
 import HomeCleaning from "./pages/cleaning/HomeCleaning";
 import NewCleaningStep1 from "./pages/cleaning/NewCleaningStep1";
 import NewCleaningStep2 from "./pages/cleaning/NewCleaningStep2";
@@ -35,10 +34,16 @@ import NewServiceStep5 from "./pages/service/NewServiceStep5";
 import HomeClientData from "./pages/clientdata/HomeClientData";
 import ClientDataDetail from "./pages/clientdata/ClientDataDetail";
 import ProjectJobPage from "./pages/clientdata/ProjectJobPage";
+import CreatePlantPage from "./pages/clientdata/CreatePlantPage";
+import NewClientService from "./pages/clientdata/NewClientService";
 
 import AllStock from "./pages/stock/AllStock";
 import StockIn from "./pages/stock/StockIn";
 import StockOut from "./pages/stock/StockOut";
+import PRAddForecast from "./pages/monitor/PRAddForecast";
+import { EnergyYieldReport } from "./pages/monitor/EnergyYieldReport";
+
+import ProjectEditPage from "./pages/clientdata/ProjectEditPage";
 
 
 function App() {
@@ -59,11 +64,14 @@ function App() {
             <Route path="home" element={<HomeMonitor />} />
             <Route path="alarm" element={<AlarmMonitor />} />
             <Route
-              path="/monitor/inverter/:inverterId"
+              path="inverter/:inverterId"
               element={<InverterDetail />}
             />
             <Route path="pr" element={<PRMonitor />} />
             <Route path="report" element={<ReportMonitor />} />
+            <Route path="energy-yield" element={<EnergyYieldReport />} />
+            <Route path="forecast/new" element={<PRAddForecast />} />
+
           </Route>
 
           {/* Cleaning */}
@@ -107,6 +115,9 @@ function App() {
           {/* Client Data */}
           <Route path="/client-data" element={<HomeClientData />} />
           <Route path="/project/:id" element={<ClientDataDetail />} />
+          <Route path="/project/edit/:siteId" element={<ProjectEditPage />} />
+          <Route path="/client/create-plant" element={<CreatePlantPage />} />
+          <Route path="/client-data/service/new" element={<NewClientService />} />
 
           {/* Stock*/}
           <Route path="/stock/all" element={<AllStock />} />

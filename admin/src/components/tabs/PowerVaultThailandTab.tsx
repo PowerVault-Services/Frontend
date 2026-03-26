@@ -1,158 +1,224 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PROJECTS } from "../../mock/project";
+
 import SearchBox from "../SearchBox";
 import TextInputFilter from "../TextInputFilter";
 import SelectFilter from "../SelectFilter";
 import DataTable, { type Column } from "../table/DataTable";
 
+import EditIcon from "../../assets/icons/Pen New Square.svg";
+import DeleteIcon from "../../assets/icons/Paper Bin.svg";
 
-interface PowerVaultThailand {
-    id: string;
-    projectnumber: string;
-    projectType: string;
+import { deleteThailandProject } from "../../services/client.api";
+import Pagination from "../table/Pagination";
+
+/* ================= Interface ================= */
+export interface PowerVaultThailand {
+    siteId: number;
+    systemSizeKWp: number;
+    projectNo: string;
     projectName: string;
-    systemSize: number;
-    date: string;
-    time: string;
     status: string;
-    startwarranty?: string;
-    endwarranty?: string;
+    endWarranty?: string | null;
 }
 
-export default function PowerVaultThailandTab() {
-    const [data, setData] = useState<PowerVaultThailand[]>([]);
-    const [loading, setLoading] = useState(true);
+interface PowerVaultThailandTabProps {
+    data: PowerVaultThailand[];
+    isLoading: boolean;
+    pagination: any;
+    onPageChange: (page: number) => void;
+
+    filters: {
+        projectNo: string;
+        projectName: string;
+        systemSizeKWp: string;
+        endWarranty: string;
+        status: string;
+    };
+    setFilters: React.Dispatch<React.SetStateAction<any>>;
+}
+
+export default function PowerVaultThailandTab({
+    data,
+    isLoading,
+    pagination,
+    onPageChange,
+    filters,
+    setFilters
+}: PowerVaultThailandTabProps) {
+
     const navigate = useNavigate();
+    const { page, pageSize, total, totalPages } = pagination;
 
-    useEffect(() => {
-        const tableData: PowerVaultThailand[] = PROJECTS.map((p) => ({
-            id: String(p.id),                 // ✅ FIX: cast to string
-            projectnumber: String(p.id),      // ✅ FIX: consistent type
-            projectName: p.name,
-            projectType: "Solar",
-            systemSize: p.systemSize,
-            startwarranty: "2023-01-01",
-            endwarranty: "2026-01-01",
-            date: "2025-01-10",
-            time: "10:00",
-            status: "Active",
-        }));
+    /* ================= Safe Date Format ================= */
+    const formatDate = (isoString?: string | null) => {
+        if (!isoString) return "-";
 
-        setData(tableData);
-        setLoading(false);
-    }, []);
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return "-";
+
+        return date.toLocaleDateString("en-CA");
+    };
+
+    /* ================= Delete ================= */
+    const handleDelete = async (id: number) => {
+        const confirmDelete = window.confirm("ต้องการลบรายการนี้หรือไม่?");
+        if (!confirmDelete) return;
+
+        try {
+            await deleteThailandProject(id);
+            alert("ลบสำเร็จ");
+            window.location.reload();
+        } catch {
+            alert("ลบไม่สำเร็จ");
+        }
+    };
 
     const handleEdit = (row: PowerVaultThailand) => {
-        console.log("Edit:", row);
+        navigate(`/project/edit/${row.siteId}`);
     };
 
-    const handleDelete = (id: string) => {
-        if (!confirm("Delete this record?")) return;
-
-        setData((prev) => prev.filter((r) => r.id !== id));
-    };
-
+    /* ================= Table Columns ================= */
     const columns: Column<PowerVaultThailand>[] = [
         {
-            key: "projectnumber",
+            id: "projectNo",
+            key: "projectNo",
             label: "Project No.",
             align: "center",
-            render: (value, row) => (
-                <button
-                    onClick={() => navigate(`/project/${row.id}`)}
-                    className="text-green-800 underline hover:text-green-900"
-                >
-                    {value}
-                </button>
-            ),
+            render: (value, row) => {
+                const raw = String(value ?? "");
+                const displayValue = raw.replace(/^NE=/, "");
+
+                return (
+                    <button
+                        onClick={() => navigate(`/project/${row.siteId}`)}
+                        className="text-green-800 underline hover:text-green-900"
+                    >
+                        {displayValue}
+                    </button>
+                );
+            }
         },
-        { key: "projectName", label: "Project Name", align: "center" },
-        { key: "systemSize", label: "System Size (kWp)", align: "center" },
-        { key: "endwarranty", label: "End Warranty", align: "center" },
-        { key: "status", label: "Status", align: "center" },
         {
-            key: "id",
+            id: "projectName",
+            key: "projectName",
+            label: "Project Name",
+            align: "center"
+        },
+        {
+            id: "systemSizeKWp",
+            key: "systemSizeKWp",
+            label: "System Size (kWp)",
+            align: "center"
+        },
+        {
+            id: "endWarranty",
+            key: "endWarranty",
+            label: "End Warranty",
+            align: "center",
+            render: (value) => formatDate(value as string | null)
+        },
+        {
+            id: "status",
+            key: "status",
+            label: "Status",
+            align: "center"
+        },
+        {
+            id: "actions",
+            key: "siteId",
             label: "Actions",
             align: "center",
             render: (_, row) => (
-                <div className="flex justify-center gap-3">
-                    <button
-                        onClick={() => handleEdit(row)}
-                        className="text-blue-600 hover:text-blue-800"
-                    >
-                        ✏️
+                <div className="flex items-center gap-3 justify-center">
+                    <button onClick={() => handleEdit(row)}>
+                        <img src={EditIcon} className="w-5 h-5" />
                     </button>
-
-                    <button
-                        onClick={() => handleDelete(row.id)}
-                        className="text-red-600 hover:text-red-800"
-                    >
-                        🗑
+                    <button onClick={() => handleDelete(row.siteId)}>
+                        <img src={DeleteIcon} className="w-5 h-5" />
                     </button>
                 </div>
-            ),
-        },
+            )
+        }
     ];
 
+    /* ================= JSX ================= */
     return (
         <div className="flex flex-col gap-[18px]">
             <SearchBox>
-                <div className="grid grid-cols-4 justify-between gap-2.5">
-                    <TextInputFilter label="Job No." value={""} onChange={() => {}} />
+                <div className="grid grid-cols-3 gap-2.5">
 
-                    <SelectFilter
-                        label="Project Type"
-                        placeholder="All"
-                        value={""}
-                        onChange={() => {}}
-                        options={[
-                            { label: "All", value: "all" },
-                            { label: "Project A", value: "project_a" },
-                            { label: "Project B", value: "project_b" },
-                        ]}
+                    <TextInputFilter
+                        label="Project No."
+                        value={filters.projectNo}
+                        onChange={(value) =>
+                            setFilters({ ...filters, projectNo: value })
+                        }
                     />
 
-                    <TextInputFilter label="Project Name" value={""} onChange={() => {}} />
-                    <TextInputFilter label="System Size (kWp)" value={""} onChange={() => {}} />
-                    <TextInputFilter label="PV Module (ea.)" value={""} onChange={() => {}} />
-                    <TextInputFilter label="Date" type="date" value={""} onChange={() => {}} />
-                    <TextInputFilter label="Time" type="time" value={""} onChange={() => {}} />
+                    <TextInputFilter
+                        label="Project Name"
+                        value={filters.projectName}
+                        onChange={(value) =>
+                            setFilters({ ...filters, projectName: value })
+                        }
+                    />
 
-                    <SelectFilter
-                        label="รับเหมา"
-                        placeholder="All"
-                        value={""}
-                        onChange={() => {}}
-                        options={[
-                            { label: "All", value: "all" },
-                            { label: "Project A", value: "project_a" },
-                            { label: "Project B", value: "project_b" },
-                        ]}
+                    <TextInputFilter
+                        label="System Size (kWp)"
+                        value={filters.systemSizeKWp}
+                        onChange={(value) =>
+                            setFilters({ ...filters, systemSizeKWp: value })
+                        }
+                    />
+
+                    <TextInputFilter
+                        label="End Warranty"
+                        type="date"
+                        value={filters.endWarranty}
+                        onChange={(value) =>
+                            setFilters({ ...filters, endWarranty: value })
+                        }
                     />
 
                     <SelectFilter
                         label="Status"
-                        placeholder="All"
-                        value={""}
-                        onChange={() => {}}
+                        value={filters.status}
+                        onChange={(value) =>
+                            setFilters({ ...filters, status: value })
+                        }
                         options={[
                             { label: "All", value: "all" },
-                            { label: "Pending", value: "pending" },
-                            { label: "Completed", value: "completed" },
+                            { label: "Active", value: "ACTIVE" },
+                            { label: "Inactive", value: "INACTIVE" },
                         ]}
                     />
                 </div>
             </SearchBox>
 
             <div className="pt-[25px]">
-                <DataTable<PowerVaultThailand>
+                <DataTable
                     columns={columns}
-                    data={data}
-                    loading={loading}
+                    data={data.map(item => ({
+                        ...item,
+                        id: item.siteId
+                    }))}
+                    loading={isLoading}
+                />
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between py-6 text-sm text-gray-500">
+                <span>
+                    {(page - 1) * pageSize + 1} to{" "}
+                    {Math.min(page * pageSize, total)} of {total} items
+                </span>
+
+                <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    onChange={onPageChange}
                 />
             </div>
         </div>
     );
 }
-

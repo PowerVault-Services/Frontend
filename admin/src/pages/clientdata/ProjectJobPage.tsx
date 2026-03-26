@@ -1,39 +1,74 @@
-import { useParams } from "react-router-dom";
-import { PROJECTS, type JobType } from "../../mock/project";
+import { useParams, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+
+import { mapProject } from "../../utils/mapProject";
+
 import {
-    JOB_ROUTE_MAP,
-    type JobRouteKey,
+  JOB_CONFIG,
+  JOB_ROUTE_MAP,
+  type JobRouteKey,
 } from "../../configs/jobConfig";
 
-import CleaningJob from "../../pages/detailjobs/CleaningJob";
-import InspectionJob from "../../pages/detailjobs/InspectionJob";
-import ServiceJob from "../../pages/detailjobs/ServiceJob";
-import OMJob from "../../pages/detailjobs/OMJob";
+import { getProjectDetail } from "../../services/client.api";
+import JobPage from "../../pages/clientdata/JobPage";
+
+import type { ProjectUI } from "../../types/project";
 
 export default function ProjectJobPage() {
-    const { projectId, job } = useParams<{
-        projectId: string;
-        job: string;
-    }>();
+  const location = useLocation();
+  const extra = (location.state as any) || {};
 
-    const project = PROJECTS.find((p) => p.id === projectId);
+  const { projectId, job } = useParams<{
+    projectId: string;
+    job: string;
+  }>();
 
-    const jobKey: JobType | undefined =
-        job && job.toLowerCase() in JOB_ROUTE_MAP
-            ? JOB_ROUTE_MAP[job.toLowerCase() as JobRouteKey]
-            : undefined;
+  const [project, setProject] = useState<ProjectUI | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    if (!project || !jobKey) {
-        return <div>Not found</div>;
-    }
+  // ✅ map route → jobKey
+  const jobKey =
+    job && job.toLowerCase() in JOB_ROUTE_MAP
+      ? JOB_ROUTE_MAP[job.toLowerCase() as JobRouteKey]
+      : undefined;
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (!projectId) return;
 
-    return (
-        <div>
-            {jobKey === "Service" && <ServiceJob project={project} />}
-            {jobKey === "Cleaning" && <CleaningJob project={project} />}
-            {jobKey === "Inspection" && <InspectionJob project={project} />}
-            {jobKey === "OM" && <OMJob project={project} />} 
-        </div>
-    );
+        const data = await getProjectDetail(Number(projectId));
+
+        // ✅ ใช้ mapper กลาง
+        const mapped = mapProject(data, extra);
+
+        setProject(mapped);
+      } catch (err) {
+        console.error("โหลด project ไม่สำเร็จ", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [projectId]);
+
+  // 🔄 loading
+  if (loading) return <div>Loading...</div>;
+
+  // ❌ invalid
+  if (!project || !jobKey) {
+    return <div>Not found</div>;
+  }
+
+  // ✅ config
+  const config = JOB_CONFIG[jobKey];
+
+  return (
+    <JobPage
+      project={project}
+      config={config}
+      jobKey={jobKey}
+    />
+  );
 }

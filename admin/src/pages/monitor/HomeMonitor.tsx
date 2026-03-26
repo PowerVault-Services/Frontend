@@ -1,24 +1,49 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getHomeRealtime, getMonitoringSites } from "../../services/monitoring.api";
+
 import HomeIcon from "../../assets/icons/home.svg";
 import TagNav from "../../components/TagNav";
-
-// tabs
 import OverviewTab from "../../components/tabs/OverviewTab";
-// import AlarmTab from "../../components/tabs/AlarmTab";
-// import PRTab from "../../components/tabs/PRTab";
-// import ReportTab from "../../components/tabs/ReportTab";
+import AlarmTab from "../../components/tabs/AlarmTab";
+import PRTab from "../../components/tabs/PRTab";
+import ReportTab from "../../components/tabs/ReportTab";
+import NewAlarm from "../../components/monitor/NewAlarm";
 
+/* ================= Types ================= */
 interface Plant {
   id: number;
   name: string;
 }
 
+interface Alarm {
+  id: number;
+  alarmName: string;
+  occurredAt: string;
+  severity: number;
+}
+
+/* ================= Component ================= */
 export default function HomeMonitor() {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeProject, setActiveProject] = useState("Overview");
 
-  const homeTags = [
+  const [activeTab, setActiveTab] = useState("Overview");
+  const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const [realtime, setRealtime] = useState<any>(null);
+
+
+
+  const [alarms, setAlarms] = useState<Alarm[]>([]);
+  const latestAlarm = [...alarms].sort(
+    (a, b) =>
+      new Date(b.occurredAt).getTime() -
+      new Date(a.occurredAt).getTime()
+  )[0];
+
+  /* ================= Constants ================= */
+  const tabs = [
     { id: "Overview", label: "Overview" },
     { id: "Alarm", label: "Alarm" },
     { id: "%PR", label: "%PR" },
@@ -26,105 +51,202 @@ export default function HomeMonitor() {
   ];
 
   useEffect(() => {
-    setLoading(true);
-    fetch("https://your-api.com/plants")
-      .then((res) => res.json())
-      .then((data) => setPlants(data))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+    const fetchPlants = async () => {
+      setLoading(true);
+      try {
+        const res = await getMonitoringSites();
+
+        const data = Array.isArray(res) ? res : [];
+
+        setPlants(data);
+
+        // auto select ตัวแรก
+        if (data.length > 0) {
+          setSelectedPlant(data[0]);
+        }
+
+      } catch (err) {
+        console.error("โหลด plant ไม่สำเร็จ:", err);
+        setPlants([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlants();
   }, []);
 
-  const renderTabContent = () => {
-    switch (activeProject) {
+  /* ================= Fetch Plants ================= */
+  useEffect(() => {
+    if (!selectedPlant) return;
+
+    const fetchRealtime = async () => {
+      try {
+        const data = await getHomeRealtime(selectedPlant.id);
+
+        setRealtime(data);
+        setAlarms(data?.alarms ?? []);
+
+      } catch (err) {
+        console.error("โหลด realtime ไม่สำเร็จ", err);
+        setRealtime(null);
+        setAlarms([]);
+      }
+    };
+
+    fetchRealtime();
+  }, [selectedPlant]);
+
+  /* ================= Search ================= */
+  const filteredPlants = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
+    if (!keyword) return plants;
+
+    return plants.filter((p) =>
+      p.name.toLowerCase().includes(keyword)
+    );
+  }, [plants, searchTerm]);
+
+  /* ================= Render Tab ================= */
+  const renderTab = () => {
+    switch (activeTab) {
       case "Overview":
-        return <OverviewTab />;
+        return (
+          <OverviewTab
+            key={selectedPlant?.id}
+            plantId={selectedPlant?.id}
+          />
+        );
       case "Alarm":
-        return <div>Alarm</div>;
+        return (
+          <AlarmTab
+            key={selectedPlant?.id}
+            plantId={selectedPlant?.id}
+          />
+        );
       case "%PR":
-        return <div>%PR</div>;
+        return (
+          <PRTab
+            key={selectedPlant?.id}
+            plantId={selectedPlant?.id}
+          />
+        );
       case "Report":
-        return <div>Report</div>;
+        return (
+          <ReportTab
+            key={selectedPlant?.id}
+            plantId={selectedPlant?.id}
+          />
+        );
       default:
-        return null;
+        return <div>Coming soon</div>;
     }
   };
 
+  const formatDate = (iso?: string) => {
+    if (!iso) return "-";
+
+    const d = new Date(iso);
+
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (iso?: string) => {
+    if (!iso) return "-";
+
+    const d = new Date(iso);
+
+    return d.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+
+
+  /* ================= JSX ================= */
   return (
     <div className="w-full">
       <h1 className="text-green-800 pb-9">Monitoring</h1>
-      <div className="w-full overflow-x-hidden">
-        {/* ===== Main Layout ===== */}
-        <div className="grid grid-cols-[280px_1fr] gap-8 items-start min-h-screen">
 
-          {/* ===== Sidebar ===== */}
-          <aside className="border border-green-800 rounded-lg py-6 px-[11px] bg-white h-screen sticky top-0">
-            <div className="mb-3">
-              <input
-                type="text"
-                placeholder="Enter Plant Name"
-                className="
-                w-full border border-green-200 rounded-lg p-[9px]
-                text-[14px] placeholder:text-green-500
-                focus:outline-none focus:ring-1 focus:ring-green-500
-              "
-              />
-            </div>
 
-            <ul className="space-y-2 text-sm text-green-800 overflow-y-auto max-h-[calc(100vh-160px)]">
-              {loading && <li className="text-gray-400">Loading...</li>}
-              {!loading && plants.length === 0 && (
-                <li className="text-gray-400">No plant found</li>
+      <div className="grid grid-cols-[280px_1fr] gap-8 min-h-screen">
+        {/* ===== Sidebar ===== */}
+        <aside className="border border-green-800 rounded-lg bg-white shadow-sm flex flex-col h-[calc(100vh-120px)]">
+          <div className="p-4">
+            <input
+              type="text"
+              placeholder="Search Plant..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4">
+            <ul className="space-y-2">
+              {loading && (
+                <li className="text-gray-400">กำลังโหลด...</li>
               )}
-              {plants.map((plant) => (
+
+              {!loading && filteredPlants.length === 0 && (
+                <li className="text-gray-400 italic">
+                  ไม่พบสถานที่
+                </li>
+              )}
+
+              {filteredPlants.map((plant) => (
                 <li
                   key={plant.id}
-                  className="cursor-pointer hover:text-green-600"
+                  onClick={() => setSelectedPlant(plant)}
+                  className={`cursor-pointer hover:text-green-600 ${selectedPlant?.id === plant.id
+                    ? "font-bold text-green-700"
+                    : ""
+                    }`}
                 >
                   ▶ {plant.name}
                 </li>
               ))}
             </ul>
-          </aside>
+          </div>
+        </aside>
 
-          {/* ===== Main Content ===== */}
-          <section className="min-w-0 w-full">
-
-            {/* Header */}
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <div className="flex">
-                <img src={HomeIcon} alt="home" className="w-4 h-4" />
-                <h5 className="text-xl font-semibold text-green-800">
-                  Alinco (Thailand)
-                </h5>
-              </div>
-              <div className="flex items-center gap-3 border border-green-400 rounded-lg bg-white px-6 py-1
-              text-sm whitespace-nowrap">
-                <span className="font-semibold text-green-700 text-[18px]">
-                  Name Alarm
-                </span>
-                <span>18 October 2025</span>
-                <span>7:30 A.M.</span>
-              </div>
+        {/* ===== Main Content ===== */}
+        <section className="min-w-0 w-full">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-1.5">
+            {/* ซ้าย */}
+            <div className="flex items-center gap-2">
+              <img src={HomeIcon} alt="home" />
+              <h5 className="font-semibold text-green-800">
+                {selectedPlant?.name ?? "Select a plant"}
+              </h5>
             </div>
+            {/* ขวา */}
+            <NewAlarm
+              alarmName={latestAlarm?.alarmName ?? "No Alarm"}
+              // เอาฟังก์ชัน formatDate และ formatTime มาครอบค่าที่ได้จาก API
+              date={latestAlarm ? formatDate(latestAlarm.occurredAt) : "-"}
+              time={latestAlarm ? formatTime(latestAlarm.occurredAt) : "-"}
+            />
+          </div>
 
-            {/* Tabs + Name Alarm */}
-            <div className="flex flex-wrap items-center justify-between gap-3 w-full">
-              <TagNav
-                items={homeTags}
-                activeId={activeProject}
-                onChange={setActiveProject}
-              />
+          {/* Tabs */}
+          <TagNav
+            items={tabs}
+            activeId={activeTab}
+            onChange={setActiveTab}
+          />
 
-
-            </div>
-
-            {/* Content Box */}
-            <div className="bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px] w-full">
-              {renderTabContent()}
-            </div>
-
-          </section>
-        </div>
+          {/* Content */}
+          <div className="bg-white rounded-b-lg px-6 py-4 min-h-[200px]">
+            {renderTab()}
+          </div>
+        </section>
       </div>
     </div>
   );

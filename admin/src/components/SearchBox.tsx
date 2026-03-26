@@ -75,14 +75,14 @@ export default function SearchBox({
           <div className="mt-4 flex justify-end gap-3">
             <button
               type="button"
-              onClick={onReset}
+              onClick={() => onReset?.()}
               className="
                 inline-flex items-center justify-center
                 h-[31px] w-[95px] px-6 py-2.5 gap-2.5
                 rounded-full
                 border border-green-600
                 bg-white
-                text-(--green-900)
+                text-green-900
                 text-sm font-normal
                 transition
               "
@@ -93,7 +93,7 @@ export default function SearchBox({
 
             <button
               type="button"
-              onClick={onSearch}
+              onClick={() => onSearch?.()}
               className="
                 inline-flex items-center justify-center
                 h-[31px] w-[95px] px-6 py-2.5 gap-2.5

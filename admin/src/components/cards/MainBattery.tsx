@@ -1,78 +1,96 @@
 import Battery from "../../assets/card/battery.svg";
 
-interface MainBattery {
-  id: string;
-  soc: number;
-  temp: number;
-  powerstatus: "Normal" | "Warning";
-  status: "Connect" | "Disconnect";
+/* ================= Types ================= */
+interface MainBatteryType {
+  id?: string;
+  soc?: number;
+  temp?: number;
+  powerstatus?: "Normal" | "Warning";
+  status?: "Connect" | "Disconnect";
 }
 
 interface MainBatteryCardProps {
-  mainBattery: MainBattery;
+  data?: MainBatteryType; // ✅ ให้ตรงกับ Overview
 }
 
-const statusDotColor: Record<MainBattery["status"], string> = {
+/* ================= Status Colors ================= */
+const statusDotColor: Record<string, string> = {
   Connect: "bg-green-500",
   Disconnect: "bg-[#E54848]",
 };
 
-const powerStatusColor: Record<MainBattery["powerstatus"], string> = {
+const powerStatusColor: Record<string, string> = {
   Normal: "bg-green-500",
   Warning: "bg-[#F68B34]",
 };
 
-export default function MainBattery({ mainBattery }: MainBatteryCardProps) {
+/* ================= Component ================= */
+export default function MainBattery({ data }: MainBatteryCardProps) {
+  // ดึงค่าออกมา ถ้าไม่มี data ให้เป็น Object ว่าง เพื่อใช้ Default Value ด้านล่าง
+  const {
+    soc = 0,
+    temp = 0,
+    powerstatus = "Normal",
+    status = "Disconnect",
+  } = data || {};
+
+  // เช็คว่ามีข้อมูลจริงหรือไม่ (เพื่อเลือกแสดงสีข้อความหรือสไตล์ No Data)
+  const hasData = !!data;
+
   return (
     <div className="w-full h-48 border border-[#DEE2E6] rounded-lg p-2.5">
       <h5 className="text-green-700">Battery</h5>
+
       <div className="flex justify-center items-center">
         <img src={Battery} alt="Main Battery" />
       </div>
-      {/* ===== Info (Label | Value | Left aligned) ===== */}
+
       <div className="mt-3 flex flex-col text-xs w-[230px]">
         {/* SOC */}
         <div className="flex items-center">
-          <span className="w-[103px] text-green-900 font-bold whitespace-nowrap">
-            SOC
-          </span>
-          <span className="text-black text-xs">
-            {mainBattery.soc}%
+          <span className="w-[103px] text-green-900 font-bold">SOC</span>
+          <span className={hasData ? "text-black" : "text-gray-400"}>
+            {hasData ? `${soc}%` : "0%"}
           </span>
         </div>
+
         {/* Temp */}
         <div className="flex items-center">
-          <span className="w-[103px] text-green-900 font-bold whitespace-nowrap">
-            Temp
-          </span>
-          <span className="text-black text-xs">
-            {mainBattery.temp}
+          <span className="w-[103px] text-green-900 font-bold">Temp</span>
+          <span className={hasData ? "text-black" : "text-gray-400"}>
+            {hasData ? `${temp}°C` : "0°C"}
           </span>
         </div>
-        {/* Status */}
+
+        {/* Power Status */}
         <div className="flex items-center">
-          <span className="w-[103px] text-green-900 font-bold whitespace-nowrap">
-            Status
+          <span className="w-[103px] text-green-900 font-bold">
+            Power Status
           </span>
 
-          <span className="flex items-center text-black gap-[5px]">
+          <span className="flex items-center gap-[5px]">
             <span
-                className={`w-2 h-2 text-xs rounded-full ${powerStatusColor[mainBattery.powerstatus]}`}
+              className={`w-2 h-2 rounded-full ${
+                hasData ? (powerStatusColor[powerstatus] || "bg-gray-400") : "bg-gray-300"
+              }`}
             />
-            {mainBattery.powerstatus}
+            <span className={hasData ? "text-black" : "text-gray-400"}>{powerstatus}</span>
           </span>
         </div>
-        {/* Status */}
+
+        {/* Connection Status */}
         <div className="flex items-center">
-          <span className="w-[103px] text-green-900 font-bold whitespace-nowrap">
-            Status
+          <span className="w-[103px] text-green-900 font-bold">
+            Connection
           </span>
 
-          <span className="flex items-center text-black gap-[5px]">
+          <span className="flex items-center gap-[5px]">
             <span
-              className={`w-2 h-2 text-xs rounded-full ${statusDotColor[mainBattery.status]}`}
+              className={`w-2 h-2 rounded-full ${
+                hasData ? (statusDotColor[status] || "bg-gray-400") : "bg-gray-300"
+              }`}
             />
-            {mainBattery.status}
+            <span className={hasData ? "text-black" : "text-gray-400"}>{status}</span>
           </span>
         </div>
       </div>
