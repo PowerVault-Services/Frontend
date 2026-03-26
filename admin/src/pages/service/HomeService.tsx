@@ -8,6 +8,7 @@ import ZipIcon from "../../assets/icons/ZIP File.svg";
 import AddIcon from "../../assets/icons/Add Circle_line.svg";
 import DataTable, { type Column } from "../../components/table/DataTable";
 import Pagination from "../../components/table/Pagination";
+import EyeIcon from "../../assets/icons/EyeIcon.svg";
 
 import EditIcon from "../../assets/icons/Pen New Square.svg";
 import DeleteIcon from "../../assets/icons/Paper Bin.svg";
@@ -314,20 +315,43 @@ export default function HomeService() {
       key: "id",
       label: "Actions",
       align: "center",
-      render: (_, row) => (
-        <div className="flex items-center gap-3 justify-center">
-          <button
-            onClick={() => handleEdit(row)}
-            className="hover:opacity-70 transition-opacity"
-            title="Edit"
-          >
-            <img src={EditIcon} alt="Edit" className="w-5 h-5" />
-          </button>
-          <button onClick={() => handleDelete(row.id)} className="hover:opacity-70 transition-opacity" title="Delete">
-            <img src={DeleteIcon} alt="Delete" className="w-5 h-5" />
-          </button>
-        </div>
-      )
+      render: (_, row) => {
+        // ✅ ย้าย Logic เข้ามาใน Block { } ของ render function
+        const isCompleted = row.status === "COMPLETED";
+
+        return (
+          <div className="flex items-center gap-3 justify-center">
+            {isCompleted ? (
+              // 👁️ แสดงปุ่ม Preview ถ้าสถานะเป็น COMPLETED
+              <button
+                onClick={() => handleEdit(row)}
+                className="hover:opacity-70 transition-opacity"
+                title="Preview"
+              >
+                <img src={EyeIcon} alt="Preview" className="w-5 h-5" />
+              </button>
+            ) : (
+              // ✏️ แสดงปุ่ม Edit และ Delete ถ้าสถานะไม่ใช่ COMPLETED
+              <>
+                <button
+                  onClick={() => handleEdit(row)}
+                  className="hover:opacity-70 transition-opacity"
+                  title="Edit"
+                >
+                  <img src={EditIcon} alt="Edit" className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => handleDelete(row.id)}
+                  className="hover:opacity-70 transition-opacity"
+                  title="Delete"
+                >
+                  <img src={DeleteIcon} alt="Delete" className="w-5 h-5" />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      }
     }
 
   ];

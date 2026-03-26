@@ -19,6 +19,9 @@ export default function NewInspectionStep2() {
 
     const [showConfirm, setShowConfirm] = useState(false);
 
+    const savedData = JSON.parse(localStorage.getItem("inspection_step1") || "{}");
+    const isReadOnly = savedData.status === "COMPLETED";
+
     const steps = [
         { id: 1, label: "กรอกข้อมูล" },
         { id: 2, label: "ส่งอีเมลแจ้งแผน" },
@@ -149,7 +152,7 @@ export default function NewInspectionStep2() {
                         </p>
                         <p style="text-indent: 50px; margin-top: 20px;">
                             โดยจะขออนุญาตทําการปิดระบบ Solar System ประมาณ ${formData.shutdownHours ||
-                            formatDuration(formData.startTime, formData.endTime)} เพื่อดําเนินการ SMDB Inspection และ Inverter Inspection
+                formatDuration(formData.startTime, formData.endTime)} เพื่อดําเนินการ SMDB Inspection และ Inverter Inspection
                         </p>
                         <p style="text-indent: 50px;">
                             จึงเรียนมาเพิ่อพิจารณาอนุมัติ และขออํานวยความสะดวกในการขึ้นหลังคา ระบบนํ้าและการเข้าปฏิบัติงานในพื้นที่
@@ -211,7 +214,7 @@ export default function NewInspectionStep2() {
                         </p>
                         <p style="text-indent: 50px; margin-top: 20px;">
                             โดยจะขออนุญาตทําการปิดระบบ Solar System ประมาณ ${formData.shutdownHours ||
-                            formatDuration(formData.startTime, formData.endTime)} เพื่อดําเนินการ SMDB Inspection และ Inverter Inspection
+                formatDuration(formData.startTime, formData.endTime)} เพื่อดําเนินการ SMDB Inspection และ Inverter Inspection
                         </p>
                         <p style="text-indent: 50px;">
                             จึงเรียนมาเพิ่อพิจารณาอนุมัติ และขออํานวยความสะดวกในการขึ้นหลังคา ระบบนํ้าและการเข้าปฏิบัติงานในพื้นที่
@@ -242,6 +245,7 @@ export default function NewInspectionStep2() {
                 startTime: formData.startTime,
                 endTime: formData.endTime,
                 shutdownHours: formData.shutdownHours,
+                status: "COMPLETED",
             }));
 
             setEmailStatus("sent");
@@ -402,6 +406,7 @@ export default function NewInspectionStep2() {
                                     type="file"
                                     className="hidden"
                                     accept=".pdf,.jpg,.jpeg,.xls,.xlsx"
+                                    disabled={isReadOnly}
                                     onChange={(e) => {
                                         if (e.target.files?.[0]) {
                                             setUploadedFile(e.target.files[0]);
@@ -428,18 +433,26 @@ export default function NewInspectionStep2() {
                         ก่อนหน้า
                     </button>
 
-                    <button
-                        disabled={emailStatus === "sending" || emailStatus === "sent"}
-                        onClick={() => setShowConfirm(true)}
-                        className="w-[195px] bg-green-700 text-white
-                        px-6 py-2.5 rounded-2xl"
-                    >
-                        {emailStatus === "sending"
-                            ? "กำลังส่ง..."
-                            : emailStatus === "sent"
-                                ? "ส่งอีเมลแล้ว"
-                                : "ยืนยันส่งอีเมล"}
-                    </button>
+                    {isReadOnly ? (
+                        <button
+                            onClick={() => navigate("/inspection/new/step3")}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            ถัดไป
+                        </button>
+                    ) : (
+                        <button
+                            disabled={emailStatus === "sending" || emailStatus === "sent"}
+                            onClick={() => setShowConfirm(true)}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            {emailStatus === "sending"
+                                ? "กำลังส่ง..."
+                                : emailStatus === "sent"
+                                    ? "ส่งอีเมลแล้ว"
+                                    : "ยืนยันส่งอีเมล"}
+                        </button>
+                    )}
 
                 </div>
 

@@ -15,6 +15,7 @@ import {
 export default function NewInspectionStep3() {
 
     const navigate = useNavigate();
+    const [isReadOnly, setIsReadOnly] = useState(false);
     const [_uploadedFile, setUploadedFile] = useState<File | null>(null);
 
 
@@ -62,6 +63,11 @@ export default function NewInspectionStep3() {
         if (sent === "true") {
             setEmailStatus("sent");
         }
+
+        if (data.status === "COMPLETED") {
+            setIsReadOnly(true);
+        }
+
 
     }, []);
 
@@ -323,19 +329,26 @@ export default function NewInspectionStep3() {
                         ก่อนหน้า
                     </button>
 
-                    <button
-                        disabled={emailStatus === "sending" || emailStatus === "sent"}
-                        onClick={() => setShowConfirm(true)}
-                        className="w-[195px] bg-green-700 text-white
-                        px-6 py-2.5 rounded-2xl"
-                    >
-                        {emailStatus === "sending"
-                            ? "กำลังส่ง..."
-                            : emailStatus === "sent"
-                                ? "ส่งรายงานแล้ว"
-                                : "ยืนยันส่งรายงาน"}
-                    </button>
-
+                    {isReadOnly ? (
+                        <button
+                            onClick={() => navigate("/inspection")}
+                            className="w-[195px] bg-green-800 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            กลับหน้าหลัก
+                        </button>
+                    ) : (
+                        <button
+                            disabled={emailStatus === "sending" || emailStatus === "sent"}
+                            onClick={() => setShowConfirm(true)}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            {emailStatus === "sending"
+                                ? "กำลังส่ง..."
+                                : emailStatus === "sent"
+                                    ? "ส่งรายงานแล้ว"
+                                    : "ยืนยันส่งรายงาน"}
+                        </button>
+                    )}
                 </div>
 
             </div>

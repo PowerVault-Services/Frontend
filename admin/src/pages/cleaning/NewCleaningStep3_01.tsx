@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadFileField from "../../components/UploadFileField";
@@ -21,6 +21,25 @@ export default function NewCleaningStep3_01() {
 
   const [currentStep] = useState(3);
   const [loading, setLoading] = useState(false);
+
+  const [existingImages, setExistingImages] = useState<any[]>([]);
+
+  useEffect(() => {
+    const savedData = JSON.parse(localStorage.getItem("cleaning_step1") || "{}");
+    const isReadOnly = savedData.status === "COMPLETED";
+
+    if (isReadOnly) {
+      // ดึงข้อมูลรูปภาพจาก API (สมมติว่าใช้ getCleaningDetail)
+      const fetchImages = async () => {
+        const jobId = localStorage.getItem("jobId");
+        // const res = await getCleaningDetail(jobId);
+        // setExistingImages(res.evidences); // เก็บข้อมูลรูปภาพที่มีอยู่
+      };
+      fetchImages();
+    }
+  }, []);
+
+  const isReadOnly = JSON.parse(localStorage.getItem("cleaning_step1") || "{}").status === "COMPLETED";
 
   // แยกเก็บไฟล์ตามประเภท
   const [filesByType, setFilesByType] = useState<Record<string, File[]>>({
@@ -145,41 +164,57 @@ export default function NewCleaningStep3_01() {
           <UploadImagePreviewField
             label="ก่อน - ล้างแผง"
             onChange={(file) => handleFileChange("BEFORE_PANEL", file)}
+            disabled={isReadOnly} // ✅ ส่ง prop ไป disable input
+            defaultValue={existingImages.find(img => img.type === "BEFORE_PANEL")?.url}
           />
 
           <UploadImagePreviewField
             label="ขณะ - ล้างแผง"
             onChange={(file) => handleFileChange("DURING_PANEL", file)}
+            disabled={isReadOnly}
+            defaultValue={existingImages.find(img => img.type === "DURING_PANEL")?.url}
           />
 
           <UploadImagePreviewField
             label="หลัง - ล้างแผง"
             onChange={(file) => handleFileChange("AFTER_PANEL", file)}
+            disabled={isReadOnly}
+            defaultValue={existingImages.find(img => img.type === "AFTER_PANEL")?.url}
           />
 
           <UploadImagePreviewField
             label="ก่อน - ทําความสะอาดห้องอินเวอร์เตอร์"
             onChange={(file) => handleFileChange("BEFORE_INVERTER", file)}
+            disabled={isReadOnly}
+            defaultValue={existingImages.find(img => img.type === "BEFORE_INVERTER")?.url}
           />
 
           <UploadImagePreviewField
             label="ขณะ - ทําความสะอาดห้องอินเวอร์เตอร์"
             onChange={(file) => handleFileChange("DURING_INVERTER", file)}
+            disabled={isReadOnly}
+            defaultValue={existingImages.find(img => img.type === "DURING_INVERTER")?.url}
           />
 
           <UploadImagePreviewField
             label="หลัง - ทําความสะอาดห้องอินเวอร์เตอร์"
             onChange={(file) => handleFileChange("AFTER_INVERTER", file)}
+            disabled={isReadOnly}
+            defaultValue={existingImages.find(img => img.type === "AFTER_INVERTER")?.url}
           />
 
           {/* DOCUMENTS */}
           <UploadFileField
             label="อัปโหลดเอกสารไฟล์ ส่งมอบงาน"
             onChange={(file) => handleFileChange("CERTIFICATE", file)}
+            disabled={isReadOnly}
+            defaultValue={existingImages.find(f => f.type === "CERTIFICATE")?.fileName}
           />
           <UploadFileField
             label="อัปโหลดเอกสารไฟล์ Check List"
             onChange={(file) => handleFileChange("LAYOUT", file)}
+            disabled={isReadOnly}
+            defaultValue={existingImages.find(f => f.type === "LAYOUT")?.fileName}
           />
 
           <div className="mt-[27px]">
@@ -198,13 +233,22 @@ export default function NewCleaningStep3_01() {
             ก่อนหน้า
           </button>
 
-          <button
-            onClick={uploadEvidence}
-            disabled={loading}
-            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl disabled:opacity-50"
-          >
-            {loading ? "กำลังอัปโหลด..." : "ถัดไป"}
-          </button>
+          {isReadOnly ? (
+            <button
+              onClick={() => navigate("/cleaning/new/step3_02")}
+              className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+            >
+              ถัดไป (View Only)
+            </button>
+          ) : (
+            <button
+              onClick={uploadEvidence}
+              disabled={loading}
+              className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl disabled:opacity-50"
+            >
+              {loading ? "กำลังอัปโหลด..." : "ถัดไป"}
+            </button>
+          )}
         </div>
 
         {/* Debug Preview */}

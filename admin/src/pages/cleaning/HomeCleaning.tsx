@@ -9,6 +9,7 @@ import DataTable, { type Column } from "../../components/table/DataTable";
 import Pagination from "../../components/table/Pagination";
 import EditIcon from "../../assets/icons/Pen New Square.svg";
 import DeleteIcon from "../../assets/icons/Paper Bin.svg";
+import EyeIcon from "../../assets/icons/EyeIcon.svg";
 
 import { getCleaningJobs } from "../../services/cleaning.api";
 import { downloadCleaningZip } from "../../services/cleaning.api";
@@ -123,6 +124,11 @@ export default function HomeCleaning() {
     // 1. เก็บข้อมูลลง localStorage เพื่อให้ Step 1-5 ดึงไปใช้ต่อ
     localStorage.setItem("cleaning_step1", JSON.stringify(cleaningData));
 
+    if (row.status === "COMPLETED") {
+      navigate("/cleaning/new/step1");
+      return;
+    }
+
     // 2. เช็ค Status เพื่อเลือกหน้าที่จะส่งไป (แก้ไขเนื้อหาที่บันทึกไว้)
     switch (row.status) {
       case "DRAFT":
@@ -225,16 +231,43 @@ export default function HomeCleaning() {
       key: "id",
       label: "Actions",
       align: "center",
-      render: (_, row) => (
-        <div className="flex items-center gap-3 justify-center">
-          <button onClick={() => handleEdit(row)} className="hover:opacity-70 transition-opacity" title="Edit">
-            <img src={EditIcon} alt="Edit" className="w-5 h-5" />
-          </button>
-          <button onClick={() => handleDelete(row.id)} className="hover:opacity-70 transition-opacity" title="Delete">
-            <img src={DeleteIcon} alt="Delete" className="w-5 h-5" />
-          </button>
-        </div>
-      )
+      render: (_, row) => {
+        // ✅ ย้าย Logic เข้ามาใน Block { } ของ render function
+        const isCompleted = row.status === "COMPLETED";
+
+        return (
+          <div className="flex items-center gap-3 justify-center">
+            {isCompleted ? (
+              // 👁️ แสดงปุ่ม Preview ถ้าสถานะเป็น COMPLETED
+              <button
+                onClick={() => handleEdit(row)}
+                className="hover:opacity-70 transition-opacity"
+                title="Preview"
+              >
+                <img src={EyeIcon} alt="Preview" className="w-5 h-5" />
+              </button>
+            ) : (
+              // ✏️ แสดงปุ่ม Edit และ Delete ถ้าสถานะไม่ใช่ COMPLETED
+              <>
+                <button
+                  onClick={() => handleEdit(row)}
+                  className="hover:opacity-70 transition-opacity"
+                  title="Edit"
+                >
+                  <img src={EditIcon} alt="Edit" className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => handleDelete(row.id)}
+                  className="hover:opacity-70 transition-opacity"
+                  title="Delete"
+                >
+                  <img src={DeleteIcon} alt="Delete" className="w-5 h-5" />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      }
     }
   ];
 

@@ -51,6 +51,9 @@ export default function NewCleaningStep1() {
 
     const [isEditMode, setIsEditMode] = useState(false);
 
+    const savedData = JSON.parse(localStorage.getItem("cleaning_step1") || "{}");
+    const isReadOnly = savedData.status === "COMPLETED";
+
     // ==========================
     // Load draft (edit mode)
     // ==========================
@@ -248,6 +251,7 @@ export default function NewCleaningStep1() {
                             <SelectFilter
                                 label="Project Name"
                                 value={projectId}
+                                disabled={isReadOnly}
                                 onChange={(val: string) => {
                                     setProjectId(val);
 
@@ -330,31 +334,39 @@ export default function NewCleaningStep1() {
                         ยกเลิก
                     </button>
 
-                    <button
-                        onClick={async () => {
-                            try {
-                                if (!date || !startTime || !endTime) {
-                                    alert("กรุณากรอก Date และ Time");
-                                    return;
+                    {isReadOnly ? (
+                        <button
+                            onClick={() => navigate("/cleaning/new/step2")}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            ดูรายละเอียดอีเมลแจ้งแผน
+                        </button>
+                    ) : (
+                        <button
+                            onClick={async () => {
+                                try {
+                                    if (!date || !startTime || !endTime) {
+                                        alert("กรุณากรอก Date และ Time");
+                                        return;
+                                    }
+
+                                    if (startTime >= endTime) {
+                                        alert("เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด");
+                                        return;
+                                    }
+
+                                    await handleSaveStep1();
+                                    navigate("/cleaning/new/step2");
+
+                                } catch (err: any) {
+                                    alert(err.message);
                                 }
-
-                                if (startTime >= endTime) {
-                                    alert("เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด");
-                                    return;
-                                }
-
-                                await handleSaveStep1();
-                                navigate("/cleaning/new/step2");
-
-                            } catch (err: any) {
-                                alert(err.message);
-                            }
-                        }}
-                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
-                    >
-                        ถัดไป
-                    </button>
-
+                            }}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            ถัดไป
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

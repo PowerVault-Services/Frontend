@@ -26,6 +26,8 @@ export interface ChecklistItem {
 interface OperationTableProps {
   items?: OperationItem[];
   onChange?: (data: ChecklistItem[]) => void;
+  disable?: boolean;
+  initialData?: ChecklistItem[]; // ✅ เพิ่ม prop นี้
 }
 
 /* =======================
@@ -80,7 +82,11 @@ const flattenItems = (items: OperationItem[], level = 0): OperationResult[] =>
 export default function OperationTable({
   items = DEFAULT_ITEMS,
   onChange,
+  disable = false,
+  initialData,
 }: OperationTableProps) {
+
+  
 
   const [rows, setRows] = useState<OperationResult[]>(flattenItems(items));
 

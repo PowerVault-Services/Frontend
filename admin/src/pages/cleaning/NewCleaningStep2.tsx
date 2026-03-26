@@ -16,6 +16,9 @@ export default function NewCleaningStep2() {
     // email status (production pattern)
     const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent">("idle");
 
+    const savedData = JSON.parse(localStorage.getItem("cleaning_step1") || "{}");
+    const isReadOnly = savedData.status === "COMPLETED";
+
     const steps = [
         { id: 1, label: "กรอกข้อมูล" },
         { id: 2, label: "ส่งอีเมลแจ้งแผน" },
@@ -157,18 +160,11 @@ export default function NewCleaningStep2() {
 
             await saveCleaningStep2Draft({
                 jobId: step1.jobId,
-
                 // ✅ FIX ให้เป็น email จริง
-                to: step1.contactEmail || "test@email.com",
-
+                to: "nita290646@gmail.com",
                 subject,
                 body,
-
-                // ✅ FIX file ต้องเป็น array
                 files: uploadedFile ? [uploadedFile] : [],
-
-                // ✅ optional
-                signatureName: "PowerVault Service"
             });
 
             alert("บันทึก Draft สำเร็จ");
@@ -358,6 +354,7 @@ export default function NewCleaningStep2() {
                                     name="files"
                                     type="file"
                                     className="hidden"
+                                    disabled={isReadOnly}
                                     onChange={(e) => {
                                         if (e.target.files && e.target.files[0]) {
                                             setUploadedFile(e.target.files[0]);
@@ -380,18 +377,26 @@ export default function NewCleaningStep2() {
                         ก่อนหน้า
                     </button>
 
-                    <button
-                        disabled={emailStatus === "sending" || emailStatus === "sent"}
-                        onClick={() => setShowConfirm(true)}
-                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
-                    >
-                        {emailStatus === "sending"
-                            ? "กำลังส่ง..."
-                            : emailStatus === "sent"
-                                ? "ส่งอีเมลแล้ว"
-                                : "ยืนยันส่งอีเมล"}
-                    </button>
-
+                    {isReadOnly ? (
+                        <button
+                            onClick={() => navigate("/cleaning/new/step3_01")}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            ถัดไป
+                        </button>
+                    ) : (
+                        <button
+                            disabled={emailStatus === "sending" || emailStatus === "sent"}
+                            onClick={() => setShowConfirm(true)}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            {emailStatus === "sending"
+                                ? "กำลังส่ง..."
+                                : emailStatus === "sent"
+                                    ? "ส่งอีเมลแล้ว"
+                                    : "ยืนยันส่งอีเมล"}
+                        </button>
+                    )}
                 </div>
             </div>
             {/* Confirm Modal*/}

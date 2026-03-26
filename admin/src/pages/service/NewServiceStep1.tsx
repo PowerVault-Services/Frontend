@@ -98,6 +98,9 @@ export default function NewServiceStep1() {
     const location = useLocation();
     const navData = location.state as any;
 
+    const savedData = JSON.parse(localStorage.getItem("service_step1") || "{}");
+    const isReadOnly = savedData.status === "COMPLETED";
+
 
     useEffect(() => {
         const savedData = localStorage.getItem("service_step1");
@@ -289,6 +292,7 @@ export default function NewServiceStep1() {
             remark,
             contractor,
             projectType,
+            status: "COMPLETED",
         }));
 
         localStorage.setItem("jobId", String(jobId));
@@ -480,20 +484,39 @@ export default function NewServiceStep1() {
                         ยกเลิก
                     </button>
 
-                    <button
-                        onClick={async () => {
-                            try {
-                                await handleSaveStep1();
-                                navigate("/service/new/step2");
-                            } catch (err: any) {
-                                alert(err.message);
-                            }
-                        }}
-                        className="w-[195px] bg-green-700 text-white
-                        px-6 py-2.5 rounded-2xl"
-                    >
-                        ถัดไป
-                    </button>
+                    {isReadOnly ? (
+                        <button
+                            onClick={() => navigate("/service/new/step2")}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            ดูรายละเอียดอีเมลแจ้งแผน
+                        </button>
+                    ) : (
+                        <button
+                            onClick={async () => {
+                                try {
+                                    if (!date || !startTime || !endTime) {
+                                        alert("กรุณากรอก Date และ Time");
+                                        return;
+                                    }
+
+                                    if (startTime >= endTime) {
+                                        alert("เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด");
+                                        return;
+                                    }
+
+                                    await handleSaveStep1();
+                                    navigate("/service/new/step2");
+
+                                } catch (err: any) {
+                                    alert(err.message);
+                                }
+                            }}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            ถัดไป
+                        </button>
+                    )}
 
                 </div>
 

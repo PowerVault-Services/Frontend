@@ -155,7 +155,7 @@ export default function HomeClientData() {
                 </div>
 
                 {/* Content Box */}
-                <div className="bg-white rounded-b-lg px-[27px] py-[13px] min-h-[200px]">
+                <div className="bg-white rounded-b-lg px-[27px] py-[13px]">
                     {renderTabContent()}
                 </div>
             </section>

@@ -4,6 +4,7 @@ import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 
 import { sendServiceStep5, saveServiceStep5Draft } from "../../services/service.api";
+import { getServiceJobStatus } from "../../services/service.api";
 
 export default function NewServiceStep5() {
 
@@ -32,6 +33,28 @@ export default function NewServiceStep5() {
         problem?: string;
         remark?: string;
     }>({});
+
+    const [isReadOnly, setIsReadOnly] = useState(false);
+    useEffect(() => {
+        if (jobId === null) return;
+
+        const id = jobId; // ✅ TS มั่นใจแล้วว่าเป็น number
+
+        async function loadStatus() {
+            try {
+                const status = await getServiceJobStatus(id);
+
+                if (status === "COMPLETED") {
+                    setIsReadOnly(true);
+                }
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        loadStatus();
+    }, [jobId]);
 
     // =========================
     // load jobId + step1 data
@@ -203,7 +226,7 @@ export default function NewServiceStep5() {
                     New Service Job
                 </h1>
 
-                <button onClick={handleSaveDraft} className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
+                <button onClick={handleSaveDraft} disabled={loading || isReadOnly} className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
                 text-green-700 bg-white border-2 border-green-700 rounded-md">
 
                     <img src={SaveDraftIcon} alt="save draft" />
@@ -323,13 +346,22 @@ export default function NewServiceStep5() {
                         ก่อนหน้า
                     </button>
 
-                    <button
-                        onClick={handleSendEmail}
-                        disabled={loading}
-                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
-                    >
-                        {loading ? "กำลังส่ง..." : "ยืนยันส่งอีเมล"}
-                    </button>
+                    {isReadOnly ? (
+                        <button
+                            onClick={() => navigate("/service")}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            เสร็จสิ้น
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleSendEmail}
+                            disabled={loading}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            {loading ? "กำลังส่ง..." : "ยืนยันส่งอีเมล"}
+                        </button>
+                    )}
 
                 </div>
 

@@ -1,11 +1,12 @@
 import { useRef } from "react";
 
 interface Props {
-    images: File[];
-    setImages: (files: File[]) => void;
+    images: (File | string)[];
+    setImages: (files: (File | string)[]) => void;
+    readOnly?: boolean;
 }
 
-export default function ImageGalleryUpload({ images, setImages }: Props) {
+export default function ImageGalleryUpload({ images, setImages, readOnly = false }: Props) {
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -33,63 +34,63 @@ export default function ImageGalleryUpload({ images, setImages }: Props) {
             {/* image preview */}
             <div className="flex gap-4 mb-4">
 
-                {images.map((img, index) => (
-                    <div key={index} className="relative">
+                {images.map((img, index) => {
 
-                        <img
-                            src={URL.createObjectURL(img)}
-                            className="w-[160px] h-[160px] object-cover rounded-lg border"
-                        />
+                    const imageUrl =
+                        typeof img === "string"
+                            ? "http://localhost:3000" + img
+                            : URL.createObjectURL(img);
 
-                        <button
-                            onClick={() => removeImage(index)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-2"
-                        >
-                            x
-                        </button>
+                    return (
+                        <div key={index} className="relative">
 
-                    </div>
-                ))}
+                            <img
+                                src={imageUrl}
+                                className="w-[160px] h-[160px] object-cover rounded-lg border"
+                            />
+
+                            {!readOnly && (
+                                <button
+                                    onClick={() => removeImage(index)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-2"
+                                >
+                                    x
+                                </button>
+                            )}
+
+                        </div>
+                    );
+                })}
 
                 {/* add button */}
-                <div
-                    onClick={() => inputRef.current?.click()}
-                    className="
-          w-[160px] h-[160px]
-          flex items-center justify-center
-          rounded-lg border
-          border-gray-300
-          cursor-pointer
-          bg-gray-100
+                {!readOnly && (
+                    <div
+                        onClick={() => inputRef.current?.click()}
+                        className="
+            w-[160px] h-[160px]
+            flex items-center justify-center
+            rounded-lg border
+            border-gray-300
+            cursor-pointer
+            bg-gray-100
         "
-                >
-                    <span className="text-3xl text-gray-500">+</span>
-                </div>
+                    >
+                        <span className="text-3xl text-gray-500">+</span>
+                    </div>
+                )}
 
-                <input
-                    ref={inputRef}
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleUpload}
-                />
+                {!readOnly && (
+                    <input
+                        ref={inputRef}
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleUpload}
+                    />
+                )}
 
             </div>
-
-            {/* progress bar */}
-            {/* <div className="w-full h-2 bg-gray-200 rounded">
-
-        <div
-          className="h-2 bg-yellow-400 rounded"
-          style={{ width: `${progress}%` }}
-        />
-
-      </div>
-
-      <p className="text-sm mt-2 text-gray-500">
-        {images.length} / 6 รูป
-      </p> */}
 
         </div>
     );

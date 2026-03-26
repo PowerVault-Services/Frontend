@@ -11,7 +11,7 @@ export default function JobPage({ project, config }: any) {
   const layoutType = activeTab?.type;
 
   return (
-    <div className="space-y-6">
+    <div className="w-full h-auto">
       {/* Header */}
       <div className="flex flex-row justify-between items-center pb-[18px]">
         <h2 className="text-green-800 flex flex-col gap-5">

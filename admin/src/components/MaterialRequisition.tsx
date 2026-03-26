@@ -10,9 +10,10 @@ export interface MaterialItem {
 
 interface Props {
     onChange?: (materials: MaterialItem[]) => void;
+    disabled?: boolean;
 }
 
-export default function MaterialRequisition({ onChange }: Props) {
+export default function MaterialRequisition({ onChange, disabled = false }: Props) {
 
     const [materials, setMaterials] = useState<MaterialItem[]>([
         { categoryId: "", productId: "", quantity: 1 }
@@ -62,6 +63,8 @@ export default function MaterialRequisition({ onChange }: Props) {
 
     function addItem() {
 
+        if (disabled) return;
+
         setMaterials([
             ...materials,
             { categoryId: "", productId: "", quantity: 1 }
@@ -70,6 +73,8 @@ export default function MaterialRequisition({ onChange }: Props) {
     }
 
     function removeItem(index: number) {
+
+        if (disabled) return;
 
         setMaterials(materials.filter((_, i) => i !== index));
 
@@ -80,6 +85,8 @@ export default function MaterialRequisition({ onChange }: Props) {
         key: K,
         value: MaterialItem[K]
     ) {
+
+        if (disabled) return;
 
         const updated = [...materials];
 
@@ -141,6 +148,7 @@ export default function MaterialRequisition({ onChange }: Props) {
 
                             {/* Category */}
                             <select
+                                disabled={disabled}
                                 value={item.categoryId}
                                 onChange={(e) =>
                                     updateItem(index, "categoryId", Number(e.target.value))
@@ -162,6 +170,7 @@ export default function MaterialRequisition({ onChange }: Props) {
 
                             {/* Product */}
                             <select
+                                disabled={disabled}
                                 value={item.productId}
                                 onChange={(e) =>
                                     updateItem(index, "productId", Number(e.target.value))
@@ -183,6 +192,7 @@ export default function MaterialRequisition({ onChange }: Props) {
 
                             {/* Quantity */}
                             <input
+                                disabled={disabled}
                                 type="number"
                                 value={item.quantity}
                                 min={1}
@@ -193,13 +203,15 @@ export default function MaterialRequisition({ onChange }: Props) {
                             />
 
                             {/* Delete */}
-                            <button
-                                onClick={() => removeItem(index)}
-                                className="bg-red-500 text-white rounded-md
-                w-10 h-10 flex items-center justify-center mx-auto"
-                            >
-                                🗑
-                            </button>
+                            {!disabled && (
+                                <button
+                                    onClick={() => removeItem(index)}
+                                    className="bg-red-500 text-white rounded-md
+        w-10 h-10 flex items-center justify-center mx-auto"
+                                >
+                                    🗑
+                                </button>
+                            )}
 
                         </div>
 
@@ -209,30 +221,16 @@ export default function MaterialRequisition({ onChange }: Props) {
 
                 <div className="border-t p-4 bg-gray-50">
 
-                    <button
-                        onClick={addItem}
-                        className="w-full bg-[#2979FF] hover:bg-[#1d6dfc]
-    text-white py-3 rounded-md font-medium"
-                    >
-                        Add new row
-                    </button>
+                    {!disabled && (
+                        <button
+                            onClick={addItem}
+                            className="w-full bg-[#2979FF] text-white py-3 rounded-md font-medium"
+                        >
+                            Add new row
+                        </button>
+                    )}
 
                 </div>
-
-                {/* Footer */}
-                {/* <div className="px-6 py-4 border-t bg-gray-50">
-
-                    <div className="flex items-center gap-3">
-
-                        <span>Total Items :</span>
-
-                        <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
-                            {materials.length}
-                        </span>
-
-                    </div>
-
-                </div> */}
 
             </div>
 

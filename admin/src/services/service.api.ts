@@ -155,3 +155,8 @@ export const sendServiceStep5 = async (payload: {
   const res = await api.post("/service/step5/send", payload);
   return res.data;
 };
+
+export const getServiceJobStatus = async (jobId: number) => {
+  const res = await api.get(`/service/job/${jobId}`);
+  return res.data?.data?.job?.status;
+};

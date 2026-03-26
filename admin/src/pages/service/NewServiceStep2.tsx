@@ -4,8 +4,8 @@ import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadIcon from "../../assets/icons/Cloud Upload.svg";
 import {
-  saveServiceStep2Draft,
-  sendServiceStep2
+    saveServiceStep2Draft,
+    sendServiceStep2
 } from "../../services/service.api";
 
 export default function NewServiceStep2() {
@@ -19,6 +19,8 @@ export default function NewServiceStep2() {
         useState<"idle" | "sending" | "sent">("idle");
 
     const [showConfirm, setShowConfirm] = useState(false);
+
+    const savedData = JSON.parse(localStorage.getItem("service_step1") || "{}");
 
 
     const steps = [
@@ -151,6 +153,7 @@ export default function NewServiceStep2() {
             return;
         }
 
+
         try {
 
             setEmailStatus("sending");
@@ -186,7 +189,9 @@ export default function NewServiceStep2() {
 
             localStorage.setItem(
                 `service_step2_sent_${formData.jobId}`,
-                "true"
+                "true",
+
+
             );
 
             setEmailStatus("sent");
@@ -351,8 +356,8 @@ export default function NewServiceStep2() {
                     </button>
 
                     <button
-                        disabled={emailStatus === "sending" || emailStatus === "sent"}
-                        onClick={() => setShowConfirm(true)}
+                        disabled={emailStatus === "sending"}
+                        onClick={handleSendEmail}
                         className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
                     >
                         {emailStatus === "sending"

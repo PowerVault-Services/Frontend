@@ -1,12 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadFileField from "../../components/UploadFileField";
-import SelectFilter from "../../components/SelectFilter";
-import TextInputFilter from "../../components/TextInputFilter";
 import ImageGalleryUpload from "../../components/ImageGalleryUpload";
 import { createServiceStep3Draft } from "../../services/service.api";
+import api from "../../services/api";
 
 import MaterialRequisition from "../../components/MaterialRequisition";
 
@@ -25,25 +24,96 @@ export default function NewServiceStep3() {
     const [currentStep] = useState(3);
 
     const [loading, setLoading] = useState(false);
+    const [isReadOnly, setIsReadOnly] = useState(false);
 
     const [reportFile, setReportFile] = useState<File | null>(null);
-    const [images, setImages] = useState<File[]>([]);
+    const [images, setImages] = useState<any[]>([]);
 
-    const [materialTitle] = useState("");
-    const [category, setCategory] = useState("");
     const [equipment, setEquipment] = useState("");
     const [amount, setAmount] = useState("");
 
-    // ✅ FIX: ใช้ key ให้ตรงกับ Step2
-    const jobIdStr = localStorage.getItem("serviceJobId");
+    // ✅ jobId (standard เหมือน cleaning)
+    const jobIdStr =
+        localStorage.getItem("jobId") ||
+        JSON.parse(localStorage.getItem("service_step1") || "{}")?.jobId;
 
-    // ✅ FIX: กัน NaN
     const jobId =
         jobIdStr && !isNaN(Number(jobIdStr))
             ? Number(jobIdStr)
             : null;
 
+    // =========================
+    // LOAD DATA + READ ONLY
+    // =========================
+    useEffect(() => {
+        if (!jobId) return;
+        const local = localStorage.getItem(`service_step3_${jobId}`);
+
+        if (local) {
+            const parsed = JSON.parse(local);
+
+            setImages(parsed.images || []);
+            setEquipment(parsed.equipment || "");
+            setAmount(parsed.amount || "");
+        }
+
+        async function loadData() {
+            try {
+                const res = await api.get(`/service/job/${jobId}`);
+                const data = res.data?.data;
+
+                console.log("🔥 STEP3 API:", data);
+
+                if (data?.job?.status === "COMPLETED") {
+                    setIsReadOnly(true);
+                }
+
+                // ✅ images
+                const attachments = data?.job?.attachments || [];
+
+                // ✅ รูป evidence
+                const evidenceImages = attachments
+                    .filter((f: any) => f.fileType === "SERVICE_EVIDENCE")
+                    .map((f: any) => f.fileUrl);
+
+                // ✅ service report (optional)
+                const reportImages = attachments
+                    .filter((f: any) => f.fileType === "SERVICE_REPORT_FORM")
+                    .map((f: any) => f.fileUrl);
+
+                // รวมเป็น images
+                setImages(evidenceImages);
+
+                // ถ้าจะใช้ reportFile
+                if (reportImages.length > 0) {
+                    setReportFile(reportImages[0]); // หรือเก็บ array ก็ได้
+                }
+
+                // ✅ report file
+                if (data?.reportFile) {
+                    setReportFile(data.reportFile);
+                }
+
+                // ✅ material
+                if (data?.items?.length > 0) {
+                    setEquipment(String(data.items[0].productId));
+                    setAmount(String(data.items[0].quantity));
+                }
+
+            } catch (err) {
+                console.error("โหลด Step3 ไม่ได้", err);
+            }
+        }
+
+        loadData();
+    }, [jobId]);
+
+    // =========================
+    // NEXT
+    // =========================
     async function handleNext() {
+
+        if (loading) return;
 
         try {
 
@@ -72,7 +142,6 @@ export default function NewServiceStep3() {
 
             let metaJson: any = {};
 
-            // ✅ FIX: productId ต้องเป็น number
             if (equipment && amount) {
                 metaJson.items = [
                     {
@@ -89,19 +158,28 @@ export default function NewServiceStep3() {
                 metaJson,
             });
 
+            localStorage.setItem(
+                `service_step3_${jobId}`,
+                JSON.stringify({
+                    images,
+                    equipment,
+                    amount
+                })
+            );
+
             navigate("/service/new/step4");
 
         } catch (error) {
-
             console.error("Step3 upload error:", error);
             alert("บันทึกข้อมูลไม่สำเร็จ");
-
         } finally {
-
             setLoading(false);
         }
     }
 
+    // =========================
+    // SAVE DRAFT
+    // =========================
     async function handleSaveDraft() {
 
         try {
@@ -115,7 +193,6 @@ export default function NewServiceStep3() {
 
             let metaJson: any = {};
 
-            // ✅ FIX: productId เป็น number
             if (equipment && amount) {
                 metaJson.items = [
                     {
@@ -135,12 +212,9 @@ export default function NewServiceStep3() {
             alert("บันทึก Draft สำเร็จ");
 
         } catch (error) {
-
             console.error("Save draft error:", error);
             alert("บันทึก Draft ไม่สำเร็จ");
-
         } finally {
-
             setLoading(false);
         }
     }
@@ -157,7 +231,7 @@ export default function NewServiceStep3() {
 
                 <button
                     onClick={handleSaveDraft}
-                    disabled={loading}
+                    disabled={loading || isReadOnly}
                     className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
                     text-green-700 bg-white border-2 border-green-700 rounded-md"
                 >
@@ -176,30 +250,93 @@ export default function NewServiceStep3() {
                 <div className="w-[1091px]">
 
                     {/* Upload Images */}
-                    <div>
+                    {/* <div>
                         <p className="text-lg font-medium text-green-800 pb-1.5">
                             รูปภาพ Service
                         </p>
-                    </div>
+                    </div> */}
 
-                    <ImageGalleryUpload
-                        images={images}
-                        setImages={setImages}
-                    />
+                    {isReadOnly ? (
+                        // ✅ MODE: COMPLETED → แสดง grid อย่างเดียว
+                        <div className="mt-2 pb-1.5">
+                            <p className="text-green-800 font-medium">รูปภาพ Service</p>
 
-                    <p className="text-[16px] text-[#E54848]">
-                        *** หมายเหตุ : จํานวนรูปภาพขั้นตํ่า 6 รูป
-                    </p>
+                            <div className="grid grid-cols-6 gap-2 mt-2">
+                                {images.map((img: any, index) => (
+                                    <img
+                                        key={index}
+                                        src={
+                                            typeof img === "string"
+                                                ? "http://localhost:3000" + img
+                                                : URL.createObjectURL(img)
+                                        }
+                                        className="w-full h-24 object-cover rounded"
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        // ✅ MODE: DRAFT → ใช้ upload component
+                        <ImageGalleryUpload
+                            images={images}
+                            setImages={setImages}
+                        />
+                    )}
 
                     {/* Upload Report */}
-                    <UploadFileField
-                        label="Service Report"
-                        onChange={(file) => setReportFile(file)}
-                    />
+                    {isReadOnly ? (
+                        <div className="mt-4">
+                            <p className="text-green-800 font-medium">Service Report</p>
 
-                    <div className="">
-                        <MaterialRequisition />
-                    </div>
+                            <div className="
+            w-full
+            border border-dashed border-gray-300
+            rounded-md
+            px-4 py-3
+            text-sm
+            text-gray-600
+            bg-gray-50
+            flex items-center
+        ">
+                                {reportFile ? (
+                                    <a
+                                        href={
+                                            typeof reportFile === "string"
+                                                ? "http://localhost:3000" + reportFile
+                                                : "#"
+                                        }
+                                        target="_blank"
+                                        className="text-blue-600 underline"
+                                    >
+                                        ดูไฟล์รายงาน
+                                    </a>
+                                ) : (
+                                    <span className="text-gray-400">
+                                        ไม่มีไฟล์
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <UploadFileField
+                            label="Service Report"
+                            onChange={(file) => setReportFile(file)}
+                        />
+                    )}
+
+                    {/* Material */}
+                    <MaterialRequisition disabled={isReadOnly} />
+
+                    {/* Preview Material */}
+                    {isReadOnly && equipment && (
+                        <div className="mt-4">
+                            <p className="text-green-800 font-medium">อุปกรณ์ที่ใช้</p>
+                            <div className="text-gray-700">
+                                Product ID: {equipment} <br />
+                                จำนวน: {amount}
+                            </div>
+                        </div>
+                    )}
 
                 </div>
 
@@ -213,13 +350,22 @@ export default function NewServiceStep3() {
                         ก่อนหน้า
                     </button>
 
-                    <button
-                        onClick={handleNext}
-                        disabled={loading}
-                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
-                    >
-                        {loading ? "กำลังบันทึก..." : "ถัดไป"}
-                    </button>
+                    {isReadOnly ? (
+                        <button
+                            onClick={() => navigate("/service/new/step4")}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            ถัดไป
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleNext}
+                            disabled={loading}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        >
+                            {loading ? "กำลังบันทึก..." : "ถัดไป"}
+                        </button>
+                    )}
 
                 </div>
 

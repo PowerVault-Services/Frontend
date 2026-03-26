@@ -4,9 +4,11 @@ import UploadIcon from "../assets/icons/Cloud Upload.svg";
 interface Props {
   label: string;
   onChange: (file: File | null) => void;
+  disabled?: boolean;
+  defaultValue?: string;
 }
 
-export default function UploadImagePreviewField({ label, onChange }: Props) {
+export default function UploadImagePreviewField({ label, onChange, disabled, defaultValue }: Props) {
 
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -25,6 +27,17 @@ export default function UploadImagePreviewField({ label, onChange }: Props) {
       <label className="text-[16px] font-semibold text-black">
         {label}
       </label>
+
+      {defaultValue && !preview && (
+        <img src={defaultValue} alt="original" className="..." />
+      )}
+
+      <input
+        type="file"
+        onChange={(e) => onChange(e.target.files?.[0] || null)}
+        disabled={disabled} // ✅ ใส่ disabled ที่นี่
+        className={disabled ? "cursor-not-allowed opacity-50" : ""}
+      />
 
       <label
         className="

@@ -30,6 +30,8 @@ export default function NewCleaningStep3_02() {
   const [currentStep] = useState(3);
   const [loading, setLoading] = useState(false);
   const [checklistData, setChecklistData] = useState<ChecklistItem[]>([]);
+  const [existingImages, setExistingImages] = useState<any[]>([]);
+  const isReadOnly = JSON.parse(localStorage.getItem("cleaning_step1") || "{}").status === "COMPLETED";
 
   /* =======================
      Summary Generator
@@ -159,7 +161,7 @@ export default function NewCleaningStep3_02() {
 
         {/* Checklist Table */}
         <div className="w-[1095px]">
-          <OperationTable onChange={setChecklistData} />
+          <OperationTable onChange={setChecklistData} disable={isReadOnly} initialData={checklistData} />
         </div>
 
         {/* Footer */}
@@ -171,13 +173,22 @@ export default function NewCleaningStep3_02() {
             ก่อนหน้า
           </button>
 
-          <button
-            onClick={handleSubmitChecklist}
-            disabled={loading}
-            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl disabled:opacity-50"
-          >
-            {loading ? "กำลังบันทึก..." : "ถัดไป"}
-          </button>
+          {isReadOnly ? (
+            <button 
+              onClick={() => navigate("/cleaning/new/step4")} 
+              className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+            >
+              ถัดไป (View Only)
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmitChecklist}
+              disabled={loading}
+              className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl disabled:opacity-50"
+            >
+              {loading ? "กำลังบันทึก..." : "ถัดไป"}
+            </button>
+          )}
         </div>
       </div>
     </div>

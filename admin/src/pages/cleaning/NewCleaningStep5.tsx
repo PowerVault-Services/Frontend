@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 
-import { getCleaningReportDownloadUrl } from "../../services/cleaning.api";
 import {
   saveCleaningStep5Draft,
   sendCleaningStep5
@@ -11,6 +10,7 @@ import {
 
 export default function NewCleaningStep5() {
   const navigate = useNavigate();
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   const steps = [
     { id: 1, label: "กรอกข้อมูล" },
@@ -36,6 +36,18 @@ export default function NewCleaningStep5() {
   useEffect(() => {
     const raw = localStorage.getItem("cleaning_step1");
     if (raw) setJobData(JSON.parse(raw));
+  }, []);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("cleaning_step1");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      setJobData(parsed);
+      // เช็คว่าเป็นสถานะ COMPLETED หรือไม่
+      if (parsed.status === "COMPLETED") {
+        setIsReadOnly(true);
+      }
+    }
   }, []);
 
   function formatThaiDate(dateStr?: string) {
@@ -133,12 +145,13 @@ export default function NewCleaningStep5() {
       {/* Header */}
       <div className="flex justify-between pb-9">
         <h1 className="text-green-800">New Cleaning Job</h1>
-
-        <button onClick={handleSaveDraft} className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
-          text-green-700 bg-white border-2 border-green-700 rounded-md">
-          <img src={SaveDraftIcon} alt="save draft" />
-          Save Draft
-        </button>
+        {!isReadOnly && (
+          <button onClick={handleSaveDraft} className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
+            text-green-700 bg-white border-2 border-green-700 rounded-md">
+            <img src={SaveDraftIcon} alt="save draft" />
+            Save Draft
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col h-[822px] px-28 py-5 gap-y-[58px] bg-white rounded-2xl justify-between items-center">
@@ -147,7 +160,7 @@ export default function NewCleaningStep5() {
         <div className="grid w-[1095px]">
 
           <label className="text-[16px] font-normal text-black mb-1">
-            รายละเอียดแจ้งแผน
+            รายละเอียดแจ้งแผน {isReadOnly && "(สถานะงานเสร็จสมบูรณ์ - ไม่สามารถแก้ไขได้)"}
           </label>
 
           <div className="h-[406px] rounded-lg border border-green-800 flex items-center justify-center">
@@ -221,12 +234,20 @@ export default function NewCleaningStep5() {
             ก่อนหน้า
           </button>
 
-          <button
-            onClick={handleSendEmail}
-            disabled={loading}
-            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl disabled:opacity-50">
-            {loading ? "กำลังส่ง..." : "ยืนยันส่งอีเมล"}
-          </button>
+          {isReadOnly ? (
+            <button
+              onClick={() => navigate("/cleaning")}
+              className="w-[195px] bg-green-800 text-white px-6 py-2.5 rounded-2xl hover:bg-green-900">
+              กลับสู่หน้าหลัก
+            </button>
+          ) : (
+            <button
+              onClick={handleSendEmail}
+              disabled={loading}
+              className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl disabled:opacity-50">
+              {loading ? "กำลังส่ง..." : "ยืนยันส่งอีเมล"}
+            </button>
+          )}
 
         </div>
       </div>

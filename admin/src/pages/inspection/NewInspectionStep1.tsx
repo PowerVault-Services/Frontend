@@ -14,23 +14,18 @@ import {
 import type { InspectionProject } from "../../services/types";
 import { saveDraftStep } from "../../services/draft.api";
 
+/* =========================
+   Utils
+========================= */
+
 function formatPhones(phone?: string | null) {
     if (!phone) return "";
-
-    return phone
-        .split(";")
-        .map((p) => p.trim())
-        .filter(Boolean)
-        .join(", ");
+    return phone.split(";").map((p) => p.trim()).filter(Boolean).join(", ");
 }
 
 function parseEmails(email?: string | null) {
     if (!email) return [];
-
-    return email
-        .split(";")
-        .map((e) => e.trim())
-        .filter(Boolean);
+    return email.split(";").map((e) => e.trim()).filter(Boolean);
 }
 
 function calculateHours(start: string, end: string) {
@@ -39,21 +34,26 @@ function calculateHours(start: string, end: string) {
     const [sh, sm] = start.split(":").map(Number);
     const [eh, em] = end.split(":").map(Number);
 
-    let totalMin = (eh * 60 + em) - (sh * 60 + sm);
-
+    let totalMin = eh * 60 + em - (sh * 60 + sm);
     if (totalMin < 0) totalMin += 24 * 60;
 
-    const hours = totalMin / 60;
-
-    return hours.toString();
+    return (totalMin / 60).toString();
 }
 
-export default function NewInspectionStep1() {
+/* =========================
+   Component
+========================= */
 
+export default function NewInspectionStep1() {
     const navigate = useNavigate();
     const FIELD_WIDTH = "w-[532px]";
 
+    const [isReadOnly, setIsReadOnly] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+
     const [shutdownHours, setShutdownHours] = useState("");
+    const [isManualHours, setIsManualHours] = useState(false);
+
     const [projects, setProjects] = useState<InspectionProject[]>([]);
     const [projectId, setProjectId] = useState("");
     const [project, setProject] = useState<InspectionProject | null>(null);
@@ -61,12 +61,11 @@ export default function NewInspectionStep1() {
     const [date, setDate] = useState("");
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
+
     const [contractor, setContractor] = useState("");
     const [problem, setProblem] = useState("");
     const [remark, setRemark] = useState("");
     const [projectType, setProjectType] = useState("");
-
-    const [isManualHours, setIsManualHours] = useState(false);
 
     const steps = [
         { id: 1, label: "กรอกข้อมูล" },
@@ -74,51 +73,117 @@ export default function NewInspectionStep1() {
         { id: 3, label: "ส่งรายงาน" },
     ];
 
-    const [currentStep] = useState(1);
+    /* =========================
+       Load draft
+    ========================= */
+    useEffect(() => {
+        const raw = localStorage.getItem("inspection_step1");
+        if (!raw) return;
 
+        const parsed = JSON.parse(raw);
+
+        if (parsed.status === "COMPLETED") {
+            setIsReadOnly(true);
+        }
+
+        if (parsed.projectName) {
+            setProject({
+                siteId: parsed.projectId ? Number(parsed.projectId) : 0,
+                projectName: parsed.projectName,
+                address: parsed.address,
+                systemSizeKWp: parsed.systemSizeKWp,
+                contactPhone: parsed.contactPhone,
+                contactEmail: parsed.contactEmail,
+            } as any);
+        }
+
+        if (parsed.jobId) {
+            setIsEditMode(true);
+            localStorage.setItem("jobId", String(parsed.jobId));
+        }
+
+        setProjectId(String(parsed.projectId || parsed.siteId || ""));
+        setDate(parsed.date || "");
+        setStartTime(parsed.startTime || "");
+        setEndTime(parsed.endTime || "");
+        setContractor(parsed.contractor || "");
+        setProblem(parsed.problem || "");
+        setRemark(parsed.remark || "");
+        setProjectType(parsed.projectType || "");
+    }, []);
+
+    /* =========================
+       Load projects
+    ========================= */
     useEffect(() => {
         async function loadProjects() {
             try {
                 const res = await getInspectionProjects();
                 setProjects(res.data);
-            } catch (error) {
-                console.error("โหลด inspection projects ไม่สำเร็จ:", error);
+            } catch (err) {
+                console.error(err);
             }
         }
-
         loadProjects();
     }, []);
 
+    /* =========================
+       Map selected project
+    ========================= */
     useEffect(() => {
+        if (!projects.length) return;
 
-        if (!projectId) {
-            setProject(null);
-            return;
+        // ✅ เคส 1: มี projectId → match ปกติ
+        if (projectId) {
+            const found = projects.find(
+                (p) => String(p.siteId) === String(projectId)
+            );
+
+            if (found) {
+                setProject(found);
+                return;
+            }
         }
 
-        const selected = projects.find(
-            (p) => p.siteId === Number(projectId)
-        );
+        // ✅ เคส 2: fallback แบบ cleaning (สำคัญมาก)
+        const raw = localStorage.getItem("inspection_step1");
+        if (!raw) return;
 
-        setProject(selected ?? null);
+        const parsed = JSON.parse(raw);
 
-    }, [projectId, projects]);
+        if (parsed.projectName) {
+            const found = projects.find(
+                (p) => p.projectName === parsed.projectName
+            );
 
+            if (found) {
+                console.log("🔥 FIX PROJECT:", found);
+
+                setProject(found);
+                setProjectId(String(found.siteId)); // ⭐ สำคัญสุด
+            }
+        }
+
+    }, [projects, projectId]);
+
+    /* =========================
+       Auto calculate hours
+    ========================= */
     useEffect(() => {
         if (!isManualHours) {
             const calculated = calculateHours(startTime, endTime);
-            if (calculated) {
-                setShutdownHours(calculated);
-            }
+            if (calculated) setShutdownHours(calculated);
         }
     }, [startTime, endTime]);
 
-
-    // ==========================
-    // Save Draft (ใช้ API)
-    // ==========================
-
+    /* =========================
+       Save
+    ========================= */
     async function handleSaveStep1() {
+        if (isReadOnly) {
+            throw new Error("ไม่สามารถแก้ไข job ที่เสร็จแล้ว");
+        }
+
         if (!projectId) throw new Error("กรุณาเลือก Project");
         if (!date || !startTime || !endTime) {
             throw new Error("กรุณากรอกวันที่และเวลา");
@@ -137,85 +202,93 @@ export default function NewInspectionStep1() {
             endTime,
             contractor,
             problem,
+            ...(currentJobId ? { jobId: Number(currentJobId) } : {}),
         };
-        console.log("🔥 STEP1 payload:", payload);
 
         const res = await createInspectionStep1(payload);
-
         const jobId = res.data?.jobId;
 
         if (!jobId) throw new Error("ไม่พบ jobId");
 
         localStorage.setItem("jobId", String(jobId));
 
-        localStorage.setItem("inspection_step1", JSON.stringify({
-            jobId,
-            projectId,
-            projectName: project?.projectName,
-            contactEmail: project?.contactEmail,
-            date,
-            startTime,
-            endTime,
-            contractor,
-            problem,
-            remark,
-            projectType,
-        }));
+        localStorage.setItem(
+            "inspection_step1",
+            JSON.stringify({
+                jobId,
+                projectId,
+                projectName: project?.projectName,
+                contactEmail: project?.contactEmail,
+                date,
+                startTime,
+                endTime,
+                contractor,
+                problem,
+                remark,
+                projectType,
+                status: isReadOnly ? "COMPLETED" : "DRAFT",
+            })
+        );
 
         await saveDraftStep(jobId, 1);
 
         return jobId;
     }
 
+    /* =========================
+       UI
+    ========================= */
 
     return (
         <div className="w-full">
-
             {/* Header */}
             <div className="flex justify-between pb-9">
                 <h1 className="text-green-800">New Inspection Job</h1>
 
-                <button
-                    onClick={async () => {
-                        try {
-                            await handleSaveStep1();
-                            alert("บันทึกเรียบร้อยแล้ว");
-                        } catch (err: any) {
-                            alert(err.message);
-                        }
-                    }}
-                    className="flex items-center w-[140px] h-10 justify-between px-5 py-3 text-[12px]
-          text-green-700 bg-white border-2 border-green-700 rounded-md"
-                >
-                    <img src={SaveDraftIcon} alt="" />
-                    Save Draft
-                </button>
+                {!isReadOnly && (
+                    <button
+                        onClick={async () => {
+                            try {
+                                await handleSaveStep1();
+                                alert("บันทึกเรียบร้อยแล้ว");
+                                navigate("/inspection");
+                            } catch (err: any) {
+                                alert(err.message);
+                            }
+                        }}
+                    >
+                        <img src={SaveDraftIcon} alt="" />
+                        Save Draft
+                    </button>
+                )}
             </div>
 
-
             {/* Form */}
-            <div className="flex flex-col h-[822px] px-28 py-5 gap-y-[58px] bg-white rounded-2xl justify-between items-center">
+            <div className="flex flex-col px-28 py-5 gap-y-[58px] bg-white rounded-2xl items-center">
+                <ProgressBar steps={steps} currentStep={1} />
 
-                <ProgressBar steps={steps} currentStep={currentStep} />
-
-                {/* Form Fields */}
-                <div className="grid grid-cols-2 w-[1095px] justify-center gap-y-[27px]">
-
-                    {/* Project */}
+                <div className="grid grid-cols-2 w-[1095px] gap-y-[27px]">
                     <div className={FIELD_WIDTH}>
-                        <SelectFilter
-                            label="Project Name"
-                            placeholder="Select Project"
-                            value={projectId}
-                            onChange={setProjectId}
-                            options={(projects ?? []).map((p) => ({
-                                label: p.projectName,
-                                value: String(p.siteId),
-                            }))}
-                        />
+                        {isEditMode ? (
+                            <InputField
+                                label="Project Name"
+                                value={project?.projectName ?? ""}
+                                disabled
+                            />
+                        ) : (
+                            <SelectFilter
+                                label="Project Name"
+                                value={projectId}
+                                onChange={setProjectId}
+                                disabled={isReadOnly}
+                                options={projects.map((p) => ({
+                                    label: p.projectName,
+                                    value: String(p.siteId),
+                                }))}
+                            />
+                        )}
                     </div>
 
-                    {/* Location */}
                     <div className={FIELD_WIDTH}>
                         <InputField
                             label="Location"
@@ -224,7 +297,6 @@ export default function NewInspectionStep1() {
                         />
                     </div>
 
-                    {/* System Size */}
                     <div className={FIELD_WIDTH}>
                         <InputField
                             label="System Size (kWp)"
@@ -233,7 +305,6 @@ export default function NewInspectionStep1() {
                         />
                     </div>
 
-                    {/* Phone */}
                     <div className={FIELD_WIDTH}>
                         <InputField
                             label="Contact Phone Number"
@@ -242,25 +313,20 @@ export default function NewInspectionStep1() {
                         />
                     </div>
 
-                    {/* Email */}
-                    <div className="flex flex-col gap-1 col-span-2">
-                        <label className="text-sm text-green-800">Contact Email</label>
-
-                        <div
-                            className="min-h-10 px-4 py-2 flex items-center rounded-sm border bg-[#EDEDED]
-                            text-[14px] text-green-500 border-green-200 cursor-not-allowed"
-                        >
-                            {parseEmails(project?.contactEmail).join(", ")}
-                        </div>
+                    <div className="col-span-2">
+                        <InputField
+                            label="Contact Email"
+                            value={parseEmails(project?.contactEmail).join(", ")}
+                            disabled
+                        />
                     </div>
 
-                    {/* Project Type */}
                     <div className={FIELD_WIDTH}>
                         <SelectFilter
                             label="Project Type"
-                            placeholder="Select"
                             value={projectType}
                             onChange={setProjectType}
+                            disabled={isReadOnly}
                             options={[
                                 { label: "Free", value: "Free" },
                                 { label: "Sale", value: "Sale" },
@@ -268,75 +334,89 @@ export default function NewInspectionStep1() {
                         />
                     </div>
 
-                    {/* Date */}
                     <div className={FIELD_WIDTH}>
                         <TextInputFilter
                             label="Date*"
                             type="date"
-                            placeholder="Select Date"
                             value={date}
                             onChange={setDate}
+                            disabled={isReadOnly}
                         />
                     </div>
 
-                    {/* Time */}
                     <div className={FIELD_WIDTH}>
-                        <TextInputFilter label="Start Time*" type="time" value={startTime} onChange={setStartTime} />
+                        <TextInputFilter
+                            label="Start Time*"
+                            type="time"
+                            value={startTime}
+                            onChange={setStartTime}
+                            disabled={isReadOnly}
+                        />
                     </div>
 
                     <div className={FIELD_WIDTH}>
-                        <TextInputFilter label="End Time*" type="time" value={endTime} onChange={setEndTime} />
+                        <TextInputFilter
+                            label="End Time*"
+                            type="time"
+                            value={endTime}
+                            onChange={setEndTime}
+                            disabled={isReadOnly}
+                        />
                     </div>
 
-                    {/* จำนวนชั่วโมง */}
                     <div className={FIELD_WIDTH}>
                         <TextInputFilter
                             label="ระยะเวลาปิด(ชั่วโมง)"
-                            type="number"
-                            placeholder="เช่น 3"
                             value={shutdownHours}
+                            disabled={isReadOnly}
                             onChange={(val) => {
                                 setShutdownHours(val);
-                                setIsManualHours(true); // ✅ สำคัญ
+                                setIsManualHours(true);
                             }}
                         />
                     </div>
 
-                    {/* Remark */}
                     <div className={FIELD_WIDTH}>
-                        <TextInputFilter label="หมายเหตุ" value={remark} onChange={setRemark} />
+                        <TextInputFilter
+                            label="หมายเหตุ"
+                            value={remark}
+                            onChange={setRemark}
+                            disabled={isReadOnly}
+                        />
                     </div>
-
                 </div>
-
 
                 {/* Footer */}
                 <div className="flex w-full max-w-[1095px] justify-between">
-
-                    <button
-                        onClick={() => navigate("/inspection")}
-                        className="w-[195px] border border-green-600 text-green-600 px-6 py-2.5 rounded-2xl"
-                    >
-                        ยกเลิก
+                    <button onClick={() => navigate("/inspection")} className="w-[195px] border border-green-600 text-green-600 px-6 py-2.5 rounded-2xl">
+                        กลับหน้าหลัก
                     </button>
 
-
-                    <button
-                        onClick={async () => {
-                            try {
-                                await handleSaveStep1();
-                                navigate("/inspection/new/step2");
-                            } catch (err: any) {
-                                alert(err.message);
-                            }
-                        }}
-                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
-                    >
-                        ถัดไป
-                    </button>
-
+                    {!isReadOnly ? (
+                        <button
+                            onClick={async () => {
+                                try {
+                                    await handleSaveStep1();
+                                    navigate("/inspection/new/step2");
+                                } catch (err: any) {
+                                    alert(err.message);
+                                }
+                            }}
+                        >
+                            ถัดไป
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => {
+                                const jobId = localStorage.getItem("jobId");
+                                navigate(`/inspection/new/step2`);
+                            }}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl hover:bg-green-800 transition"
+                        >
+                            ดู Preview
+                        </button>
+                    )}
                 </div>
-
             </div>
         </div>
     );
