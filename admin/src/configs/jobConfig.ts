@@ -54,3 +54,5 @@ export const JOB_CONFIG = {
     ],
   },
 };
+
+export type JobType = keyof typeof JOB_CONFIG;
