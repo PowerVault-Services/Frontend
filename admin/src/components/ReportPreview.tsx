@@ -1,9 +1,9 @@
-interface Props { data: { reportUrl?: string } | null }
+interface Props { data: { fileUrl?: string } | null }
 
 export default function ReportPreview({ data }: Props) {
   console.log("📄 ReportPreview data:", data);
 
-  if (!data?.reportUrl) {
+  if (!data?.fileUrl) {
     return (
       <div style={{
         background: "#000",
@@ -20,9 +20,10 @@ export default function ReportPreview({ data }: Props) {
     );
   }
 
-  const pdfURL = data.reportUrl.startsWith("http")
-    ? data.reportUrl
-    : `http://localhost:3000${data.reportUrl}`;
+  // ✅ แก้แล้ว
+  const pdfURL = data.fileUrl.startsWith("http")
+    ? data.fileUrl
+    : `${import.meta.env.VITE_API_URL}${data.fileUrl}`;
 
   return (
     <div style={{

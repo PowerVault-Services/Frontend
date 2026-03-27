@@ -27,8 +27,12 @@ export default function NewClientService() {
     useEffect(() => {
         const type = localStorage.getItem("jobType");
         if (type) {
-            // แปลงเป็นตัวพิมพ์ใหญ่และยืนยัน Type (Casting)
             setJobType(type.toUpperCase() as JobType);
+        }
+
+        const savedPlantName = localStorage.getItem("newPlantName");
+        if (savedPlantName) {
+            setForm(prev => ({ ...prev, projectName: savedPlantName }));
         }
     }, []);
 
@@ -39,24 +43,25 @@ export default function NewClientService() {
 
     const formatType = (type: string) => {
         switch (type) {
-            case "SERVICE": return "Service";
-            case "CLEANING": return "Cleaning";
+            case "SERVICE":    return "Service";
+            case "CLEANING":   return "Cleaning";
             case "INSPECTION": return "Inspection";
-            case "OM": return "O&M";
-            default: return "-";
+            case "OM":         return "O&M";
+            default:           return "-";
         }
     };
 
+    // ✅ แบบที่ 1: Pill สี — แยกสีตาม job type
     const jobBadgeClass = (job: string) => {
         switch (job) {
             case "SERVICE":
-                return "bg-sky-100 text-sky-700";
+                return "bg-purple-100 text-purple-800";
             case "CLEANING":
-                return "bg-purple-100 text-purple-700";
+                return "bg-green-100 text-green-800";
             case "INSPECTION":
-                return "bg-pink-100 text-pink-700";
+                return "bg-blue-100 text-blue-800";
             case "OM":
-                return "bg-orange-100 text-orange-700";
+                return "bg-amber-100 text-amber-800";
             default:
                 return "bg-gray-100 text-gray-600";
         }
@@ -73,20 +78,16 @@ export default function NewClientService() {
         try {
             setIsLoading(true);
 
-            // 🔥 1. สร้าง Project (เช็คฟิลด์ให้ตรงกับ CreateThailandProjectPayload)
             const plantRes = await createThailandProject({
                 projectNo: form.projectNo,
                 projectName: form.projectName,
-                capacityKwp: Number(form.systemSizeKWp || 0), // ใช้ capacityKwp ตาม interface ในไฟล์
+                capacityKwp: Number(form.systemSizeKWp || 0),
                 status: "ACTIVE",
                 address: form.address,
-                // ฟิลด์อื่นๆ ถ้ามีใน interface...
             });
 
-            // plantRes จะคืนค่า ThailandProject ซึ่งมี siteId
             const siteId = plantRes.siteId;
 
-            // 🔥 2. สร้าง Service Entry
             await createServiceEntry({
                 siteId: siteId,
                 job: (jobType || "SERVICE") as "SERVICE" | "CLEANING" | "INSPECTION" | "OM",
@@ -118,56 +119,91 @@ export default function NewClientService() {
                 </h1>
             </div>
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-9 space-y-8">
+            <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-9 space-y-6">
 
-                {/* JOB TYPE */}
-                <div className="flex justify-between items-start">
+                {/* JOB TYPE + PLANT NAME */}
+                <div className="flex justify-between items-start pb-4 border-b border-gray-100">
                     <div>
-                        <p className="text-sm text-gray-500">Plant Name</p>
-                        <h2 className="text-xl font-semibold">
+                        <p className="text-sm text-gray-400 mb-1">Plant Name</p>
+                        <h2 className="text-3xl font-semibold text-gray-800">
                             {form.projectName || "-"}
                         </h2>
                     </div>
 
-                    <div>
-                        <p className="text-sm text-gray-500">Job Type</p>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${jobBadgeClass(jobType)}`}>
+                    <div className="text-right">
+                        <p className="text-sm text-gray-400 mb-2">Job Type</p>
+                        {/* ✅ Pill badge แบบที่ 1 */}
+                        <span className={`inline-block px-4 py-1.5 rounded-full text-sm font-medium ${jobBadgeClass(jobType)}`}>
                             {formatType(jobType)}
                         </span>
                     </div>
                 </div>
 
-                {/* PROJECT INFO */}
-                <div className="grid grid-cols-2 gap-6">
+                {/* PROJECT INFO GRID */}
+                <div className="grid grid-cols-2 gap-x-6 gap-y-5">
 
-                    <FormInput label="Project No." name="projectNo" value={form.projectNo} onChange={handleChange} required />
-                    <FormInput label="Project Name" name="projectName" value={form.projectName} onChange={handleChange} required />
+                    <FormInput
+                        label="Project No."
+                        name="projectNo"
+                        value={form.projectNo}
+                        onChange={handleChange}
+                        required
+                    />
+                    <FormInput
+                        label="Project Name"
+                        name="projectName"
+                        value={form.projectName}
+                        onChange={handleChange}
+                        required
+                    />
+                    <FormInput
+                        label="System Size (kWp)"
+                        name="systemSizeKWp"
+                        value={form.systemSizeKWp}
+                        onChange={handleChange}
+                        type="number"
+                    />
+                    <FormInput
+                        label="Address"
+                        name="address"
+                        value={form.address}
+                        onChange={handleChange}
+                    />
+                    <FormInput
+                        label="Email"
+                        name="contactEmail"
+                        value={form.contactEmail}
+                        onChange={handleChange}
+                    />
+                    <FormInput
+                        label="Phone"
+                        name="contactPhone"
+                        value={form.contactPhone}
+                        onChange={handleChange}
+                    />
 
-                    <FormInput label="System Size (kWp)" name="systemSizeKWp" value={form.systemSizeKWp} onChange={handleChange} type="number" />
-                    <FormInput label="Address" name="address" value={form.address} onChange={handleChange} />
-
-                    <FormInput label="Email" name="contactEmail" value={form.contactEmail} onChange={handleChange} />
-                    <FormInput label="Phone" name="contactPhone" value={form.contactPhone} onChange={handleChange} />
-
-                    <div className="col-span-2">
-                        <label className="text-sm text-gray-600">Description</label>
+                    {/* Description — full width */}
+                    <div className="col-span-2 space-y-1">
+                        <label className="text-xs text-gray-500">Description</label>
                         <textarea
                             name="description"
                             value={form.description}
                             onChange={handleChange}
-                            className="w-full border rounded-lg px-3 py-2"
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700
+                                       focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
                             rows={3}
                         />
                     </div>
 
                 </div>
 
-                {/* ACTION */}
-                <div className="flex justify-end gap-4 pt-6">
+                {/* ACTION BUTTONS */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                     <button
                         type="button"
                         onClick={() => navigate(-1)}
-                        className="px-6 py-2 border border-green-600 text-green-600 rounded-xl"
+                        className="px-6 py-2.5 border border-green-600 text-green-600 rounded-xl text-sm
+                                   hover:bg-green-50 transition-colors"
                     >
                         ยกเลิก
                     </button>
@@ -175,7 +211,8 @@ export default function NewClientService() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="px-6 py-2 bg-green-700 text-white rounded-xl"
+                        className="px-6 py-2.5 bg-green-700 text-white rounded-xl text-sm
+                                   hover:bg-green-800 transition-colors disabled:opacity-50"
                     >
                         {isLoading ? "กำลังสร้าง..." : "Create"}
                     </button>
@@ -190,15 +227,16 @@ export default function NewClientService() {
 
 function FormInput({ label, name, value, onChange, type = "text", required = false }: any) {
     return (
-        <div className="space-y-2">
-            <label className="text-sm text-gray-600">{label}</label>
+        <div className="space-y-1">
+            <label className="text-xs text-gray-500">{label}</label>
             <input
                 required={required}
                 name={name}
                 value={value}
                 onChange={onChange}
                 type={type}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700
+                           focus:outline-none focus:ring-2 focus:ring-green-500"
             />
         </div>
     );
