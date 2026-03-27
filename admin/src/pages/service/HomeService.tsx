@@ -114,7 +114,7 @@ export default function HomeService() {
         systemSize: item.systemSizeKWp,
         pvModuleEA: item.pvModuleEA,
         date: item.date?.slice(0, 10),
-        time: item.time,
+        time: formatTimeRange(item.time),
         status: item.status,
         problem: item.problem,
         contractor: item.contractor,
@@ -136,6 +136,15 @@ export default function HomeService() {
     }
 
   };
+
+  const formatTimeRange = (time?: string) => {
+  if (!time) return "";
+
+  return time
+    .split("-")
+    .map(t => t.slice(0, 5)) // เอาแค่ HH:mm
+    .join(" - ");
+};
 
   const handleEdit = (row: Service) => {
 

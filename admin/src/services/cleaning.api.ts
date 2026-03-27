@@ -61,34 +61,30 @@ export const sendCleaningStep2 = async (jobId: number) => {
    STEP 3: EVIDENCE + CHECKLIST
 ========================================================= */
 
+// 1. ฟังก์ชันอัปโหลดรูป (ที่เราแก้กันไปก่อนหน้า)
 export const uploadCleaningEvidence = async ({
   jobId,
-  labelType,
-  files,
+  filesByType,
 }: {
   jobId: number;
-  labelType?: string;
-  files: File[];
+  filesByType: Record<string, File[]>;
 }) => {
-  if (files.length > 30) {
-    throw new Error("ไฟล์เกิน 30 รายการ");
-  }
+  const requests = Object.entries(filesByType).map(([type, files]) => {
+    const formData = new FormData();
+    formData.append("jobId", String(jobId));
+    formData.append("labelType", type); // ✅ แก้ตรงนี้
 
-  const formData = new FormData();
-  formData.append("jobId", String(jobId));
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
 
-  if (labelType) {
-    formData.append("labelType", labelType);
-  }
-
-  files.forEach((file) => {
-    formData.append("files", file);
+    return api.post("/cleaning/step3/evidence", formData);
   });
 
-  const res = await api.post("/cleaning/step3/evidence", formData);
-  return res.data;
+  await Promise.all(requests);
 };
 
+// 2. ฟังก์ชันบันทึก Checklist (เพิ่ม EXPORT ตรงนี้!)
 export const saveCleaningChecklist = async (payload: {
   jobId: number;
   checklistJson: any;

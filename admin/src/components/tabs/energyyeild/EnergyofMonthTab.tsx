@@ -59,13 +59,13 @@ export function EnergyofMonthTab({ data, month }: TabProps) {
                                         {day}
                                     </td>
                                     <td className="border px-3 py-2 text-center">
-                                        {dayRecord.energy ?? "-"}
+                                        {dayRecord.production ?? "-"}
                                     </td>
                                     <td className="border px-3 py-2 text-center">
-                                        {dayRecord.radiation ?? "-"}
+                                        {dayRecord.irradiation ?? "-"}
                                     </td>
                                     <td className="border px-3 py-2 text-center">
-                                        {dayRecord.grid ?? "-"}
+                                        {dayRecord.fromGrid ?? "-"}
                                     </td>
                                     <td className="border px-3 py-2 text-center">
                                         {dayRecord.consumption ?? "-"}

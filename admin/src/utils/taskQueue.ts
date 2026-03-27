@@ -1,4 +1,4 @@
-// src/utils/taskQueue.ts
+import api from "../services/api";
 
 export type QueueType = "report-generation" | "email-sending";
 
@@ -13,10 +13,8 @@ export async function pollTask(
   return new Promise((resolve, reject) => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/tasks/${taskId}?queue=${queue}`);
-        const json = await res.json();
-
-        const data = json.data;
+        const res = await api.get(`/tasks/${taskId}?queue=${queue}`);
+        const data = res.data?.data;
 
         if (!data) {
           clearInterval(interval);
@@ -59,20 +57,21 @@ export async function handleQueueOrSync(
   queue: QueueType,
   onSuccess: (data: any) => any,
   onProgress?: (progress: number) => void
-): Promise<any> {                            // ✅ เพิ่ม return type
+): Promise<any> {
   const res = await apiCall;
-  const data = res.data?.data;
+
+  const data = res.data;  // ✅ เปลี่ยนจาก res.data?.data → res.data
 
   // 🟡 Queue mode
   if (data?.taskId) {
     const result = await pollTask(data.taskId, queue, onProgress);
     onSuccess(result);
-    return result;                           // ✅ return ออกมา
+    return result;
   }
 
   // 🟢 Sync mode
   else {
     onSuccess(data);
-    return data;                             // ✅ return ออกมา
+    return data;
   }
 }

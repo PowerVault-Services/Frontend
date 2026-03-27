@@ -487,7 +487,7 @@ export default function NewServiceStep1() {
                     {isReadOnly ? (
                         <button
                             onClick={() => navigate("/service/new/step2")}
-                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                            className="min-w-[195px] w-auto bg-green-700 text-white px-6 py-2.5 rounded-2xl"
                         >
                             ดูรายละเอียดอีเมลแจ้งแผน
                         </button>
