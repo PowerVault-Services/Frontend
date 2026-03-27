@@ -31,6 +31,9 @@ export interface ProjectUI {
   startWarranty: string;
   endWarranty: string;
 
+  warrantyCustomerItems?: any[];
+  warrantySupplierItems?: any[];
+
   layouts?: {
     id: number;
     type: "PV_LAYOUT" | "PV_STRING_LAYOUT";
