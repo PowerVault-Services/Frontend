@@ -14,6 +14,9 @@ export function GraphTab({ data, month }: TabProps) {
     const apiData = data?.charts?.production || [];
     const trendData = data?.charts?.trend || [];
 
+    const production = data?.charts?.production || [];
+    const irradiation = data?.charts?.irradiation || [];
+
     if (!data) {
         return <div className="text-center py-10 text-gray-500">No data</div>;
     }
@@ -22,7 +25,7 @@ export function GraphTab({ data, month }: TabProps) {
         <div className="w-full">
             <div className="flex flex-col gap-8">
                 <EnergyProductionChart
-                    data={apiData}
+                    data={data?.charts?.production || []}
                     year={yearNum}
                     month={monthNum}
                 />

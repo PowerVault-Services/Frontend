@@ -6,15 +6,7 @@ import OperationTable from "../../components/table/OperationTable";
 
 import { saveDraftStep } from "../../services/draft.api";
 import { saveCleaningChecklist } from "../../services/cleaning.api";
-
-/* =======================
-   Types
-======================= */
-interface ChecklistItem {
-  item: string;
-  ok: boolean;
-  remark: string;
-}
+import type { ChecklistItem } from "../../components/table/OperationTable";
 
 export default function NewCleaningStep3_02() {
   const navigate = useNavigate();
@@ -82,11 +74,48 @@ export default function NewCleaningStep3_02() {
 
     // ✅ แปลงให้ตรง API ใหม่
     const payload = {
-      items: checklistData.map((i) => ({
-        title: i.item,
-        status: i.ok ? "done" : "fail",
-        remark: i.remark || "",
-      })),
+      items: [
+        {
+          title: "แผงโซลาร์เซลล์",
+          children: checklistData
+            .filter(i => i.group === "panel")
+            .map(i => ({
+              title: i.item,
+              status: i.ok ? "done" : "fail",
+              remark: i.remark || "",
+            })),
+        },
+        {
+          title: "Inverter Unit",
+          children: checklistData
+            .filter(i => i.group === "inverter")
+            .map(i => ({
+              title: i.item,
+              status: i.ok ? "done" : "fail",
+              remark: i.remark || "",
+            })),
+        },
+        {
+          title: "Monitoring System",
+          children: checklistData
+            .filter(i => i.group === "monitoring")
+            .map(i => ({
+              title: i.item,
+              status: i.ok ? "done" : "fail",
+              remark: i.remark || "",
+            })),
+        },
+        {
+          title: "ระบบน้ำทำความสะอาดแผงโซลาร์เซลล์",
+          children: checklistData
+            .filter(i => i.group === "water")
+            .map(i => ({
+              title: i.item,
+              status: i.ok ? "done" : "fail",
+              remark: i.remark || "",
+            })),
+        },
+      ],
     };
 
     try {
@@ -174,8 +203,8 @@ export default function NewCleaningStep3_02() {
           </button>
 
           {isReadOnly ? (
-            <button 
-              onClick={() => navigate("/cleaning/new/step4")} 
+            <button
+              onClick={() => navigate("/cleaning/new/step4")}
               className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
             >
               ถัดไป (View Only)

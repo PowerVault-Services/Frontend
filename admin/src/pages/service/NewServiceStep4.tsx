@@ -196,11 +196,7 @@ export default function NewServiceStep4() {
                         )}
 
                         {!generating && !error && (
-                            <ReportPreview
-                                data={{
-                                    reportUrl
-                                }}
-                            />
+                            <ReportPreview data={{ fileUrl: reportUrl }} />
                         )}
 
                     </div>

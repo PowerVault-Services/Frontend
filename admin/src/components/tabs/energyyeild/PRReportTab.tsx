@@ -5,7 +5,11 @@ interface TabProps {
 
 export function PRReportTab({ data }: TabProps) {
     // ✅ FIX: ใช้ prReport จาก API
-    const reportList = data?.prReport || [];
+    const reportList = Array.isArray(data?.prReport)
+        ? data.prReport
+        : data?.prReport
+            ? [data.prReport]
+            : [];
 
     // ✅ FIX: ใช้ site จาก API
     const siteName = data?.site?.plantName || "Unknown Plant";

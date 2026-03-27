@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import type React from "react";
 
-
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
 import ExportIcon from "../../assets/icons/File Download.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
@@ -15,7 +14,7 @@ import { handleQueueOrSync } from "../../utils/taskQueue";
 
 interface CleaningReportResponse {
   success: boolean;
-  download?: string;
+  fileUrl: string; 
   [key: string]: any;
 }
 
@@ -69,12 +68,15 @@ export default function NewCleaningStep4() {
           generateCleaningReport(jobId),
           "report-generation",
           (res) => res,
-          (p) => { console.log("progress:", p); }
+          (p) => {
+            console.log("progress:", p);
+            setProgress(p);
+          }
         ) as CleaningReportResponse;
 
         console.log("🔥 STEP4 RESPONSE:", result);
 
-        if (!result?.success) {
+        if (!result?.fileUrl) {
           throw new Error("Generate report failed");
         }
 
@@ -91,7 +93,7 @@ export default function NewCleaningStep4() {
         alert(error.response?.data?.message || "ไม่สามารถสร้างรายงานได้");
 
       } finally {
-        setLoading(false); // ✅ สำคัญมาก
+        setLoading(false);
       }
     };
 
@@ -104,18 +106,16 @@ export default function NewCleaningStep4() {
   function handleDownloadReport(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
 
-    if (!reportData?.download) {
+    if (!reportData?.fileUrl) {  // ✅ เปลี่ยนจาก download → fileUrl
       alert("ไม่พบไฟล์รายงาน");
       return;
     }
 
-    window.open(reportData.download, "_blank");
+    window.open(reportData.fileUrl, "_blank");  // ✅ เปลี่ยนจาก download → fileUrl
   }
 
   async function handleSaveDraft() {
-
     try {
-
       const jobId = localStorage.getItem("jobId");
 
       if (!jobId) {
@@ -130,12 +130,9 @@ export default function NewCleaningStep4() {
       navigate("/cleaning");
 
     } catch (err) {
-
       console.error(err);
       alert("Save Draft ไม่สำเร็จ");
-
     }
-
   }
 
   return (
@@ -208,8 +205,10 @@ export default function NewCleaningStep4() {
         </div>
 
       </div>
+
+      {/* Progress Toast */}
       {loading && (
-        <div className="fixed top-5 right-5 z-[100] w-80 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="fixed top-5 right-5 z-[100] w-80 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden">
           <div className="p-4">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium text-green-800">
@@ -220,9 +219,7 @@ export default function NewCleaningStep4() {
               </span>
             </div>
 
-            {/* Progress Bar Background */}
             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-              {/* Progress Line */}
               <div
                 className="bg-green-600 h-full transition-all duration-500 ease-out"
                 style={{ width: `${progress}%` }}
@@ -235,6 +232,7 @@ export default function NewCleaningStep4() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

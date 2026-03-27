@@ -52,13 +52,48 @@ interface OverviewTabProps {
 /* ================= Helper ================= */
 const formatDateByView = (view: string) => {
   const d = new Date();
-
-  if (view === "day") return d.toISOString().split("T")[0];
+  if (view === "day")   return d.toISOString().split("T")[0];
   if (view === "month") return d.toISOString().slice(0, 7);
-  if (view === "year") return d.getFullYear().toString();
-
+  if (view === "year")  return d.getFullYear().toString();
   return "";
 };
+
+/* ================= Skeleton Card ================= */
+function InverterSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl p-4 flex flex-col gap-3 animate-pulse">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gray-200" />
+        <div className="flex flex-col gap-1.5 flex-1">
+          <div className="h-3 w-24 bg-gray-200 rounded-full" />
+          <div className="h-2.5 w-16 bg-gray-100 rounded-full" />
+        </div>
+        {/* status badge */}
+        <div className="h-5 w-16 bg-gray-200 rounded-full" />
+      </div>
+
+      {/* Divider */}
+      <div className="h-px bg-gray-100" />
+
+      {/* Rows */}
+      <div className="flex flex-col gap-2.5">
+        <div className="flex justify-between">
+          <div className="h-2.5 w-20 bg-gray-100 rounded-full" />
+          <div className="h-2.5 w-14 bg-gray-200 rounded-full" />
+        </div>
+        <div className="flex justify-between">
+          <div className="h-2.5 w-16 bg-gray-100 rounded-full" />
+          <div className="h-2.5 w-10 bg-gray-200 rounded-full" />
+        </div>
+        <div className="flex justify-between">
+          <div className="h-2.5 w-12 bg-gray-100 rounded-full" />
+          <div className="h-2.5 w-12 bg-gray-200 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function OverviewTab({ plantId }: OverviewTabProps) {
   /* ================= State ================= */
@@ -99,36 +134,28 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
           getSummaryCards(plantId),
         ]);
 
-        // ===== Overview =====
         setData(overview);
-
-        // ===== Energy =====
         setEnergyData(energy);
 
-        // ===== Energy Flow =====
         const flowData = flow?.energyFlow || {};
-
         setFlowData({
-          pv: flowData.pv?.powerKw || 0,
-          grid: flowData.grid?.signedPowerKw ?? flowData.grid?.powerKw ?? 0,
-          battery:
-            flowData.battery?.signedPowerKw ?? flowData.battery?.powerKw ?? 0,
-          load: flowData.load?.powerKw || 0,
+          pv:      flowData.pv?.powerKw || 0,
+          grid:    flowData.grid?.signedPowerKw ?? flowData.grid?.powerKw ?? 0,
+          battery: flowData.battery?.signedPowerKw ?? flowData.battery?.powerKw ?? 0,
+          load:    flowData.load?.powerKw || 0,
         });
 
-        // ===== Summary =====
         const rawSummary = summary?.summaryCards;
-
         const summaryObj = Array.isArray(rawSummary)
           ? {
-            meter: rawSummary.find((i: any) => i.type === "meter"),
-            battery: rawSummary.find((i: any) => i.type === "battery"),
-            solar: rawSummary.find((i: any) => i.type === "solar"),
-          }
+              meter:   rawSummary.find((i: any) => i.type === "meter"),
+              battery: rawSummary.find((i: any) => i.type === "battery"),
+              solar:   rawSummary.find((i: any) => i.type === "solar"),
+            }
           : rawSummary;
 
         setRealtime({
-          summaryCards: summaryObj,
+          summaryCards:   summaryObj,
           supportingData: summary?.supportingData,
         });
 
@@ -140,52 +167,12 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
     };
 
     fetchData();
-
   }, [plantId, view, date]);
-
-  /* ================= Refresh ================= */
-  // const handleRefresh = async () => {
-  //   if (!plantId) return;
-
-  //   try {
-  //     setLoading(true);
-
-  //     // await api.post(`/monitoring/sites/${plantId}/refresh`, {
-  //     //   mode: "full",
-  //     // });
-
-  //     // const [overviewRes, realtimeRes] = await Promise.all([
-  //     //   api.get(`/monitoring/sites/${plantId}/overview`),
-  //     //   api.get(`/monitoring/sites/${plantId}/home-realtime?refresh=full`),
-  //     // ]);
-
-  //     setData(overviewRes.data?.data);
-
-  //     const rt = realtimeRes.data?.data || {};
-  //     setRealtime(rt);
-
-  //     const flow = rt.energyFlow || {};
-
-  //     setFlowData({
-  //       pv: flow.pv?.powerKw || 0,
-  //       grid: flow.grid?.signedPowerKw ?? flow.grid?.powerKw ?? 0,
-  //       battery: flow.battery?.signedPowerKw ?? flow.battery?.powerKw ?? 0,
-  //       load: flow.load?.powerKw || 0,
-  //     });
-
-  //   } catch (err) {
-  //     console.error("❌ Refresh error:", err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   /* ================= Scroll ================= */
   const scroll = (direction: "left" | "right") => {
     if (!scrollContainerRef.current) return;
-
     const scrollAmount = scrollContainerRef.current.clientWidth;
-
     scrollContainerRef.current.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
       behavior: "smooth",
@@ -195,12 +182,12 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
   /* ================= Mapping ================= */
   const inverters: Inverter[] =
     data?.inverters?.map((inv: any) => ({
-      id: String(inv.id),
-      name: inv.name,
-      model: inv.model,
-      power: inv.activePower ?? 0,
+      id:     String(inv.id),
+      name:   inv.name,
+      model:  inv.model,
+      power:  inv.activePower ?? 0,
       status: inv.status === "Normal" ? "Connect" : "Disconnect",
-      alarm: inv.status === "Fault" ? "Fault" : "-",
+      alarm:  inv.status === "Fault" ? "Fault" : "-",
     })) || [];
 
   const isScrollable = inverters.length > 4;
@@ -217,7 +204,6 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
           battery={flowData.battery}
           load={flowData.load}
         />
-
         <EnergyManagementCard
           data={energyData}
           view={view}
@@ -229,7 +215,7 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
 
       {/* ===== Inverters ===== */}
       <div className="relative group">
-        {isScrollable && (
+        {isScrollable && !loading && (
           <button
             onClick={() => scroll("left")}
             className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 z-10 w-8 h-8 bg-green-100 rounded-[10px] flex items-center justify-center shadow-md"
@@ -238,22 +224,31 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
           </button>
         )}
 
-        <div
-          ref={scrollContainerRef}
-          className={
-            isScrollable
-              ? "grid grid-flow-col gap-[18px] overflow-x-auto pb-2 no-scrollbar auto-cols-[100%] md:auto-cols-[calc(25%-13.5px)]"
-              : "grid grid-cols-1 md:grid-cols-4 gap-[18px]"
-          }
-        >
-          {inverters.map((inv) => (
-            <div key={inv.id}>
-              <InverterCard inverter={inv} />
-            </div>
-          ))}
-        </div>
+        {/* ✅ Skeleton while loading */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-[18px]">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <InverterSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <div
+            ref={scrollContainerRef}
+            className={
+              isScrollable
+                ? "grid grid-flow-col gap-[18px] overflow-x-auto pb-2 no-scrollbar auto-cols-[100%] md:auto-cols-[calc(25%-13.5px)]"
+                : "grid grid-cols-1 md:grid-cols-4 gap-[18px]"
+            }
+          >
+            {inverters.map((inv) => (
+              <div key={inv.id}>
+                <InverterCard inverter={inv} />
+              </div>
+            ))}
+          </div>
+        )}
 
-        {isScrollable && (
+        {isScrollable && !loading && (
           <button
             onClick={() => scroll("right")}
             className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 z-10 w-8 h-8 bg-green-100 rounded-[10px] flex items-center justify-center shadow-md"
@@ -265,10 +260,10 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
 
       {/* ===== Bottom Section ===== */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-[18px]">
-        <MainMeterCard data={realtime?.summaryCards?.meter} />
+        <MainMeterCard   data={realtime?.summaryCards?.meter} />
         <MainBatteryCard data={realtime?.summaryCards?.battery} />
-        <MainSolar data={realtime?.summaryCards?.solar} />
-        <MainWeather data={realtime?.supportingData?.weather} /> 
+        <MainSolar       data={realtime?.summaryCards?.solar} />
+        <MainWeather     data={realtime?.supportingData?.weather} />
       </div>
 
     </div>

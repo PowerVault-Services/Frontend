@@ -61,6 +61,15 @@ export default function HomeCleaning() {
     }
   }, [partiallySelected]);
 
+  const formatTimeRange = (time?: string) => {
+    if (!time) return "";
+
+    return time
+      .split("-")
+      .map(t => t.slice(0, 5)) // เอาแค่ HH:mm
+      .join(" - ");
+  };
+
   // ===== FETCH DATA =====
   const fetchCleaning = async () => {
     try {
@@ -89,7 +98,7 @@ export default function HomeCleaning() {
         systemSize: item.systemSizeKWp,
         pvModuleEA: item.pvModuleEA,
         date: item.date?.slice(0, 10),
-        time: item.time,
+        time: formatTimeRange(item.time),
         status: item.status
       }));
 

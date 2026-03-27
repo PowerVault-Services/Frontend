@@ -21,6 +21,7 @@ export interface ChecklistItem {
   item: string;
   ok: boolean;
   remark: string;
+  group: "panel" | "inverter" | "monitoring" | "water";
 }
 
 interface OperationTableProps {
@@ -39,7 +40,10 @@ const DEFAULT_ITEMS: OperationItem[] = [
     item: "แผงโซลาร์เซลล์",
     children: [
       { id: 11, item: "ตรวจสอบความสะอาดแผงและล้างแผงโซลาร์เซลล์" },
-      { id: 12, item: "ตรวจสอบสภาพแผง สึกกร่อน และการเกิดออกไซด์ บน Frame" },
+      {
+        id: 12,
+        item: "ตรวจสอบสภาพแผง สีกระจก และการเกิดออกไซต์ บน Frame", // ✅ แก้ตรงนี้
+      },
     ],
   },
   {
@@ -47,7 +51,7 @@ const DEFAULT_ITEMS: OperationItem[] = [
     item: "Inverter Unit",
     children: [
       { id: 21, item: "ตรวจสอบสภาพและทำความสะอาด Filter" },
-      { id: 22, item: "ตรวจสอบการทำงานของพัดลมระบายอากาศ และดูดฝุ่น" },
+      { id: 22, item: "ตรวจสอบการทำงานของพัดลมระบายอากาศและดูดฝุ่น" },
     ],
   },
   {
@@ -86,7 +90,7 @@ export default function OperationTable({
   initialData,
 }: OperationTableProps) {
 
-  
+
 
   const [rows, setRows] = useState<OperationResult[]>(flattenItems(items));
 
@@ -97,6 +101,7 @@ export default function OperationTable({
         item: r.item,
         ok: r.done,
         remark: r.remark || "",
+        group: mapGroup(r),
       }));
 
     onChange?.(result);
@@ -113,6 +118,14 @@ export default function OperationTable({
     );
 
   let mainIndex = 0;
+
+  const mapGroup = (row: OperationResult): ChecklistItem["group"] => {
+    if (row.id >= 10 && row.id < 20) return "panel";
+    if (row.id >= 20 && row.id < 30) return "inverter";
+    if (row.id >= 30 && row.id < 40) return "monitoring";
+    if (row.id >= 40 && row.id < 50) return "water";
+    return "panel";
+  };
 
   return (
     <div className="rounded-sm border border-[#CFCFCF] overflow-hidden">

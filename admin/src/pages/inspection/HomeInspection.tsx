@@ -85,7 +85,7 @@ export default function HomeInspection() {
         projectName: item.projectName,
         systemSize: item.systemSizeKWp,
         date: item.date?.slice(0, 10),
-        time: item.time,
+        time: formatTimeRange(item.time),
         status: item.status
       }));
 
@@ -101,6 +101,15 @@ export default function HomeInspection() {
   useEffect(() => {
     fetchInspection();
   }, [page, jobNo, projectType, projectName, systemSize, date, status]);
+
+  const formatTimeRange = (time?: string) => {
+    if (!time) return "";
+
+    return time
+      .split("-")
+      .map(t => t.slice(0, 5)) // เอาแค่ HH:mm
+      .join(" - ");
+  };
 
   const resetFilters = () => {
     setJobNo("");

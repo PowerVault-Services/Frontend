@@ -238,7 +238,7 @@ export default function NewCleaningStep1() {
             </div>
 
             {/* Form */}
-            <div className="flex flex-col min-h-205.5 px-28 py-10 gap-y-10 bg-white rounded-2xl items-center">
+            <div className="flex flex-col min-h-[822px] px-28 py-5 gap-y-[58px] bg-white rounded-2xl items-center justify-between">
 
                 <ProgressBar steps={steps} currentStep={currentStep} />
 
@@ -337,7 +337,7 @@ export default function NewCleaningStep1() {
                     {isReadOnly ? (
                         <button
                             onClick={() => navigate("/cleaning/new/step2")}
-                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                            className="w-auto bg-green-700 text-white px-6 py-2.5 rounded-2xl"
                         >
                             ดูรายละเอียดอีเมลแจ้งแผน
                         </button>
