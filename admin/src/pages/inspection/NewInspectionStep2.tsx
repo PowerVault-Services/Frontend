@@ -136,7 +136,7 @@ export default function NewInspectionStep2() {
             setLoading(true);
 
             const subject =
-                `[ทดสอบระบบ]ขออนุญาตเข้าบํารุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
+                `ขออนุญาตเข้าบํารุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
 
             const body = `
                     <div style="margin-top: 40px; max-width: 800px;">
@@ -198,7 +198,7 @@ export default function NewInspectionStep2() {
             setEmailStatus("sending");
 
             const subject =
-                `[ทดสอบระบบ]ขออนุญาตเข้าบํารุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
+                `ขออนุญาตเข้าบํารุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
 
             const body = `
                     <div style="margin-top: 40px; max-width: 800px;">

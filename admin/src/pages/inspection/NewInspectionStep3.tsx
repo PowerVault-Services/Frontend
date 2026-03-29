@@ -150,7 +150,7 @@ export default function NewInspectionStep3() {
             setEmailStatus("sending");
 
             const subject =
-                `[ทดสอบระบบ]ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System ประจําปี 2568 ${jobData.projectName}`;
+                `ขออนุญาตนําส่งรายงาน Inspection ระบบ Solar System ประจําปี 2568 ${jobData.projectName}`;
 
             const body = `
                 <div style="margin-top: 40px; max-width: 800px;">

@@ -128,7 +128,7 @@ export default function NewServiceStep5() {
             setLoading(true);
 
             const subject =
-                `[ทดสอบระบบ]ขออนุญาตนําส่งรายงานการเข้า ${jobData.problem}`;
+                `ขออนุญาตนําส่งรายงานการเข้า ${jobData.problem}`;
 
             const body = `
             <div style="margin-top: 40px; max-width: 800px;">

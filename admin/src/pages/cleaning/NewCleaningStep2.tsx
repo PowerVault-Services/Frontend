@@ -138,7 +138,7 @@ export default function NewCleaningStep2() {
                 return;
             }
 
-            const subject = `[ทดสอบระบบ]ขออนุญาตเข้าบำรุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
+            const subject = `ขออนุญาตเข้าบำรุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
 
             const body = `
                     <div style="margin-top: 40px; max-width: 800px;">
@@ -199,7 +199,7 @@ export default function NewCleaningStep2() {
 
             setEmailStatus("sending");
 
-            const subject = `[ทดสอบระบบ]ขออนุญาตเข้าบำรุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
+            const subject = `ขออนุญาตเข้าบำรุงรักษาระบบ Solar System โครงการ ${formData.projectName}`;
 
             const body = `
                     <div style="margin-top: 40px; max-width: 800px;">

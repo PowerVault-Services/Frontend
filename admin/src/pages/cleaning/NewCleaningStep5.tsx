@@ -67,7 +67,7 @@ export default function NewCleaningStep5() {
     return {
       jobId,
       to: "nita290646@gmail.com",
-      subject: "[ทดสอบระบบ]ขออนุญาตนําส่งรายงานการเข้าบํารุงรักษาระบบ Solar System",
+      subject: "ขออนุญาตนําส่งรายงานการเข้าบํารุงรักษาระบบ Solar System",
       body: `
         <div style="margin-top: 40px; max-width: 800px;">
           <p>เรียน ท่านผู้เกี่ยวข้อง</p>

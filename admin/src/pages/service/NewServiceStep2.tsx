@@ -102,7 +102,7 @@ export default function NewServiceStep2() {
             setLoading(true);
 
             const subject =
-                `[ทดสอบระบบ]ขออนุญาตแจ้งเข้าแก้ไข ${formData.problem}`;
+                `ขออนุญาตแจ้งเข้าแก้ไข ${formData.problem}`;
 
             const body = `
                 <div style="margin-top: 40px; max-width: 800px;">
@@ -161,7 +161,7 @@ export default function NewServiceStep2() {
             setEmailStatus("sending");
 
             const subject =
-                `[ทดสอบระบบ]ขออนุญาตแจ้งเข้าแก้ไข ${formData.problem}`;
+                `ขออนุญาตแจ้งเข้าแก้ไข ${formData.problem}`;
 
             const body = `
                 <div style="margin-top: 40px; max-width: 800px;">
