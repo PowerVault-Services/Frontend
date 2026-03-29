@@ -11,7 +11,7 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/api': 'http://10.240.68.114'
+      '/api': 'https://c7d0f354-10b0-4c36-a2dc-e1807319a93a.cloud.ce.kmitl.ac.th'
     }
   }
 })
