@@ -83,7 +83,7 @@ export const saveServiceStep2Draft = async (payload: {
 
 export const sendServiceStep2 = async (jobId: number) => {
   const res = await api.post("/service/step2/send", { jobId });
-  return res.data;
+  return res;
 };
 
 export const createServiceStep3Draft = async ({

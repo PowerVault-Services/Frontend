@@ -103,6 +103,26 @@ export default function NewServiceStep1() {
 
 
     useEffect(() => {
+        // ✅ ถ้ามาจาก Alarm page (มี navData) ให้ล้างค่าเก่าก่อนเสมอ
+        if (navData?.projectName) {
+            localStorage.removeItem("service_step1");
+            localStorage.removeItem("jobId");
+
+            setProjectId("");
+            setProject(null);
+            setDate("");
+            setStartTime("");
+            setEndTime("");
+            setProblem(navData.problem || "");
+            setRemark("");
+            setRemarkLocation("");
+            setContractor("");
+            setProjectType("");
+            setIsEditMode(false);
+            return; // หยุด ไม่ต้อง load localStorage
+        }
+
+        // โหลดจาก localStorage เฉพาะกรณีที่ไม่มี navData
         const savedData = localStorage.getItem("service_step1");
         if (!savedData) return;
 
@@ -147,7 +167,7 @@ export default function NewServiceStep1() {
         }
 
         if (idFromStorage) {
-            setProjectId(String(idFromStorage)); // 👈 สำคัญ
+            setProjectId(String(idFromStorage));
         }
 
     }, []);
@@ -195,7 +215,7 @@ export default function NewServiceStep1() {
     }, []);
 
     useEffect(() => {
-
+        // ✅ ถ้ามาจาก navData ให้ match project จาก projects list เท่านั้น ไม่ต้อง load localStorage
         if (navData?.projectName && projects.length > 0) {
             const found = projects.find(
                 (p) => p.projectName === navData.projectName
@@ -204,8 +224,8 @@ export default function NewServiceStep1() {
             if (found) {
                 setProjectId(String(found.siteId));
                 setProject(found);
-                return;
             }
+            return; // หยุด ไม่ต้อง load localStorage
         }
 
         const savedData = localStorage.getItem("service_step1");
@@ -213,7 +233,6 @@ export default function NewServiceStep1() {
 
         const parsed = JSON.parse(savedData);
 
-        // 👉 อย่างน้อยต้องมีอะไรสักอย่าง เช่น:
         if (parsed.projectId) {
             setProjectId(String(parsed.projectId));
         }
@@ -383,7 +402,7 @@ export default function NewServiceStep1() {
                     <div className={FIELD_WIDTH}>
                         <InputField
                             label="Contact Phone Number"
-                            value={formatPhones(project?.contactPhone)} // NEW
+                            value={formatPhones(project?.contactPhone)}
                             disabled
                         />
                     </div>
