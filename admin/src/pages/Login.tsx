@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
 import eyeIcon from "../assets/icons/Eye.svg";
 import eyeClosedIcon from "../assets/icons/Eye Closed.svg";
@@ -63,8 +62,6 @@ export default function Login() {
       setLoading(false);
     }
   };
-
-  console.log("API URL:", import.meta.env.VITE_API_URL);
 
   return (
     <div
