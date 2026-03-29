@@ -45,8 +45,6 @@ export default function Login() {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      console.log("API URL:", import.meta.env.VITE_API_URL);
-
       navigate("/", { replace: true });
 
     } catch (err: any) {
@@ -64,6 +62,8 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  console.log("API URL:", import.meta.env.VITE_API_URL);
 
   return (
     <div
