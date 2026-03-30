@@ -25,7 +25,7 @@ export default function LayoutTab({ siteId, type }: Props) {
       const res = await uploadLayout(siteId, type, file);
 
       // ✅ FIX ตรงนี้
-      setFileUrl("http://localhost:3000" + res.data.fileUrl);
+      setFileUrl(`${import.meta.env.VITE_API_URL}${res.data.fileUrl}`);
 
       // ✅ เรียกใช้ State นี้ ข้อความจะถูกส่งไปที่ Notification
       setSuccessMsg("อัปโหลดรูป Layout เรียบร้อยแล้ว");
@@ -53,7 +53,7 @@ export default function LayoutTab({ siteId, type }: Props) {
         );
 
         if (layout?.fileUrl) {
-          setFileUrl("http://localhost:3000" + layout.fileUrl);
+          setFileUrl(`${import.meta.env.VITE_API_URL}${layout.fileUrl}`);
         }
 
       } catch (err) {

@@ -267,7 +267,7 @@ export default function NewServiceStep3() {
                                         key={index}
                                         src={
                                             typeof img === "string"
-                                                ? "http://localhost:3000" + img
+                                                ? `${import.meta.env.VITE_API_URL}${img}`
                                                 : URL.createObjectURL(img)
                                         }
                                         className="w-full h-24 object-cover rounded"
@@ -302,7 +302,7 @@ export default function NewServiceStep3() {
                                     <a
                                         href={
                                             typeof reportFile === "string"
-                                                ? "http://localhost:3000" + reportFile
+                                                ? `${import.meta.env.VITE_API_URL}${reportFile}`
                                                 : "#"
                                         }
                                         target="_blank"

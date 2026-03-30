@@ -16,8 +16,8 @@ export default function CleaningInformationTab({ project }: Props) {
           <img
             src={
               project?.imageUrl
-                ? "http://localhost:3000" + project.imageUrl
-                : "https://powervaultthailand.com/wp-content/uploads/2025/01/UNIQUE-PLASTIC-INDUSTRY.jpg"
+                ? `${import.meta.env.VITE_API_URL}${project.imageUrl}`
+                : "https://powervaultthailand.com/..."
             }
             alt="solar"
             className="w-full h-full object-cover"

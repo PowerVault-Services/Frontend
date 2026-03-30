@@ -23,7 +23,7 @@ export default function OMPVStringLayoutTab({ siteId, type }: Props) {
         );
 
         if (layout?.fileUrl) {
-          setImageUrl("http://localhost:3000" + layout.fileUrl);
+          setImageUrl(`${import.meta.env.VITE_API_URL}${layout.fileUrl}`);
         } else {
           setImageUrl(null);
         }

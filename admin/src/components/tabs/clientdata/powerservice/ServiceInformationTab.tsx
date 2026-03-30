@@ -16,7 +16,7 @@ export default function ServiceInformationTab({ project }: Props) {
           <img
             src={
               project?.imageUrl
-                ? "http://localhost:3000" + project.imageUrl
+                ? `${import.meta.env.VITE_API_URL}${project.imageUrl}`
                 : "https://powervaultthailand.com/wp-content/uploads/2025/01/UNIQUE-PLASTIC-INDUSTRY.jpg"
             }
             alt="solar"

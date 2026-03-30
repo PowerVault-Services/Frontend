@@ -10,7 +10,7 @@ export default function CleaningPVLayoutTab({ project }: Props) {
     );
 
     const imageUrl = layout?.fileUrl
-        ? "http://localhost:3000" + layout.fileUrl
+        ? `${import.meta.env.VITE_API_URL}${layout.fileUrl}`
         : null;
 
     return (

@@ -10,7 +10,7 @@ interface Props {
 
 export default function LayoutImageTab({ siteId, type }: Props) {
     const [imageUrl, setImageUrl] = useState<string | null>(null);
-
+    console.log("API URL:", import.meta.env.VITE_API_URL);
     useEffect(() => {
         const fetchLayout = async () => {
             try {

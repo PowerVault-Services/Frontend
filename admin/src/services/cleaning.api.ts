@@ -148,7 +148,7 @@ export const getCleaningReportDownloadUrl = (jobId: number) => {
 };
 
 export const downloadCleaningZip = async (jobIds: number[]): Promise<{ success: boolean; message?: string }> => {
-  const base = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+  const base = import.meta.env.VITE_API_URL;
   const ids = jobIds.join(",");
 
   try {
