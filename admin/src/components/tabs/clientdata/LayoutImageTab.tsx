@@ -21,7 +21,7 @@ export default function LayoutImageTab({ siteId, type }: Props) {
                 const layout = layouts.find((l: any) => l.type === type);
 
                 if (layout?.fileUrl) {
-                    setImageUrl(`http://localhost:3000${layout.fileUrl}`);
+                    setImageUrl(`${import.meta.env.VITE_API_URL}${layout.fileUrl}`);
                 }
             } catch (err) {
                 console.error("โหลด layout ไม่สำเร็จ", err);
