@@ -6,15 +6,18 @@ import TextInputFilter from "../../components/TextInputFilter";
 import PRTable from "../../components/table/PRTable";
 import api from "../../services/api";
 
+const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
 export default function PRMonitor() {
     const navigate = useNavigate();
 
     // ===== Filter States =====
     const [projectName, setProjectName] = useState("");
-    
+
     // เก็บ State เป็น YYYY-MM (ค่าเริ่มต้นเป็นค่าว่าง เพื่อดึงข้อมูลทั้งหมด)
-    const [startMonth, setStartMonth] = useState("");
-    const [endMonth, setEndMonth] = useState("");
+    const [startMonth, setStartMonth] = useState(currentMonth);
+    const [endMonth, setEndMonth] = useState(currentMonth);
 
     const [page, setPage] = useState(1);
     const [pageSize] = useState(20);
@@ -32,7 +35,7 @@ export default function PRMonitor() {
             // API ต้องการ YYYY-MM ซึ่ง input type="month" จะคืนค่า YYYY-MM มาให้อยู่แล้ว
             const res = await api.get("/monitoring/pr/sites", {
                 params: {
-                    startMonth: searchParams.start || undefined,
+                    startMonth: searchParams.start || currentMonth, // ✅ fallback
                     endMonth: searchParams.end || undefined,
                     q: searchParams.q || undefined,
                 },
@@ -57,7 +60,8 @@ export default function PRMonitor() {
         } finally {
             setLoading(false);
         }
-    }, []); 
+    }, []);
+
 
     // ===== 1. ดึงข้อมูลครั้งแรกตอนโหลดหน้าเว็บ =====
     useEffect(() => {
@@ -77,7 +81,7 @@ export default function PRMonitor() {
         setStartMonth("");
         setEndMonth("");
         setPage(1);
-        
+
         // ส่งคำสั่งดึงข้อมูลด้วยค่าว่าง
         fetchPR({ start: "", end: "", q: "" });
     };
@@ -99,7 +103,7 @@ export default function PRMonitor() {
             <div className="pb-[62px]">
                 <SearchBox onSearch={handleSearch} onReset={handleReset}>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                        
+
                         <TextInputFilter
                             label="Project Name"
                             value={projectName}
@@ -147,7 +151,7 @@ export default function PRMonitor() {
                 total={total}
                 onPageChange={setPage}
             />
-            
+
         </div>
     );
 }

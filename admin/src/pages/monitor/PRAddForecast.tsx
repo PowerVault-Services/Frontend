@@ -3,6 +3,8 @@ import { ArrowLeft } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import api from "../../services/api";
 
+import {createForecast} from "../../services/forecast.api";
+
 interface Plant {
     id: number;
     name: string;
@@ -16,6 +18,9 @@ type RowData = {
     pr: string;
 };
 
+const now = new Date();
+const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
 export default function PRAddForecast() {
     const navigate = useNavigate();
 
@@ -25,10 +30,10 @@ export default function PRAddForecast() {
     const [searchQuery, setSearchQuery] = useState("");
 
     const [selectedPlants, setSelectedPlants] = useState<number[]>([]);
-    const [startMonth, setStartMonth] = useState("2026-03");
-    
+    const [startMonth, setStartMonth] = useState(currentMonth);
+
     const [formData, setFormData] = useState<Record<string, RowData>>({});
-    
+
     // ✅ เพิ่ม State สำหรับปุ่ม Submit
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -110,7 +115,7 @@ export default function PRAddForecast() {
         });
 
         return rowsToRender;
-    }, [selectedPlants, plants, months, formData]);
+    }, [selectedPlants, plants, months, formData])
 
     /* ---------------- UPDATE INPUT ---------------- */
     const updateValue = (key: string, field: "irradiation" | "production", value: string) => {
@@ -118,13 +123,14 @@ export default function PRAddForecast() {
             const currentRow = prev[key] || { irradiation: "", production: "", pr: "" };
             const updatedRow = { ...currentRow, [field]: value };
 
-            const irr = Number(updatedRow.irradiation);
-            const prod = Number(updatedRow.production);
+            const irr = parseFloat(updatedRow.irradiation);
+            const prod = parseFloat(updatedRow.production);
 
-            if (irr && prod) {
-                updatedRow.pr = (prod / irr).toFixed(2);
+            // ✅ แก้: ใช้ isNaN และ > 0 แทน truthy check
+            if (!isNaN(irr) && !isNaN(prod) && irr > 0) {
+                updatedRow.pr = ((prod / irr) * 100).toFixed(2); // ✅ คูณ 100 ให้เป็น %
             } else {
-                updatedRow.pr = "";
+                updatedRow.pr = ""; // ✅ reset เมื่อไม่มีค่า
             }
 
             return { ...prev, [key]: updatedRow };
@@ -132,37 +138,46 @@ export default function PRAddForecast() {
     };
 
     /* ---------------- SUBMIT LOGIC ---------------- */
-    // ✅ ฟังก์ชันจัดการตอนกดปุ่ม Submit
     const handleSubmit = async () => {
         try {
             setIsSubmitting(true);
 
-            // 1. กรองเฉพาะข้อมูลที่มีการกรอกตัวเลขจริงๆ
             const payloadToSubmit = tableRows.filter(
                 (row) => row.irradiation !== "" || row.production !== ""
             );
 
             if (payloadToSubmit.length === 0) {
                 alert("กรุณากรอกข้อมูล Forecast อย่างน้อย 1 ช่องก่อนบันทึก");
-                setIsSubmitting(false);
                 return;
             }
 
-            // แสดงข้อมูลที่จะส่งไป Backend (ให้ลองเปิด Console ดูครับ)
-            console.log("🚀 ข้อมูลที่จะส่งไป Backend:", payloadToSubmit);
+            // Group by siteId
+            const grouped: Record<number, any[]> = {};
+            payloadToSubmit.forEach((row) => {
+                if (!grouped[row.plantId]) grouped[row.plantId] = [];
+                // แปลง "Mar 2026" → month number (1-12)
+                const monthNum = new Date(row.month).getMonth() + 1;
+                grouped[row.plantId].push({
+                    month: monthNum,
+                    globalKwhM2: Number(row.irradiation),
+                    eGridKwh: Number(row.production),
+                    prRatio: Number(row.pr),
+                });
+            });
 
-            // 2. จำลองการยิง API (นำ API ยิงบันทึกของจริงมาใส่ตรงนี้ได้เลย)
-            // await api.post("/monitoring/pr/forecast", { data: payloadToSubmit });
-            
-            // สมมติว่ายิง API ใช้เวลา 1 วินาที
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await createForecast({
+                data: Object.entries(grouped).map(([siteId, rows]) => ({
+                    siteId: Number(siteId),
+                    rows,
+                })),
+            });
 
             alert("บันทึกข้อมูล Forecast สำเร็จ!");
-            navigate(-1); // กลับไปหน้า %PR
+            navigate(-1);
 
-        } catch (error) {
-            console.error("Submit error:", error);
-            alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        } catch (error: any) {
+            console.error("Submit error:", error.response?.data || error);
+            alert("เกิดข้อผิดพลาด: " + (error.response?.data?.message || error.message));
         } finally {
             setIsSubmitting(false);
         }
@@ -210,8 +225,8 @@ export default function PRAddForecast() {
                             <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 z-10 shadow-sm">
                                 <tr className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                     <th className="px-4 py-3 w-12 text-center border-b border-slate-200 dark:border-slate-700">
-                                        <input 
-                                            type="checkbox" 
+                                        <input
+                                            type="checkbox"
                                             checked={filteredPlants.length > 0 && selectedPlants.length === filteredPlants.length}
                                             onChange={toggleAllPlants}
                                             disabled={loadingPlants || filteredPlants.length === 0}
@@ -327,6 +342,7 @@ export default function PRAddForecast() {
 
                                 <tbody className="text-sm font-mono divide-y divide-slate-200 dark:divide-slate-800">
                                     {tableRows.map((row, i) => {
+                                        console.log("ROW PR:", row.key, row.pr);
                                         const showPlant = i === 0 || tableRows[i - 1].plantId !== row.plantId;
 
                                         return (
@@ -356,7 +372,7 @@ export default function PRAddForecast() {
                                                     />
                                                 </td>
                                                 <td className="px-4 py-3 font-bold text-green-600 dark:text-green-500">
-                                                    {row.pr ? `${row.pr}%` : "-"}
+                                                    {row.pr !== "" && row.pr !== undefined ? `${row.pr}%` : "-"}
                                                 </td>
                                             </tr>
                                         );
@@ -372,8 +388,8 @@ export default function PRAddForecast() {
                             onClick={handleSubmit}
                             disabled={isSubmitting}
                             className={`px-8 py-3 rounded-lg font-bold text-white transition-all shadow-sm flex items-center gap-2
-                                ${isSubmitting 
-                                    ? "bg-gray-400 cursor-not-allowed" 
+                                ${isSubmitting
+                                    ? "bg-gray-400 cursor-not-allowed"
                                     : "bg-green-600 hover:bg-green-700 hover:shadow-md active:scale-95"
                                 }`}
                         >
