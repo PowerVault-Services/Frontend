@@ -1,5 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import api from "../../services/api";
+import { useNavigate } from "react-router-dom";
+
 
 type Alarm = {
   alarmId: ReactNode;
@@ -20,6 +22,7 @@ interface Props {
 }
 
 export default function AlarmTab({ plantId }: Props) {
+  const navigate = useNavigate();
   const [severity, setSeverity] = useState("ALL");
   const [status, setStatus] = useState("ACTIVE");
 
@@ -31,44 +34,60 @@ export default function AlarmTab({ plantId }: Props) {
   useEffect(() => {
     if (!plantId) return;
 
+    // ✅ clear ข้อมูลเก่าก่อนเสมอ
+    setAlarms([]);
+    setLoading(true);
+
+    let cancelled = false;
+
     const fetchAlarms = async () => {
       try {
-        setLoading(true);
-
-        const res = await api.get("/alarms/export", {
+        const res = await api.get("/alarms", {
           params: {
             siteId: plantId,
             tab: status === "ACTIVE" ? "active" : "historical",
-            severity: severity === "ALL" ? undefined : severity
+            severity: severity === "ALL" ? undefined : severity,
           },
-          responseType: "blob", // ✅ สำคัญมาก: ต้องตั้งเป็น blob เพื่อรับไฟล์
         });
+
+        if (cancelled) return; // ✅ ป้องกัน race condition
 
         setAlarms(res.data?.data?.list ?? []);
 
       } catch (err) {
+        if (cancelled) return;
         console.error("โหลด alarm ไม่สำเร็จ", err);
+        setAlarms([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchAlarms();
+
+    return () => {
+      cancelled = true; // ✅ cleanup เมื่อ plantId หรือ filter เปลี่ยน
+    };
+
   }, [plantId, severity, status]);
 
   const handleCreateInspection = (alarm: Alarm) => {
-    console.log("Create inspection for:", alarm);
+    // navigate ไปหน้า New Service Step1 พร้อมส่งข้อมูล alarm
+    navigate("/service/new/step1", {
+      state: {
+        projectName: alarm.plantName,  // ใช้ match กับ projects list ใน Step1
+        problem: alarm.alarmName,      // pre-fill ช่อง "ปัญหา / Alarm ที่พบ"
+      },
+    });
   };
 
 
 
   return (
     <div className="p-6">
-
       {/* FILTER */}
       <div className="rounded-lg border border-[#DEE2E6] p-4 mb-6">
         <div className="flex flex-wrap gap-4 items-center">
-
           {/* Severity */}
           <div className="flex flex-col min-w-[180px] round-lg">
             <label className="text-xs font-bold text-green-800 round-lg">
@@ -124,33 +143,43 @@ export default function AlarmTab({ plantId }: Props) {
           </thead>
 
           <tbody>
-            {alarms.map((alarm) => (
-              <tr key={alarm.id} className="border-b hover:bg-gray-50">
-
-                <td className="px-4 py-3">{alarm.severityText}</td>
-                <td className="px-4 py-3">{alarm.plantName}</td>
-                <td className="px-4 py-3">{alarm.deviceType}</td>
-                <td className="px-4 py-3">{alarm.deviceName}</td>
-                <td className="px-4 py-3">{alarm.sn}</td>
-                <td className="px-4 py-3">{alarm.alarmId}</td>
-                <td className="px-4 py-3">{alarm.alarmName}</td>
-                <td className="px-4 py-3">
-                  {new Date(alarm.occurrenceTime).toLocaleString()}
+            {loading ? (
+              <tr>
+                <td colSpan={9} className="text-center py-8 text-gray-400">
+                  กำลังโหลด...
                 </td>
-
-                <td className="px-4 py-3 items-center text-center">
-                  <button
-                    onClick={() => handleCreateInspection(alarm)}
-                    className="bg-[#2979FF] text-white px-3 py-1 rounded"
-                  >
-                    Create Service
-                  </button>
-                </td>
-
               </tr>
-            ))}
+            ) : alarms.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="text-center py-8 text-gray-400">
+                  ไม่พบข้อมูล Alarm
+                </td>
+              </tr>
+            ) : (
+              alarms.map((alarm) => (
+                <tr key={alarm.id} className="border-b hover:bg-gray-50">
+                  <td className="px-4 py-3">{alarm.severityText}</td>
+                  <td className="px-4 py-3">{alarm.plantName}</td>
+                  <td className="px-4 py-3">{alarm.deviceType}</td>
+                  <td className="px-4 py-3">{alarm.deviceName}</td>
+                  <td className="px-4 py-3">{alarm.sn}</td>
+                  <td className="px-4 py-3">{alarm.alarmId}</td>
+                  <td className="px-4 py-3">{alarm.alarmName}</td>
+                  <td className="px-4 py-3">
+                    {new Date(alarm.occurrenceTime).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => handleCreateInspection(alarm)}
+                      className="bg-[#2979FF] text-white px-3 py-1 rounded"
+                    >
+                      Create Service
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
-
         </table>
       </div>
 

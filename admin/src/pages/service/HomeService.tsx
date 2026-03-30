@@ -120,6 +120,8 @@ export default function HomeService() {
         contractor: item.contractor,
       }));
 
+      console.log("raw item:", list[0])
+
       setData(mapped);
       setTotalItems(json.pagination?.total ?? 0);
 

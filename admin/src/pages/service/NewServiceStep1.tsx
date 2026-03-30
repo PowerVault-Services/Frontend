@@ -271,6 +271,7 @@ export default function NewServiceStep1() {
             contractor,
             problem: problem || "-",
             note: remark || "-",
+            projectType: projectType || null,
         };
 
         console.log("🔥 SERVICE STEP1:", payload);
@@ -471,7 +472,6 @@ export default function NewServiceStep1() {
                         <TextInputFilter
                             label="บริเวณที่เข้าทำงาน"
                             placeholder="Text"
-                            key={remarklocation}
                             value={remarklocation}
                             onChange={setRemarkLocation}
                         />

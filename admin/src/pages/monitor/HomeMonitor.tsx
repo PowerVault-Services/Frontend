@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getHomeRealtime, getMonitoringSites } from "../../services/monitoring.api";
+import { getHomeRealtime, getMonitoringSites, getLatestAlarm } from "../../services/monitoring.api";
 
 import HomeIcon from "../../assets/icons/home.svg";
 import TagNav from "../../components/TagNav";
@@ -14,11 +14,11 @@ interface Plant {
   id: number;
   name: string;
 }
-
 interface Alarm {
   id: number;
   alarmName: string;
-  occurredAt: string;
+  occurredAt: string;      // ✅ ตรงกับ API doc
+  occurrenceTime: string;  // API ส่งมาทั้งคู่
   severity: number;
 }
 
@@ -38,8 +38,8 @@ export default function HomeMonitor() {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const latestAlarm = [...alarms].sort(
     (a, b) =>
-      new Date(b.occurredAt).getTime() -
-      new Date(a.occurredAt).getTime()
+      new Date(b.occurrenceTime).getTime() -
+      new Date(a.occurrenceTime).getTime()
   )[0];
 
   /* ================= Constants ================= */
@@ -80,21 +80,36 @@ export default function HomeMonitor() {
   useEffect(() => {
     if (!selectedPlant) return;
 
-    const fetchRealtime = async () => {
-      try {
-        const data = await getHomeRealtime(selectedPlant.id);
+    // ✅ Clear ค่าเก่าก่อนเลย ไม่ให้ค้าง
+    setAlarms([]);
 
-        setRealtime(data);
-        setAlarms(data?.alarms ?? []);
+    let cancelled = false; // ✅ ป้องกัน race condition
+
+    const fetchData = async () => {
+      try {
+        const [realtimeData, alarmData] = await Promise.all([
+          getHomeRealtime(selectedPlant.id),
+          getLatestAlarm({ siteId: selectedPlant.id }),
+        ]);
+
+        if (cancelled) return; // ✅ ถ้า plant เปลี่ยนไปแล้ว ไม่ต้อง set
+
+        setRealtime(realtimeData);
+        setAlarms(alarmData ? [alarmData] : []);
 
       } catch (err) {
-        console.error("โหลด realtime ไม่สำเร็จ", err);
+        if (cancelled) return;
+        console.error("โหลดข้อมูลไม่สำเร็จ", err);
         setRealtime(null);
         setAlarms([]);
       }
     };
 
-    fetchRealtime();
+    fetchData();
+
+    return () => {
+      cancelled = true; // ✅ cleanup เมื่อ plant เปลี่ยน
+    };
   }, [selectedPlant]);
 
   /* ================= Search ================= */

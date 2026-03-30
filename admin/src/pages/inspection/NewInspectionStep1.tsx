@@ -402,6 +402,7 @@ export default function NewInspectionStep1() {
                                     alert(err.message);
                                 }
                             }}
+                            className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
                         >
                             ถัดไป
                         </button>

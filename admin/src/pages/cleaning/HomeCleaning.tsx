@@ -116,6 +116,17 @@ export default function HomeCleaning() {
   }, [page, jobNo, projectType, projectName, systemSize, pvModuleEA, date, status, time]);
 
 
+  const [notification, setNotification] = useState<{ show: boolean; message: string }>({
+    show: false,
+    message: "",
+  });
+
+  const showNotification = (message: string) => {
+    setNotification({ show: true, message });
+    setTimeout(() => setNotification({ show: false, message: "" }), 4000);
+  };
+
+
   // ===== HANDLE EDIT (ทำงานจริง: ส่งไปหน้า Step ตาม Status) =====
   const handleEdit = (row: Cleaning) => {
     const cleaningData = {
@@ -297,17 +308,18 @@ export default function HomeCleaning() {
     setPage(1); // trigger fetch
   };
 
-  const handleDownloadZip = () => {
+  const handleDownloadZip = async () => {
     if (selectedRows.size === 0) {
       alert("กรุณาเลือกอย่างน้อย 1 รายการ");
       return;
     }
 
     const ids = Array.from(selectedRows);
+    const result = await downloadCleaningZip(ids);
 
-    console.log("📦 Download:", ids);
-
-    downloadCleaningZip(ids); // ✅ ตัวนี้แหละสำคัญ
+    if (!result.success) {
+      showNotification("ไม่สามารถดาวน์โหลดได้ เนื่องจากเอกสารยังไม่สมบูรณ์");
+    }
   };
 
   return (
@@ -374,6 +386,43 @@ export default function HomeCleaning() {
           <span>Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalItems)} of {totalItems} items</span>
           <Pagination page={page} totalPages={totalPages} onChange={setPage} />
         </div>
+      </div>
+
+      {/* ✅ Notification Toast */}
+      <div
+        className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-4 rounded-xl
+        bg-white border border-red-200 shadow-lg text-sm text-red-700
+        transition-all duration-500 ease-in-out
+        ${notification.show ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-3 pointer-events-none"}`}
+      >
+        {/* ไอคอน */}
+        <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+          <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+        </div>
+
+        <div>
+          <p className="font-semibold text-red-800">ดาวน์โหลดไม่สำเร็จ</p>
+          <p className="text-red-500 text-xs mt-0.5">{notification.message}</p>
+        </div>
+
+        {/* ปุ่มปิด */}
+        <button
+          onClick={() => setNotification({ show: false, message: "" })}
+          className="ml-2 text-red-300 hover:text-red-500 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Progress bar fade */}
+        <div className={`absolute bottom-0 left-0 h-0.5 bg-red-300 rounded-full
+        ${notification.show ? "animate-[shrink_4s_linear_forwards]" : ""}`}
+          style={{ width: notification.show ? "100%" : "0%" }}
+        />
       </div>
     </div>
   );

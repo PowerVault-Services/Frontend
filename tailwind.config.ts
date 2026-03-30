@@ -51,11 +51,17 @@ export default {
           "0%": { transform: "translateY(-100%)" },
           "100%": { transform: "translateY(400%)" },
         },
+        shrink: {
+          "0%": { width: "100%" },
+          "100%": { width: "0%" },
+        },
+
       },
 
       animation: {
         flowx: "flowx 2s linear infinite",
         flowy: "flowy 2s linear infinite",
+        shrink: "shrink 4s linear forwards",
       },
     },
   },

@@ -37,6 +37,10 @@ export default function NewCleaningStep3_01() {
     LAYOUT: [],
   });
 
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({
+    show: false, message: "", type: "success",
+  });
+
   // ✅ เพิ่มฟังก์ชันสำหรับแสดง Label พร้อมจำนวนรูป (ที่ Error เพราะก่อนหน้านี้ไม่มีฟังก์ชันนี้)
   const getLabelWithCount = (label: string, type: string) => {
     const count = filesByType[type]?.length || 0;
@@ -62,27 +66,23 @@ export default function NewCleaningStep3_01() {
   const uploadEvidence = async () => {
     if (loading) return;
     const jobId = localStorage.getItem("jobId");
-    if (!jobId) return alert("ไม่พบ jobId");
+    if (!jobId) return showToast("ไม่พบ jobId", "error"); // ✅
 
-    // ✅ ตรวจสอบขั้นต่ำประเภทละ 6 รูป
     const requiredTypes = ["BEFORE_PANEL", "BEFORE_INVERTER", "DURING_PANEL", "DURING_INVERTER", "AFTER_PANEL", "AFTER_INVERTER"];
     const isIncomplete = requiredTypes.some(type => filesByType[type].length < 6);
 
     if (isIncomplete) {
-      alert("กรุณาอัปโหลดรูปภาพให้ครบถ้วนอย่างน้อยประเภทละ 6 รูป");
+      showToast("กรุณาอัปโหลดรูปภาพให้ครบอย่างน้อยประเภทละ 6 รูป", "error"); // ✅
       return;
     }
 
     try {
       setLoading(true);
-      await uploadCleaningEvidence({
-        jobId: Number(jobId),
-        filesByType: filesByType,
-      });
-      alert("อัปโหลดสำเร็จ");
-      navigate("/cleaning/new/step3_02");
+      await uploadCleaningEvidence({ jobId: Number(jobId), filesByType });
+      showToast("อัปโหลดสำเร็จ ✓"); // ✅
+      setTimeout(() => navigate("/cleaning/new/step3_02"), 1500);
     } catch (error: any) {
-      alert(error.response?.data?.message || "อัปโหลดไฟล์ไม่สำเร็จ");
+      showToast(error.response?.data?.message || "อัปโหลดไฟล์ไม่สำเร็จ", "error"); // ✅
     } finally {
       setLoading(false);
     }
@@ -91,13 +91,18 @@ export default function NewCleaningStep3_01() {
   async function handleSaveDraft() {
     try {
       const jobId = localStorage.getItem("jobId");
-      if (!jobId) return alert("ไม่พบ jobId");
+      if (!jobId) return showToast("ไม่พบ jobId", "error"); // ✅
       await saveDraftStep(Number(jobId), 3);
-      alert("บันทึกเรียบร้อยแล้ว");
-      navigate("/cleaning");
+      showToast("บันทึกเรียบร้อยแล้ว ✓"); // ✅
+      setTimeout(() => navigate("/cleaning"), 1500);
     } catch (err) {
-      alert("Save Draft ไม่สำเร็จ");
+      showToast("Save Draft ไม่สำเร็จ", "error"); // ✅
     }
+  }
+
+  function showToast(message: string, type: "success" | "error" = "success") {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast(t => ({ ...t, show: false })), 3500);
   }
 
   return (
@@ -181,6 +186,25 @@ export default function NewCleaningStep3_01() {
           )}
         </div>
       </div>
+      {toast.show && (
+        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-lg text-white text-sm
+    transition-all duration-300 ease-in-out
+    ${toast.type === "success" ? "bg-green-700" : "bg-red-500"}`}
+        >
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0
+      ${toast.type === "success" ? "bg-green-600" : "bg-red-400"}`}
+          >
+            {toast.type === "success"
+              ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+              : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+            }
+          </div>
+          <span className="font-medium">{toast.message}</span>
+          <button onClick={() => setToast(t => ({ ...t, show: false }))} className="ml-2 opacity-70 hover:opacity-100">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

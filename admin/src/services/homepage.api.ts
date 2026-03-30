@@ -20,5 +20,8 @@ export const getHomepagePlants = async (
 
   const res = await api.get(`/homepage/plants?${params.toString()}`);
 
+  console.log("res.data →", res.data)        // ดูชั้นแรก
+  console.log("res.data.data →", res.data.data)  // ดูชั้นสอง
+
   return res.data.data;
 };

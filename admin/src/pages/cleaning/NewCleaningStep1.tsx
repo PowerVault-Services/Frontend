@@ -76,6 +76,18 @@ export default function NewCleaningStep1() {
         setContractor(parsed.contractor || "");
         setProjectType(parsed.projectType || "");
 
+        if (parsed.startTime) {
+            setStartTime(parsed.startTime.slice(0, 5));
+        } else if (parsed.time) {
+            const parts = parsed.time.split("-").map((t: string) => t.trim());
+            setStartTime(parts[0]?.slice(0, 5) || "");
+            setEndTime(parts[1]?.slice(0, 5) || "");
+        }
+
+        if (parsed.endTime) {
+            setEndTime(parsed.endTime.slice(0, 5));
+        }
+
         if (parsed.jobId) {
             localStorage.setItem("jobId", String(parsed.jobId));
             setIsEditMode(true);
@@ -207,6 +219,7 @@ export default function NewCleaningStep1() {
         await saveDraftStep(jobId, 1);
 
         return jobId;
+        
     }
 
     function formatEmails(emails?: string) {
@@ -220,21 +233,24 @@ export default function NewCleaningStep1() {
             <div className="flex justify-between pb-9">
                 <h1 className="text-green-800">New Cleaning Job</h1>
 
-                <button
-                    onClick={async () => {
-                        try {
-                            await handleSaveStep1();
-                            alert("บันทึกเรียบร้อยแล้ว");
-                            navigate("/cleaning");
-                        } catch (err: any) {
-                            alert(err.message);
-                        }
-                    }}
-                    className="flex items-center w-35 h-10 justify-between px-5 py-3 text-[12px] text-green-700 bg-white border-2 border-green-700 rounded-md hover:bg-green-50 transition-colors"
-                >
-                    <img src={SaveDraftIcon} alt="" />
-                    Save Draft
-                </button>
+                {!isReadOnly && (
+                    <button
+                        onClick={async () => {
+                            try {
+                                await handleSaveStep1();
+                                alert("บันทึกเรียบร้อยแล้ว");
+                                navigate("/cleaning");
+                            } catch (err: any) {
+                                alert(err.message);
+                            }
+                        }}
+                        className="flex items-center w-35 h-10 justify-between px-5 py-3 text-[12px]
+    text-green-700 bg-white border-2 border-green-700 rounded-md hover:bg-green-50"
+                    >
+                        <img src={SaveDraftIcon} alt="" />
+                        Save Draft
+                    </button>
+                )}
             </div>
 
             {/* Form */}
@@ -290,33 +306,33 @@ export default function NewCleaningStep1() {
                     </div>
 
                     <div className={FIELD_WIDTH}>
-                        <TextInputFilter label="Date*" type="date" value={date} onChange={setDate} />
+                        <TextInputFilter label="Date*" type="date" value={date} onChange={setDate} disabled={isReadOnly} />
                     </div>
 
                     <div className={FIELD_WIDTH}>
-                        <TextInputFilter label="Start Time*" type="time" value={startTime} onChange={setStartTime} />
+                        <TextInputFilter label="Start Time*" type="time" value={startTime} onChange={setStartTime} disabled={isReadOnly} />
                     </div>
 
                     <div className={FIELD_WIDTH}>
-                        <TextInputFilter label="End Time*" type="time" value={endTime} onChange={setEndTime} />
+                        <TextInputFilter label="End Time*" type="time" value={endTime} onChange={setEndTime} disabled={isReadOnly} />
                     </div>
 
                     <div className={FIELD_WIDTH}>
-                        <SelectFilter label="รับเหมา" value={contractor} onChange={setContractor} options={[
+                        <SelectFilter label="รับเหมา" value={contractor} onChange={setContractor} disabled={isReadOnly} options={[
                             { label: "TK Clean", value: "TK Clean" },
                             { label: "A Plus", value: "A Plus" },
                         ]} />
                     </div>
 
                     <div className={FIELD_WIDTH}>
-                        <SelectFilter label="Project Type" value={projectType} onChange={setProjectType} options={[
+                        <SelectFilter label="Project Type" value={projectType} onChange={setProjectType} disabled={isReadOnly} options={[
                             { label: "EPC", value: "EPC" },
                             { label: "PPA", value: "PPA" },
                         ]} />
                     </div>
 
                     <div className={FIELD_WIDTH}>
-                        <TextInputFilter label="หมายเหตุ" value={remark} onChange={setRemark} />
+                        <TextInputFilter label="หมายเหตุ" value={remark} onChange={setRemark} disabled={isReadOnly} />
                     </div>
                 </div>
 

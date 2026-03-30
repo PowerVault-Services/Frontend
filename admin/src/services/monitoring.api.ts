@@ -215,15 +215,27 @@ export const getSummaryCards = async (siteId: number) => {
   return res.data.data;
 };
 
+// monitoring.api.ts — แก้ getLatestAlarm
 export const getLatestAlarm = async (params: {
   siteId?: number;
   plantCode?: string;
 }) => {
-  const res = await api.get("/monitoring/alarms/latest", {
-    params,
+  const res = await api.get("/alarms", {
+    params: {
+      siteId: params.siteId,
+      tab: "active",
+      pageSize: 10,  // เอาแค่ 10 รายการ แล้ว sort เอาล่าสุด
+      page: 1,
+    },
   });
 
-  return res.data.data;
+  // คืนเฉพาะ alarm ล่าสุด (เรียงตาม occurredAt)
+  const list: any[] = res.data?.data?.list ?? [];
+  if (list.length === 0) return null;
+
+  return list.sort(
+    (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
+  )[0];
 };
 
 export const getHomeRealtime = async (siteId: number) => {

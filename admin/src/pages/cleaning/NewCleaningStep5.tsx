@@ -97,7 +97,7 @@ export default function NewCleaningStep5() {
       );
 
       showToast("ส่งรายงานเรียบร้อยแล้ว ✓");
-      setTimeout(() => navigate("/cleaning/home"), 2000);
+      setTimeout(() => navigate("/cleaning/home"), 5000);
 
     } catch (error: any) {
       console.error(error);

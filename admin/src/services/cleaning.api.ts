@@ -147,8 +147,34 @@ export const getCleaningReportDownloadUrl = (jobId: number) => {
   return `/api/cleaning/step4/download/${jobId}`;
 };
 
-export const downloadCleaningZip = (jobIds: number[]) => {
+export const downloadCleaningZip = async (jobIds: number[]): Promise<{ success: boolean; message?: string }> => {
+  const base = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
   const ids = jobIds.join(",");
-  window.open(`/api/cleaning/jobs/download-zip?jobIds=${ids}`, "_blank");
+
+  try {
+    const res = await fetch(`${base}/api/cleaning/jobs/download-zip?jobIds=${ids}`);
+
+    // ✅ เช็ค content-type ถ้าเป็น JSON แสดงว่า error
+    const contentType = res.headers.get("content-type") ?? "";
+
+    if (!res.ok || contentType.includes("application/json")) {
+      const json = await res.json();
+      return { success: false, message: json.message };
+    }
+
+    // ✅ เป็น zip จริง → trigger download
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cleaning-reports-${Date.now()}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    return { success: true };
+
+  } catch (err) {
+    return { success: false, message: "เกิดข้อผิดพลาดในการเชื่อมต่อ" };
+  }
 };
 

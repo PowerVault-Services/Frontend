@@ -41,6 +41,17 @@ export default function NewCleaningStep2() {
     //pop-up confirm send e-mail
     const [showConfirm, setShowConfirm] = useState(false);
 
+    const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({
+        show: false,
+        message: "",
+        type: "success",
+    });
+
+    function showToast(message: string, type: "success" | "error" = "success") {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast(t => ({ ...t, show: false })), 3500);
+    }
+
     useEffect(() => {
         const raw = localStorage.getItem("cleaning_step1");
 
@@ -237,9 +248,14 @@ export default function NewCleaningStep2() {
             // mark ว่าส่งแล้ว
             localStorage.setItem("cleaning_step2_sent", "true");
 
+            // แก้ใน handleSendEmail
             setEmailStatus("sent");
+            showToast("ส่งอีเมลเรียบร้อยแล้ว ✓");
 
-            navigate("/cleaning/new/step3_01");
+            // ✅ delay ให้ toast แสดงก่อน 2 วินาที แล้วค่อย navigate
+            setTimeout(() => {
+                navigate("/cleaning/new/step3_01");
+            }, 5000);
 
         } catch (err) {
 
@@ -445,6 +461,15 @@ export default function NewCleaningStep2() {
 
                     </div>
 
+                </div>
+            )}
+
+            {toast.show && (
+                <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-white text-[15px]
+    transition-all duration-300 ${toast.type === "success" ? "bg-green-700" : "bg-red-600"}`}
+                >
+                    <span>{toast.type === "success" ? "✓" : "✕"}</span>
+                    <span>{toast.message}</span>
                 </div>
             )}
         </div>

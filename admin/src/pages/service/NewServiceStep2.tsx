@@ -22,8 +22,19 @@ export default function NewServiceStep2() {
 
     const [showConfirm, setShowConfirm] = useState(false);
 
-    const savedData = JSON.parse(localStorage.getItem("service_step1") || "{}");
+    // ✅ เพิ่ม toast (เหมือน cleaning step2)
+    const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({
+        show: false,
+        message: "",
+        type: "success",
+    });
 
+    function showToast(message: string, type: "success" | "error" = "success") {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast(t => ({ ...t, show: false })), 3500);
+    }
+
+    const savedData = JSON.parse(localStorage.getItem("service_step1") || "{}");
 
     const steps = [
         { id: 1, label: "กรอกข้อมูล" },
@@ -46,35 +57,26 @@ export default function NewServiceStep2() {
     });
 
     useEffect(() => {
-
         const raw = localStorage.getItem("service_step1");
-
         if (!raw) return;
 
         const data = JSON.parse(raw);
-
         setFormData(data);
 
         if (data.jobId) {
             localStorage.setItem("serviceJobId", String(data.jobId));
         }
 
-        const sent = localStorage.getItem(
-            `service_step2_sent_${data.jobId}`
-        );
-
+        const sent = localStorage.getItem(`service_step2_sent_${data.jobId}`);
         if (sent === "true") {
             setEmailStatus("sent");
         }
-
     }, []);
 
     function formatThaiDate(dateStr: string) {
-
         if (!dateStr) return "";
 
         const date = new Date(dateStr);
-
         const months = [
             "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน",
             "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม",
@@ -89,35 +91,29 @@ export default function NewServiceStep2() {
     }
 
     async function handleSaveDraft() {
-
         if (loading) return;
-
         if (!formData.jobId) {
             alert("ไม่พบ jobId");
             return;
         }
 
         try {
-
             setLoading(true);
 
-            const subject =
-                `ขออนุญาตแจ้งเข้าแก้ไข ${formData.problem}`;
-
+            const subject = `ขออนุญาตแจ้งเข้าแก้ไข ${formData.problem}`;
             const body = `
                 <div style="margin-top: 40px; max-width: 800px;">
                     <p>เรียน ท่านผู้เกี่ยวข้อง</p>
                     <p><b>เรื่อง แจ้งเข้าแก้ไข ${formData.problem} โครงการ ${formData.projectName}</b></p>
-
                     <p style="text-indent: 50px; margin-top: 20px;">
                         ทางทีมงาน PowerVault ขออนุญาตเข้าดําเนินการ ${formData.problem}
-                    โครงการ ${formData.projectName} วันที่ ${formatThaiDate(formData.date)}
-                    เวลา ${formData.time} น. โดยประมาณ </p>
-
+                        โครงการ ${formData.projectName} วันที่ ${formatThaiDate(formData.date)}
+                        เวลา ${formData.time} น. โดยประมาณ
+                    </p>
                     <p style="text-indent: 50px; margin-top: 20px;">
                         ${formData.remark ?? ""}
                     </p>
-                </div>  
+                </div>
             `;
 
             await saveServiceStep2Draft({
@@ -131,20 +127,17 @@ export default function NewServiceStep2() {
             alert("บันทึก Draft สำเร็จ");
 
         } catch (err) {
-
             console.error(err);
             alert("บันทึก Draft ไม่สำเร็จ");
-
         } finally {
-
             setLoading(false);
         }
     }
 
     async function handleSendEmail() {
-
         if (emailStatus === "sending") return;
 
+        // ถ้าเคยส่งแล้วให้ไป step3 เลย
         if (emailStatus === "sent") {
             navigate("/service/new/step3");
             return;
@@ -155,28 +148,23 @@ export default function NewServiceStep2() {
             return;
         }
 
-
         try {
-
             setEmailStatus("sending");
 
-            const subject =
-                `ขออนุญาตแจ้งเข้าแก้ไข ${formData.problem}`;
-
+            const subject = `ขออนุญาตแจ้งเข้าแก้ไข ${formData.problem}`;
             const body = `
                 <div style="margin-top: 40px; max-width: 800px;">
                     <p>เรียน ท่านผู้เกี่ยวข้อง</p>
-                    <p><b>เรื่อง แจ้งเข้าแก้ไข ${formData.problem}โครงการ ${formData.projectName}</b></p>
-
+                    <p><b>เรื่อง แจ้งเข้าแก้ไข ${formData.problem} โครงการ ${formData.projectName}</b></p>
                     <p style="text-indent: 50px; margin-top: 20px;">
                         ทางทีมงาน PowerVault ขออนุญาตเข้าดําเนินการ ${formData.problem}
-                    โครงการ ${formData.projectName} วันที่ ${formatThaiDate(formData.date)}
-                    เวลา ${formData.time} น. โดยประมาณ </p>
-
+                        โครงการ ${formData.projectName} วันที่ ${formatThaiDate(formData.date)}
+                        เวลา ${formData.time} น. โดยประมาณ
+                    </p>
                     <p style="text-indent: 50px; margin-top: 20px;">
                         ${formData.remark ?? ""}
                     </p>
-                </div>  
+                </div>
             `;
 
             await saveServiceStep2Draft({
@@ -193,20 +181,19 @@ export default function NewServiceStep2() {
                 () => { }
             );
 
-            localStorage.setItem(
-                `service_step2_sent_${formData.jobId}`,
-                "true",
-            );
+            localStorage.setItem(`service_step2_sent_${formData.jobId}`, "true");
 
             setEmailStatus("sent");
 
-            navigate("/service/new/step3");
+            // ✅ แสดง toast แล้ว delay navigate (เหมือน cleaning step2)
+            showToast("ส่งอีเมลเรียบร้อยแล้ว ✓");
+            setTimeout(() => {
+                navigate("/service/new/step3");
+            }, 5000);
 
         } catch (err) {
-
             console.error(err);
-            alert("ส่งอีเมลไม่สำเร็จ");
-
+            showToast("ส่งอีเมลไม่สำเร็จ", "error");
             setEmailStatus("idle");
         }
     }
@@ -243,12 +230,9 @@ export default function NewServiceStep2() {
                         </label>
 
                         <div className="h-[406px] rounded-lg border border-green-800 flex items-center justify-center">
-
                             <div className="w-[953px] text-[18px] font-normal text-gray-800 leading-relaxed">
 
-                                <p>
-                                    <span>From :</span> ทีมดูแลระบบ PowerVault Service
-                                </p>
+                                <p><span>From :</span> ทีมดูแลระบบ PowerVault Service</p>
 
                                 <p>
                                     <span>To :</span>{" "}
@@ -260,62 +244,42 @@ export default function NewServiceStep2() {
                                 <p>
                                     <span>Subject :</span>{" "}
                                     ขออนุญาตแจ้งเข้าแก้ไข{" "}
-                                    <span className="text-[#2196F3] font-semibold">
-                                        {formData.problem}
-                                    </span>{" "}
+                                    <span className="text-[#2196F3] font-semibold">{formData.problem}</span>{" "}
                                     โครงการ{" "}
-                                    <span className="text-[#2196F3] font-semibold">
-                                        {formData.projectName}
-                                    </span>
+                                    <span className="text-[#2196F3] font-semibold">{formData.projectName}</span>
                                 </p>
 
                                 <div className="pt-4 indent-10">
-
                                     <p>เรียน ท่านผู้เกี่ยวข้อง</p>
 
                                     <p>
                                         เรื่อง แจ้งเข้า{" "}
-                                        <span className="text-[#2196F3] font-semibold">
-                                            {formData.problem}
-                                        </span>{" "}
+                                        <span className="text-[#2196F3] font-semibold">{formData.problem}</span>{" "}
                                         โครงการ{" "}
-                                        <span className="text-[#2196F3] font-semibold">
-                                            {formData.projectName}
-                                        </span>
+                                        <span className="text-[#2196F3] font-semibold">{formData.projectName}</span>
                                     </p>
 
                                     <p className="pt-4 indent-28">
                                         ทางทีมงาน PowerVault ขออนุญาตเข้าดําเนินการ{" "}
-                                        <span className="text-[#2196F3] font-semibold">
-                                            {formData.problem}
-                                        </span>
+                                        <span className="text-[#2196F3] font-semibold">{formData.problem}</span>
                                     </p>
 
                                     <p className="indent-10">
                                         โครงการ{" "}
-                                        <span className="text-[#2196F3] font-semibold">
-                                            {formData.projectName}
-                                        </span>{" "}
+                                        <span className="text-[#2196F3] font-semibold">{formData.projectName}</span>{" "}
                                         เข้าปฏิบัติงาน ในวันที่{" "}
-                                        <span className="text-[#2196F3] font-semibold">
-                                            {formatThaiDate(formData.date)}
-                                        </span>{" "}
+                                        <span className="text-[#2196F3] font-semibold">{formatThaiDate(formData.date)}</span>{" "}
                                         เวลา{" "}
-                                        <span className="text-[#2196F3] font-semibold">
-                                            {formData.time}
-                                        </span>{" "}
+                                        <span className="text-[#2196F3] font-semibold">{formData.time}</span>{" "}
                                         น. โดยประมาณ
                                     </p>
-
                                 </div>
 
                             </div>
-
                         </div>
 
                         {/* Upload */}
                         <div className="mt-[27px]">
-
                             <label className="text-[16px] font-normal">
                                 อัปโหลดเอกสารไฟล์
                             </label>
@@ -324,13 +288,10 @@ export default function NewServiceStep2() {
                                 htmlFor="teamFile"
                                 className="flex items-center rounded-lg h-[39px] border border-dashed border-green-800 px-4 py-3 text-sm text-gray-600 cursor-pointer hover:bg-green-50 transition"
                             >
-
                                 <img src={UploadIcon} alt="upload" className="h-4.5 w-4.5" />
-
                                 <span className="text-[#2979FF] font-normal ml-2">
                                     {uploadedFile ? uploadedFile.name : "คลิกเลือกไฟล์เพื่ออัปโหลด"}
                                 </span>
-
                                 <input
                                     id="teamFile"
                                     type="file"
@@ -341,9 +302,7 @@ export default function NewServiceStep2() {
                                         if (file) setUploadedFile(file);
                                     }}
                                 />
-
                             </label>
-
                         </div>
 
                     </div>
@@ -359,10 +318,17 @@ export default function NewServiceStep2() {
                         ก่อนหน้า
                     </button>
 
+                    {/* ✅ เชื่อม modal แทนที่จะเรียก handleSendEmail โดยตรง */}
                     <button
-                        disabled={emailStatus === "sending"}
-                        onClick={handleSendEmail}
-                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl"
+                        disabled={emailStatus === "sending" || emailStatus === "sent"}
+                        onClick={() => {
+                            if (emailStatus === "sent") {
+                                navigate("/service/new/step3");
+                                return;
+                            }
+                            setShowConfirm(true);
+                        }}
+                        className="w-[195px] bg-green-700 text-white px-6 py-2.5 rounded-2xl disabled:opacity-60"
                     >
                         {emailStatus === "sending"
                             ? "กำลังส่ง..."
@@ -375,10 +341,9 @@ export default function NewServiceStep2() {
 
             </div>
 
-            {/* Confirm Modal */}
+            {/* ✅ Confirm Modal */}
             {showConfirm && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
                     <div className="bg-white rounded-xl w-[720px] p-6 shadow-lg">
 
                         <h2 className="text-lg font-semibold">
@@ -394,14 +359,12 @@ export default function NewServiceStep2() {
                         </p>
 
                         <div className="flex justify-end gap-3 mt-6">
-
                             <button
                                 onClick={() => setShowConfirm(false)}
                                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
                             >
                                 ยกเลิก
                             </button>
-
                             <button
                                 onClick={() => {
                                     setShowConfirm(false);
@@ -411,11 +374,19 @@ export default function NewServiceStep2() {
                             >
                                 ยืนยันส่ง
                             </button>
-
                         </div>
 
                     </div>
+                </div>
+            )}
 
+            {/* ✅ Toast */}
+            {toast.show && (
+                <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-white text-[15px]
+                    transition-all duration-300 ${toast.type === "success" ? "bg-green-700" : "bg-red-600"}`}
+                >
+                    <span>{toast.type === "success" ? "✓" : "✕"}</span>
+                    <span>{toast.message}</span>
                 </div>
             )}
 
