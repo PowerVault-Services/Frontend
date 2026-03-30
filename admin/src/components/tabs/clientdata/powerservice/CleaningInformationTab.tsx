@@ -7,6 +7,16 @@ interface Props {
 }
 
 export default function CleaningInformationTab({ project }: Props) {
+  const BASE_URL = import.meta.env.VITE_API_URL || "";
+  const API_ROOT = BASE_URL.replace("/api", "");
+
+  const imageUrl = project.siteImageUrl
+  ? `${API_ROOT}${project.siteImageUrl}`
+  : "fallback-url";
+
+console.log("CLEANING PROJECT OBJECT:", project);
+console.log("CLEANING IMAGE URL:", imageUrl);
+
   return (
     <div className="flex justify-center-safe py-[51px] px-8 w-full h-auto">
       <div className="pr-3">
@@ -14,11 +24,7 @@ export default function CleaningInformationTab({ project }: Props) {
         {/* Image */}
         <div className="w-[700px] h-96 rounded-xl overflow-hidden mb-[41px]">
           <img
-            src={
-              project?.imageUrl
-                ? `${import.meta.env.VITE_API_URL}${project.imageUrl}`
-                : "https://powervaultthailand.com/..."
-            }
+            src={imageUrl}
             alt="solar"
             className="w-full h-full object-cover"
           />
@@ -52,8 +58,6 @@ export default function CleaningInformationTab({ project }: Props) {
           <p>Solar Panel : {project?.panelBrand || "-"}</p>
           <p>Panel Brand : {project?.panelBrand || "-"}</p>
           <p>ขนาดแผง (W) : {project?.panelPowerW || "-"}</p>
-          <p>Inverter (ea) : {project?.inverterCount || "-"}</p>
-          <p>Inverter Brand : {project?.inverterBrand || "-"}</p>
           <p>เงื่อนไขเข้างาน : {project?.condition || "-"}</p>
           <p>Remark : {project?.remark || "-"}</p>
 

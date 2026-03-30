@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, X } from "lucide-react";
 
-import { createClientPlant } from "../../services/client-data.api";
+import { createClientPlant, uploadPlantImage } from "../../services/client-data.api";
 
 export default function CreatePlantPage() {
     const navigate = useNavigate();
@@ -21,6 +21,8 @@ export default function CreatePlantPage() {
         freeOmYears: "",
         freeOmFreq: "",
         warrantyOutput: "",
+        warrantyEnd: "",
+        warrantyStart: "",
         codDate: "",
         solarPanel: "",
         panelBrand: "",
@@ -34,9 +36,25 @@ export default function CreatePlantPage() {
         status: "ACTIVE",
     });
 
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedImage(file);
+            setImagePreview(URL.createObjectURL(file)); // สร้าง URL ชั่วคราวเพื่อแสดงรูป
+        }
+    };
+
+    const removeImage = () => {
+        setSelectedImage(null);
+        setImagePreview(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -44,8 +62,7 @@ export default function CreatePlantPage() {
         setIsLoading(true);
 
         try {
-
-            // 🔥 map form → backend payload
+            // Step 1: สร้าง plant ด้วย JSON ปกติ (ไม่ใช่ FormData)
             const payload = {
                 projectNo: formData.projectNo,
                 projectName: formData.projectName,
@@ -54,48 +71,36 @@ export default function CreatePlantPage() {
                 type: formData.type,
                 address: formData.address,
                 locationProvince: formData.province,
-
+                codDate: formData.codDate || undefined,
                 freeOmText: formData.freeOmYears && formData.freeOmFreq
                     ? `${formData.freeOmYears} Years / ${formData.freeOmFreq} Times`
                     : undefined,
-
-                warrantyOutputPct: formData.warrantyOutput
-                    ? Number(formData.warrantyOutput)
-                    : undefined,
-
-                codDate: formData.codDate || undefined,
-
+                warrantyOutputPct: formData.warrantyOutput ? Number(formData.warrantyOutput) : undefined,
                 solarPanel: formData.solarPanel,
                 panelBrand: formData.panelBrand,
-                panelSizeW: formData.panelSizeW
-                    ? Number(formData.panelSizeW)
-                    : undefined,
-
+                panelSizeW: formData.panelSizeW ? Number(formData.panelSizeW) : undefined,
                 salePerson: formData.salePerson,
                 siteEngineer: formData.siteEngineer,
                 installationContractor: formData.installationContractor,
                 workEntryConditions: formData.workConditions,
-
                 contactEmail: formData.customerEmail,
                 contactPhone: formData.telephone,
             };
 
-            // 🔥 CALL API
-            await createClientPlant(payload);
+            const created = await createClientPlant(payload);
+            const newSiteId: number = created.data.siteId;
+
+            // Step 2: อัปโหลดรูปแยก (ถ้ามี)
+            if (selectedImage && newSiteId) {
+                await uploadPlantImage(newSiteId, selectedImage);
+            }
 
             alert("สร้างโปรเจคสำเร็จ!");
             navigate("/client-data");
 
         } catch (error: any) {
-
             console.error(error);
-
-            if (error.message?.includes("already exists")) {
-                alert("Project No ซ้ำ");
-            } else {
-                alert("เกิดข้อผิดพลาด");
-            }
-
+            alert(error.message?.includes("already exists") ? "Project No ซ้ำ" : "เกิดข้อผิดพลาด");
         } finally {
             setIsLoading(false);
         }
@@ -146,6 +151,23 @@ export default function CreatePlantPage() {
                         </div>
                         <FormInput label="Warranty Output (%)" name="warrantyOutput" value={formData.warrantyOutput} onChange={handleChange} placeholder="e.g. 98" type="number" />
                         <FormInput label="COD Date" name="codDate" value={formData.codDate} onChange={handleChange} type="date" />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormInput
+                                label="Warranty Start"
+                                name="warrantyStart"
+                                value={formData.warrantyStart}
+                                onChange={handleChange}
+                                type="date"
+                            />
+                            <FormInput
+                                label="Warranty End (หมดประกัน)"
+                                name="warrantyEnd"
+                                value={formData.warrantyEnd}
+                                onChange={handleChange}
+                                type="date"
+                            />
+                        </div>
 
                         {/* --- เพิ่มพิกัด GPS ตรงนี้ --- */}
                         <div className="space-y-2 lg:col-span-1">
@@ -203,6 +225,34 @@ export default function CreatePlantPage() {
                     <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                         <FormInput label="Customer Contact Email" name="customerEmail" value={formData.customerEmail} onChange={handleChange} placeholder="client@example.com" type="email" />
                         <FormInput label="Telephone" name="telephone" value={formData.telephone} onChange={handleChange} placeholder="+1 (555) 000-0000" />
+                    </div>
+                </section>
+
+                <section className="bg-white rounded-xl overflow-hidden shadow-sm border border-slate-100 mt-8">
+                    <div className="bg-green-700 px-8 py-4 border-b border-green-100">
+                        <h5 className="text-white flex items-center gap-2">Plant Image (รูปภาพสถานที่)</h5>
+                    </div>
+                    <div className="p-8">
+                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-6 hover:bg-slate-50 transition-all relative">
+                            {imagePreview ? (
+                                <div className="relative w-full max-w-sm">
+                                    <img src={imagePreview} alt="Preview" className="rounded-lg shadow-md w-full h-48 object-cover" />
+                                    <button
+                                        type="button"
+                                        onClick={removeImage}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-lg"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label className="flex flex-col items-center cursor-pointer py-4">
+                                    <Upload className="text-slate-400 mb-2" size={32} />
+                                    <span className="text-sm text-slate-500 font-medium">Click to upload plant photo</span>
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                                </label>
+                            )}
+                        </div>
                     </div>
                 </section>
 

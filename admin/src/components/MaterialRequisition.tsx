@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getStockMeta } from "../services/stock.api";
 import type { Category, Product } from "../services/stock.api";
+import DeleteIcon from "../assets/icons/deleteicon.svg";
 
 export interface MaterialItem {
     categoryId: number | "";
@@ -209,7 +210,7 @@ export default function MaterialRequisition({ onChange, disabled = false }: Prop
                                     className="bg-red-500 text-white rounded-md
         w-10 h-10 flex items-center justify-center mx-auto"
                                 >
-                                    🗑
+                                    <img src={DeleteIcon} alt="Delete" />
                                 </button>
                             )}
 

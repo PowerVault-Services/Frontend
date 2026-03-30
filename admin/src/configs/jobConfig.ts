@@ -1,5 +1,6 @@
 import ServiceInformationTab from "../components/tabs/clientdata/powerservice/ServiceInformationTab";
 import InspectionInformationTab from "../components/tabs/clientdata/powerservice/InspectionInformationTab";
+import CleaningInformationTab from "../components/tabs/clientdata/powerservice/CleaningInformationTab"; //
 
 export const JOB_ROUTE_MAP = {
   cleaning: "Cleaning",
@@ -16,7 +17,7 @@ export const JOB_CONFIG = {
     headerBg: "bg-purple-500",
     textColor: "text-white",
     tabs: [
-      { id: "Information", label: "Information", component: ServiceInformationTab },
+      { id: "Information", label: "Information", component: CleaningInformationTab },
       { id: "PV Layout", label: "PV Layout", type: "PV_LAYOUT" },
     ],
   },

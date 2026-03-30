@@ -8,7 +8,7 @@ import DataTable, { type Column } from "../table/DataTable";
 import EditIcon from "../../assets/icons/Pen New Square.svg";
 import DeleteIcon from "../../assets/icons/Paper Bin.svg";
 
-import { deleteThailandProject } from "../../services/client.api";
+import { deleteClientPlant } from "../../services/client-data.api";
 import Pagination from "../table/Pagination";
 
 /* ================= Interface ================= */
@@ -65,11 +65,12 @@ export default function PowerVaultThailandTab({
         if (!confirmDelete) return;
 
         try {
-            await deleteThailandProject(id);
+            await deleteClientPlant(id);
             alert("ลบสำเร็จ");
             window.location.reload();
-        } catch {
-            alert("ลบไม่สำเร็จ");
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "ลบไม่สำเร็จ";
+            alert(msg);
         }
     };
 

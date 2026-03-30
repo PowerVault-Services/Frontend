@@ -273,7 +273,6 @@ export default function NewCleaningStep2() {
             {/* Header */}
             <div className="flex justify-between pb-9">
                 <h1 className="text-green-800">New Cleaning Job</h1>
-
                 <button
                     onClick={handleSaveDraft}
                     disabled={loading}

@@ -228,11 +228,9 @@ export default function NewCleaningStep1() {
     }
     return (
         <div className="w-full">
-
             {/* Header */}
             <div className="flex justify-between pb-9">
                 <h1 className="text-green-800">New Cleaning Job</h1>
-
                 {!isReadOnly && (
                     <button
                         onClick={async () => {

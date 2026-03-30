@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getStockSummary } from "../../services/stock.api";
+import { getStockSummary, getStockMeta, createStockProduct } from "../../services/stock.api";
 
 import AddIcon from "../../assets/icons/Add Circle_line.svg";
 import SearchBox from "../../components/SearchBox";
@@ -51,37 +51,42 @@ export default function AllStock() {
 
     const fetchSummary = async () => {
         try {
-
             setLoading(true);
 
-            const res = await getStockSummary();
+            // ✅ ดึงทั้ง summary และ meta พร้อมกัน
+            const [summaryRes, metaRes] = await Promise.all([
+                getStockSummary(),
+                getStockMeta(false),
+            ]);
 
-            const list = res.data.list;
+            const summaryList: any[] = summaryRes.data.list ?? [];
+            const allProducts: any[] = metaRes.products ?? [];
 
-            const formatted = list.map((item: any) => ({
-                id: item.sku,
-                productCode: item.sku,
-                category: item.category,
-                productName: item.name,
-                unit: item.unit,
-                stockIn: item.inQty,
-                stockOut: item.outQty,
-                remainingStock: item.onHand,
-            }));
+            // ✅ merge: ใช้ product จาก meta เป็น base แล้ว join กับ summary
+            const formatted = allProducts.map((product) => {
+                const summary = summaryList.find((s) => s.sku === product.sku);
+                return {
+                    id: product.sku,
+                    productCode: product.sku,
+                    category: summary?.category ?? product.category ?? "-",
+                    productName: product.name,
+                    unit: summary?.unit ?? product.unit ?? "-",
+                    stockIn: summary?.inQty ?? 0,
+                    stockOut: summary?.outQty ?? 0,
+                    remainingStock: summary?.onHand ?? 0,
+                };
+            });
 
             setData(formatted);
             setFilteredData(formatted);
 
         } catch (err) {
-
             console.error(err);
-
         } finally {
-
             setLoading(false);
-
         }
     };
+
 
     useEffect(() => {
         fetchSummary();
@@ -238,6 +243,17 @@ export default function AllStock() {
                 mode="create"
                 onClose={() => setOpenModal(false)}
                 onSuccess={fetchSummary}
+                onSubmit={async (formData) => { // ✅ เพิ่ม
+                    if (!formData.sku || !formData.name || !formData.categoryId || !formData.unitId) {
+                        throw new Error("กรุณากรอกข้อมูลให้ครบ");
+                    }
+                    await createStockProduct({
+                        sku: formData.sku,
+                        name: formData.name,
+                        categoryId: Number(formData.categoryId),
+                        unitId: Number(formData.unitId),
+                    });
+                }}
             />
 
         </div>

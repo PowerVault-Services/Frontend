@@ -1,93 +1,48 @@
 import { useEffect, useState } from "react";
 import { getStockOutList, createStockOut } from "../../services/stock.api";
-import  MinusIcon  from "../../assets/icons/Minus Circle.svg"
+import MinusIcon from "../../assets/icons/Minus Circle.svg";
 import SearchBox from "../../components/SearchBox";
 import TextInputFilter from "../../components/TextInputFilter";
 import DataTable, { type Column } from "../../components/table/DataTable";
-import SelectFilter from "../../components/SelectFilter";
 import AddProductModal from "../../components/AddProductModal";
 
 interface StockOut {
     id: number | string;
-    date: string;                 // วันที่ทำรายการ
-    productCode: number;          // รหัสสินค้า
-    category: string;             // หมวดหมู่
-    projectType: string;          // โครงการ
-    productName: string;          // ชื่อสินค้า
-    unit: string;                 // หน่วยนับ
-    stockIn: number;              // รับเข้า
-    stockOut: number;             // จ่ายออก
-    remainingStock: number;       // คงเหลือ
-    note?: string;                // หมายเหตุ
-    warrantyYear?: number;        // รับประกัน (ปี)
-    warrantyStartDate?: string;   // วันที่เริ่มประกัน
-    warrantyEndDate?: string;     // วันหมดรับประกัน
+    date: string;
+    productCode: string;
+    category: string;
+    projectType: string;
+    productName: string;
+    unit: string;
+    stockOut: number;
+    note?: string;
     description?: string;
 }
-
 
 export default function StockOut() {
     const [data, setData] = useState<StockOut[]>([]);
     const [loading, setLoading] = useState(true);
     const [openModal, setOpenModal] = useState(false);
 
+    const [page, setPage] = useState(1);
+    const pageSize = 13;
+    const [totalItems, setTotalItems] = useState(0);
+
+    const [keyword, setKeyword] = useState("");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+
     const columns: Column<StockOut>[] = [
-        {
-            id: "date",
-            key: "date",
-            label: "วันที่",
-            align: "center",
-            width: "120px",
-        },
-        {
-            id: "productCode",
-            key: "productCode",
-            label: "รหัสสินค้า",
-            align: "center",
-            width: "120px",
-        },
-        {
-            id: "category",
-            key: "category",
-            label: "หมวดหมู่",
-            align: "center",
-            width: "150px",
-        },
-        {
-            id: "productName",
-            key: "productName",
-            label: "ชื่อสินค้า",
-            align: "center",
-            width: "280px",
-        },
-        {
-            id: "unit",
-            key: "unit",
-            label: "หน่วยนับ",
-            align: "center",
-            width: "100px",
-        },
-        {
-            id: "stockOut",
-            key: "stockOut",
-            label: "จ่ายออก",
-            align: "center",
-            width: "100px",
-        },
-        {
-            id: "projectType",
-            key: "projectType",
-            label: "โครงการ",
-            align: "center",
-            width: "100px",
-        },
-        {
-            id: "description",
-            key: "description",
-            label: "รายละเอียด",
-            align: "center",
-            width: "100px",
-        },
+        { id: "date", key: "date", label: "วันที่", align: "center", width: "120px" },
+        { id: "productCode", key: "productCode", label: "รหัสสินค้า", align: "center", width: "120px" },
+        { id: "category", key: "category", label: "หมวดหมู่", align: "center", width: "150px" },
+        { id: "productName", key: "productName", label: "ชื่อสินค้า", align: "center", width: "280px" },
+        { id: "unit", key: "unit", label: "หน่วยนับ", align: "center", width: "100px" },
+        { id: "stockOut", key: "stockOut", label: "จ่ายออก", align: "center", width: "100px" },
+        { id: "projectType", key: "projectType", label: "โครงการ", align: "center", width: "100px" },
+        { id: "description", key: "description", label: "รายละเอียด", align: "center", width: "100px" },
         {
             id: "note",
             key: "note",
@@ -98,46 +53,60 @@ export default function StockOut() {
         },
     ];
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-
     const loadData = async () => {
         try {
             setLoading(true);
-            const res = await getStockOutList();
 
-            // 🔥 ถ้า backend structure ไม่ตรง ให้ map ตรงนี้
-            const mapped = res.map((item: any, index: number) => ({
-                id: item.id ?? index,
-                date: item.txDate,
-                productCode: item.product?.code,
-                category: item.product?.category,
-                projectType: item.project,
-                productName: item.product?.name,
-                unit: item.product?.unit,
-                stockOut: item.outQty,
-                remainingStock: item.onHand,
-                note: item.note,
-                description: item.description,
+            const params = new URLSearchParams({
+                page: String(page),
+                pageSize: String(pageSize),
+            });
+
+            if (keyword) params.append("q", keyword);
+            if (dateFrom) params.append("dateFrom", dateFrom);
+            if (dateTo) params.append("dateTo", dateTo);
+
+            const res = await getStockOutList(`?${params.toString()}`);
+
+            if (!res) {
+                setData([]);
+                return;
+            }
+
+            const list = res.data?.list ?? [];
+
+            const mapped: StockOut[] = list.map((item: any) => ({
+                id: item.id,
+                date: item.txDate?.slice(0, 10) ?? "-",
+                productCode: item.sku ?? "-",
+                category: item.category ?? "-",
+                projectType: item.project ?? "-",
+                productName: item.productName ?? "-",
+                unit: item.unit ?? "-",
+                stockOut: item.quantity ?? 0,
+                note: item.note ?? "-",
+                description: item.description ?? "-",
             }));
 
             setData(mapped);
+            setTotalItems(res.data?.pagination?.total ?? 0);
+
         } catch (error) {
             console.error(error);
+            setData([]);
         } finally {
             setLoading(false);
         }
     };
 
-
+    useEffect(() => {
+        loadData();
+    }, [page, keyword, dateFrom, dateTo]);
 
     return (
         <div className="w-full">
             <div className="flex justify-between pb-9">
                 <h1 className="text-green-800">Stock จ่ายออก</h1>
-
                 <button
                     onClick={() => setOpenModal(true)}
                     className="flex items-center px-7 py-3 bg-green-700 text-white rounded-md text-[15px] font-normal gap-5"
@@ -149,26 +118,9 @@ export default function StockOut() {
 
             <SearchBox>
                 <div className="grid grid-cols-4 justify-between gap-2.5">
-                    <TextInputFilter label="วันที่" type="date" value={""} onChange={() => { }} />
-                    <TextInputFilter label="รหัสสินค้า" value={""} onChange={() => { }} />
-                    <TextInputFilter label="หมวดหมู่" value={""} onChange={() => { }} />
-                    <TextInputFilter label="ชื่อสินค้า" value={""} onChange={() => { }} />
-                    <TextInputFilter label="หน่วยนับ" value={""} onChange={() => { }} />
-                    <TextInputFilter label="จ่ายออก" value={""} onChange={() => { }} />
-                    <TextInputFilter label="โครงการ" value={""} onChange={() => { }} />
-                    <SelectFilter
-                        label="รับประกัน (ปี)"
-                        placeholder="All"
-                        value=""
-                        onChange={() => { }}
-                        options={[
-                            { label: "All", value: "all" },
-                            { label: "1", value: "1" },
-                            { label: "2", value: "2" },
-                            { label: "3", value: "3" },
-                            { label: "4", value: "4" },
-                        ]}
-                    />
+                    <TextInputFilter label="ค้นหา" value={keyword} onChange={setKeyword} />
+                    <TextInputFilter label="วันที่เริ่ม" type="date" value={dateFrom} onChange={setDateFrom} />
+                    <TextInputFilter label="วันที่สิ้นสุด" type="date" value={dateTo} onChange={setDateTo} />
                 </div>
             </SearchBox>
 
@@ -176,15 +128,28 @@ export default function StockOut() {
                 <DataTable<StockOut> columns={columns} data={data} loading={loading} />
             </div>
 
+            <div className="flex items-center justify-between py-6 text-sm text-gray-500">
+                <span>
+                    {(page - 1) * pageSize + 1} to{" "}
+                    {Math.min(page * pageSize, totalItems)} of {totalItems} items
+                </span>
+            </div>
+
             <AddProductModal
                 open={openModal}
                 mode="stockOut"
                 onClose={() => setOpenModal(false)}
-                onSuccess={async () => {
-                    await loadData();
+                onSuccess={loadData}
+                onSubmit={async (formData) => { // ✅ เพิ่ม onSubmit
+                    if (!formData.productId) throw new Error("กรุณาเลือกสินค้า");
+                    if (!formData.quantity) throw new Error("กรุณากรอกจำนวน");
+                    await createStockOut({
+                        productId: Number(formData.productId),
+                        quantity: Number(formData.quantity),
+                        siteId: formData.projectId ? Number(formData.projectId) : undefined,
+                    });
                 }}
             />
-
         </div>
     );
 }

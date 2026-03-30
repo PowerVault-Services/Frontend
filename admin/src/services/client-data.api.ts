@@ -150,15 +150,15 @@ export const deleteClientPlant = async (siteId: number) => {
 ========================= */
 
 export const createServiceEntry = async (payload: {
-    siteId: number;
-    job: "SERVICE" | "CLEANING" | "INSPECTION" | "OM";
-    description: string;
+  siteId: number;
+  job: "SERVICE" | "CLEANING" | "INSPECTION" | "OM";
+  description: string;
 }) => {
-    const res = await api.post(
-        "/client-data/service/entries",
-        payload
-    );
-    return res.data.data;
+  const res = await api.post(
+    "/client-data/service/entries",
+    payload
+  );
+  return res.data.data;
 };
 
 /* =========================
@@ -166,22 +166,46 @@ export const createServiceEntry = async (payload: {
 ========================= */
 
 export interface CreateThailandProjectPayload {
-    projectNo: string;
-    projectName: string;
-    capacityKwp: number;
-    status: string;
-    address?: string;
-    contactEmail?: string;
-    contactPhone?: string;
+  projectNo: string;
+  projectName: string;
+  capacityKwp: number;
+  status: string;
+  address?: string;
+  contactEmail?: string;
+  contactPhone?: string;
 }
 
 export const createThailandProject = async (
-    payload: CreateThailandProjectPayload
+  payload: CreateThailandProjectPayload
 ) => {
-    // ใช้ endpoint ให้ถูกตาม backend (ในที่นี้เดาว่า /client-data/thailand/projects)
-    const res = await api.post(
-        "/client-data/thailand/projects",
-        payload
-    );
-    return res.data.data; 
+  // ใช้ endpoint ให้ถูกตาม backend (ในที่นี้เดาว่า /client-data/thailand/projects)
+  const res = await api.post(
+    "/client-data/thailand/projects",
+    payload
+  );
+  return res.data.data;
+};
+
+export const uploadPlantImage = async (siteId: number, file: File) => {
+  console.log("UPLOAD FILE:", file);
+  console.log("SITE ID:", siteId);
+
+  const formData = new FormData();
+
+  // 🔥 ลอง "file" ก่อน
+  formData.append("file", file);
+
+  const res = await api.post(
+    `/client-data/projects/${siteId}/image`,
+    formData
+  );
+
+  return res.data;
+};
+
+export const deletePlantImage = async (siteId: number) => {
+  const res = await api.delete(
+    `/client-data/projects/${siteId}/image`
+  );
+  return res.data;
 };

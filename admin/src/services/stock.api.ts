@@ -118,3 +118,8 @@ export interface CreateStockProductPayload {
   categoryId: number;
   unitId: number;
 }
+
+export const getStockProjects = async () => {
+    const res = await api.get("/stock/projects");
+    return res.data;
+};

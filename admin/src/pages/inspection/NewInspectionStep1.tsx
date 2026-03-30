@@ -198,8 +198,8 @@ export default function NewInspectionStep1() {
         const payload = {
             siteId: Number(projectId),
             workDate: date,
-            startTime,
-            endTime,
+            startTime: startTime.length === 5 ? startTime + ":00" : startTime,
+            endTime: endTime.length === 5 ? endTime + ":00" : endTime,
             contractor,
             problem,
             ...(currentJobId ? { jobId: Number(currentJobId) } : {}),

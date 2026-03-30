@@ -7,6 +7,13 @@ interface Props {
 }
 
 export default function ServiceInformationTab({ project }: Props) {
+  const BASE_URL = import.meta.env.VITE_API_URL || "";
+  const API_ROOT = BASE_URL.replace("/api", "");
+
+  const imageUrl = project.siteImageUrl
+    ? `${API_ROOT}${project.siteImageUrl}`
+    : "fallback-url";
+
   return (
     <div className="flex justify-center-safe py-[51px] px-8 w-full h-auto">
       <div className="pr-3">
@@ -14,11 +21,7 @@ export default function ServiceInformationTab({ project }: Props) {
         {/* Image */}
         <div className="w-[700px] h-96 rounded-xl overflow-hidden mb-[41px]">
           <img
-            src={
-              project?.imageUrl
-                ? `${import.meta.env.VITE_API_URL}${project.imageUrl}`
-                : "https://powervaultthailand.com/wp-content/uploads/2025/01/UNIQUE-PLASTIC-INDUSTRY.jpg"
-            }
+            src={imageUrl}
             alt="solar"
             className="w-full h-full object-cover"
           />
@@ -48,12 +51,10 @@ export default function ServiceInformationTab({ project }: Props) {
           <p>Address : {project?.address || "-"}</p>
           <p>Location : {project?.province || "-"}</p>
           <p>Type : {project?.epcPPA || "-"}</p>
-          <p>O&amp;M : {project?.om || "-"}</p>
-          <p>Solar Panel : {project?.panelBrand || "-"}</p>
-          <p>Panel Brand : {project?.panelBrand || "-"}</p>
-          <p>ขนาดแผง (W) : {project?.panelPowerW || "-"}</p>
-          <p>Inverter (ea) : {project?.inverterCount || "-"}</p>
-          <p>Inverter Brand : {project?.inverterBrand || "-"}</p>
+          <p>อุปกรณ์ : {project?.equipment || "-"}</p>
+          <p>รับประกันอุปกรณ์ (ปี) : {project?.panelBrand || "-"}</p>
+          <p>เริ่มรับประกันอุปกรณ์ : {project?.panelBrand || "-"}</p>
+          <p>หมดรับประกันอุปกรณ์ : {project?.panelPowerW || "-"}</p>
           <p>เงื่อนไขเข้างาน : {project?.condition || "-"}</p>
           <p>Remark : {project?.remark || "-"}</p>
 

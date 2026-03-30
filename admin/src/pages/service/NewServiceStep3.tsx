@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import SaveDraftIcon from "../../assets/icons/Diskette.svg";
+import DeleteIcon from "../../assets/icons/deleteicon.svg";
 import ProgressBar from "../../components/progress/ProgressBar";
 import UploadFileField from "../../components/UploadFileField";
 import ImageGalleryUpload from "../../components/ImageGalleryUpload";
@@ -248,13 +249,6 @@ export default function NewServiceStep3() {
 
                 {/* Form Fields */}
                 <div className="w-[1091px]">
-
-                    {/* Upload Images */}
-                    {/* <div>
-                        <p className="text-lg font-medium text-green-800 pb-1.5">
-                            รูปภาพ Service
-                        </p>
-                    </div> */}
 
                     {isReadOnly ? (
                         // ✅ MODE: COMPLETED → แสดง grid อย่างเดียว
