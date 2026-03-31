@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import PeriodSelector from "../../components/charts/PeriodSelector";
 import CalendarSelector from "../../components/charts/CalendarSelector";
 import EnergySummary from "../../components/charts/EnergySummary";
@@ -7,80 +7,38 @@ import TrendChart from "../../components/charts/TrendChart";
 export type PeriodType = "day" | "month" | "year" | "lifetime";
 
 interface EnergyTrendProps {
-    data?: any[];
+    charts?: {
+      trend?: any[];
+      trendDay?: any[];
+      trendYear?: any[];
+      trendLifetime?: any[];
+    };
+    summary?: {
+      yield: number;
+      consumption: number;
+      fromPV: number;
+      fromGrid: number;
+      feedToGrid: number;
+    };
 }
 
-// ✅ กำหนดค่าเริ่มต้น data = [] ป้องกัน undefined
-export default function EnergyTrendChart({ data = [] }: EnergyTrendProps) {
+export default function EnergyTrendChart({ charts, summary }: EnergyTrendProps) {
   const [period, setPeriod] = useState<PeriodType>("month");
   const [date, setDate] = useState(new Date());
-  
-  // หมายเหตุ: สังเกตว่าใน useEffect คุณใช้ setData(arr) เพื่อเก็บลง chartData
-  // แต่ตอนส่งให้ TrendChart คุณดันส่งตัวแปร `data` (ที่เป็น props) ไปแทน
-  const [chartData, setData] = useState<any[]>([]);
 
-  const summary = {
-    yield: 127.92,
-    consumption: 706.89,
-    fromPV: 127.91,
-    fromGrid: 578.98,
-    feedToGrid: 11.94
+  const defaultSummary = {
+    yield: 0,
+    consumption: 0,
+    fromPV: 0,
+    fromGrid: 0,
+    feedToGrid: 0,
   };
 
-  useEffect(() => {
-    // mock data fetch
-    if (period === "day") {
-      const hours = Array.from({ length: 24 }, (_, i) => ({
-        time: `${String(i).padStart(2, "0")}:00`,
-        pv: Math.random() * 3,
-        grid: Math.random() * 4
-      }));
-      setData(hours);
-    }
-
-    if (period === "month") {
-      const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-
-      const arr = Array.from({ length: days }, (_, i) => ({
-        day: i + 1,
-        pv: Math.random() * 30,
-        grid: Math.random() * 20
-      }));
-
-      setData(arr);
-    }
-
-    if (period === "year") {
-      const months = [
-        "Jan","Feb","Mar","Apr","May","Jun",
-        "Jul","Aug","Sep","Oct","Nov","Dec"
-      ];
-
-      const arr = months.map(m => ({
-        month: m,
-        pv: Math.random() * 300,
-        grid: Math.random() * 200
-      }));
-
-      setData(arr);
-    }
-
-    if (period === "lifetime") {
-      const startYear = 2019;
-      const currentYear = date.getFullYear();
-
-      const arr = Array.from(
-        { length: currentYear - startYear + 1 },
-        (_, i) => ({
-          year: startYear + i,
-          pv: Math.random() * 1200
-        })
-      );
-
-      setData(arr);
-    }
-
-  }, [period, date]);
+  const trendData =
+    period === "day"      ? (charts?.trendDay || [])
+    : period === "month"  ? (charts?.trend || [])
+    : period === "year"   ? (charts?.trendYear || [])
+    : (charts?.trendLifetime || []);
 
   return (
     <div className="bg-white p-6 rounded-lg border border-[#DEE2E6] space-y-5 mt-5">
@@ -103,11 +61,9 @@ export default function EnergyTrendChart({ data = [] }: EnergyTrendProps) {
 
       </div>
 
-      <EnergySummary summary={summary} />
+      <EnergySummary summary={summary || defaultSummary} />
 
-      {/* ✅ TypeScript จะไม่ฟ้อง Error แล้ว เพราะ data เป็น Array เสมอ */}
-      {/* 💡 แนะนำเพิ่มเติม: ถ้าตั้งใจจะใช้ข้อมูลจำลองจาก State ให้เปลี่ยนจาก data เป็น chartData ตรงนี้แทนนะครับ */}
-      <TrendChart data={data} period={period} />
+      <TrendChart data={trendData} period={period} />
 
     </div>
   );
