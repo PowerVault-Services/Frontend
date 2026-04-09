@@ -52,11 +52,13 @@ interface OverviewTabProps {
 /* ================= Helper ================= */
 const formatDateByView = (view: string) => {
   const d = new Date();
-  if (view === "day")   return d.toISOString().split("T")[0];
+  if (view === "day") return d.toISOString().split("T")[0];
   if (view === "month") return d.toISOString().slice(0, 7);
-  if (view === "year")  return d.getFullYear().toString();
+  if (view === "year") return d.getFullYear().toString();
   return "";
 };
+
+
 
 /* ================= Skeleton Card ================= */
 function InverterSkeleton() {
@@ -134,28 +136,49 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
           getSummaryCards(plantId),
         ]);
 
+        console.log("✅ plantId:", plantId);
+        console.log("✅ flow raw:", flow);
+        console.log("🔌 RAW energyFlow:", JSON.stringify(flow?.energyFlow, null, 2));
+
         setData(overview);
         setEnergyData(energy);
 
-        const flowData = flow?.energyFlow || {};
+        // เพิ่ม type guard ก่อน setFlowData
+        const ef = flow?.energyFlow || {};
+
+        const PV_THRESHOLD = 0.05;
+
         setFlowData({
-          pv:      flowData.pv?.powerKw || 0,
-          grid:    flowData.grid?.signedPowerKw ?? flowData.grid?.powerKw ?? 0,
-          battery: flowData.battery?.signedPowerKw ?? flowData.battery?.powerKw ?? 0,
-          load:    flowData.load?.powerKw || 0,
+          // pv ไม่มี signed — ใช้ powerKw ตรงๆ + threshold กัน noise
+          pv: (ef.pv?.powerKw ?? 0) >= PV_THRESHOLD ? (ef.pv?.powerKw ?? 0) : 0,
+
+          // grid/battery — ใช้ signedPowerKw ถ้ามี, fallback powerKw พร้อม direction
+          grid: ef.grid?.signedPowerKw !== null && ef.grid?.signedPowerKw !== undefined
+            ? ef.grid.signedPowerKw
+            : ef.grid?.direction === "export" ? -(ef.grid?.powerKw ?? 0)
+              : ef.grid?.direction === "import" ? (ef.grid?.powerKw ?? 0)
+                : 0,
+
+          battery: ef.battery?.signedPowerKw !== null && ef.battery?.signedPowerKw !== undefined
+            ? ef.battery.signedPowerKw
+            : ef.battery?.direction === "discharge" ? -(ef.battery?.powerKw ?? 0)
+              : ef.battery?.direction === "charge" ? (ef.battery?.powerKw ?? 0)
+                : 0,
+
+          load: ef.load?.powerKw ?? 0,
         });
 
         const rawSummary = summary?.summaryCards;
         const summaryObj = Array.isArray(rawSummary)
           ? {
-              meter:   rawSummary.find((i: any) => i.type === "meter"),
-              battery: rawSummary.find((i: any) => i.type === "battery"),
-              solar:   rawSummary.find((i: any) => i.type === "solar"),
-            }
+            meter: rawSummary.find((i: any) => i.type === "meter"),
+            battery: rawSummary.find((i: any) => i.type === "battery"),
+            solar: rawSummary.find((i: any) => i.type === "solar"),
+          }
           : rawSummary;
 
         setRealtime({
-          summaryCards:   summaryObj,
+          summaryCards: summaryObj,
           supportingData: summary?.supportingData,
         });
 
@@ -182,15 +205,17 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
   /* ================= Mapping ================= */
   const inverters: Inverter[] =
     data?.inverters?.map((inv: any) => ({
-      id:     String(inv.id),
-      name:   inv.name,
-      model:  inv.model,
-      power:  inv.activePower ?? 0,
+      id: String(inv.id),
+      name: inv.name,
+      model: inv.model,
+      power: inv.activePower ?? 0,
       status: inv.status === "Normal" ? "Connect" : "Disconnect",
-      alarm:  inv.status === "Fault" ? "Fault" : "-",
+      alarm: inv.status === "Fault" ? "Fault" : "-",
     })) || [];
 
   const isScrollable = inverters.length > 4;
+
+  console.log("🌱 render plantId:", plantId);
 
   /* ================= UI ================= */
   return (
@@ -260,10 +285,10 @@ export default function OverviewTab({ plantId }: OverviewTabProps) {
 
       {/* ===== Bottom Section ===== */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-[18px]">
-        <MainMeterCard   data={realtime?.summaryCards?.meter} />
+        <MainMeterCard data={realtime?.summaryCards?.meter} />
         <MainBatteryCard data={realtime?.summaryCards?.battery} />
-        <MainSolar       data={realtime?.summaryCards?.solar} />
-        <MainWeather     data={realtime?.supportingData?.weather} />
+        <MainSolar data={realtime?.summaryCards?.solar} />
+        <MainWeather data={realtime?.supportingData?.weather} />
       </div>
 
     </div>
