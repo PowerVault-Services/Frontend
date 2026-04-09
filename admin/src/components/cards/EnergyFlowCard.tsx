@@ -49,9 +49,19 @@ function EnergyNode({
 
 /* ================= Main Card ================= */
 export default function EnergyFlowCard({ pv, grid, battery, load }: EnergyFlowProps) {
-  
-  // ✅ ย้าย constant ออกมาไว้นอก JSX
   const THRESHOLD = 0.05;
+
+  // ✅ แปลงค่าให้เป็นบวกเสมอสำหรับ display
+  const absGrid    = Math.abs(grid);
+  const absBattery = Math.abs(battery);
+
+  // ✅ label บอกทิศทาง
+  const gridLabel    = grid < -THRESHOLD ? "GRID ↑ Export"
+                     : grid >  THRESHOLD ? "GRID ↓ Import"
+                     : "GRID";
+  const batteryLabel = battery > THRESHOLD  ? "BATTERY ↓ Charge"
+                     : battery < -THRESHOLD ? "BATTERY ↑ Discharge"
+                     : "BATTERY";
 
   const colors = {
     pv:      "border-[#ff9800] text-[#ff9800]",
@@ -66,22 +76,26 @@ export default function EnergyFlowCard({ pv, grid, battery, load }: EnergyFlowPr
 
         {/* Top: PV (Solar) */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2">
-          <EnergyNode label="Solar" value={pv} icon={pvIcon} colorClass={colors.pv} labelPosition="top" />
+          <EnergyNode label="SOLAR" value={pv} icon={pvIcon}
+            colorClass={colors.pv} labelPosition="top" />
         </div>
 
         {/* Left: Battery */}
         <div className="absolute left-4 top-1/2 -translate-y-1/2">
-          <EnergyNode label="Battery" value={Math.abs(battery)} icon={batteryIcon} colorClass={colors.battery} labelPosition="bottom" />
+          <EnergyNode label={batteryLabel} value={absBattery} icon={batteryIcon}
+            colorClass={colors.battery} labelPosition="bottom" />
         </div>
 
         {/* Right: Grid */}
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <EnergyNode label="Grid" value={Math.abs(grid)} icon={gridIcon} colorClass={colors.grid} labelPosition="bottom" />
+          <EnergyNode label={gridLabel} value={absGrid} icon={gridIcon}
+            colorClass={colors.grid} labelPosition="bottom" />
         </div>
 
         {/* Bottom: Load (Home) */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-          <EnergyNode label="Home" value={load} icon={loadIcon} colorClass={colors.load} labelPosition="bottom" />
+          <EnergyNode label="HOME" value={load} icon={loadIcon}
+            colorClass={colors.load} labelPosition="bottom" />
         </div>
 
         {/* ================= FLOW LINES (SVG) ================= */}
@@ -98,26 +112,26 @@ export default function EnergyFlowCard({ pv, grid, battery, load }: EnergyFlowPr
           />
 
           {/* Grid ↔ Home
-              grid > 0 = import (Grid→Home) = default direction
-              grid < 0 = export (Home→Grid) = reverse */}
+              signedPowerKw > 0 = import (Grid→Home)
+              signedPowerKw < 0 = export (Home→Grid) → reverse */}
           <FlowLine
-            active={Math.abs(grid) >= THRESHOLD}
+            active={absGrid >= THRESHOLD}
             d="M224 157 H197 Q177 157 177 177 V224"
             stroke="#488fc2"
             reverse={grid < 0}
           />
 
           {/* Battery ↔ Home
-              battery < 0 = discharge (Battery→Home) = default direction
-              battery > 0 = charge (Home→Battery) = reverse */}
+              signedPowerKw < 0 = discharge (Battery→Home)
+              signedPowerKw > 0 = charge (Home→Battery) → reverse */}
           <FlowLine
-            active={Math.abs(battery) >= THRESHOLD}
+            active={absBattery >= THRESHOLD}
             d="M90 157 H117 Q137 157 137 177 V224"
             stroke="#a280db"
             reverse={battery > 0}
           />
 
-          {/* Solar → Grid (เฉพาะตอน export เกิน) */}
+          {/* Solar → Grid (export เกิน) */}
           {grid < -THRESHOLD && (
             <FlowLine
               active={true}
