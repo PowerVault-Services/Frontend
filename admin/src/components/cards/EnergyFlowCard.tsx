@@ -52,22 +52,22 @@ export default function EnergyFlowCard({ pv, grid, battery, load }: EnergyFlowPr
   const THRESHOLD = 0.05;
 
   // ✅ แปลงค่าให้เป็นบวกเสมอสำหรับ display
-  const absGrid    = Math.abs(grid);
+  const absGrid = Math.abs(grid);
   const absBattery = Math.abs(battery);
 
   // ✅ label บอกทิศทาง
-  const gridLabel    = grid < -THRESHOLD ? "GRID ↑ Export"
-                     : grid >  THRESHOLD ? "GRID ↓ Import"
-                     : "GRID";
-  const batteryLabel = battery > THRESHOLD  ? "BATTERY ↓ Charge"
-                     : battery < -THRESHOLD ? "BATTERY ↑ Discharge"
-                     : "BATTERY";
+  const gridLabel = grid < -THRESHOLD ? "GRID ↑ Export"
+    : grid > THRESHOLD ? "GRID ↓ Import"
+      : "GRID";
+  const batteryLabel = battery > THRESHOLD ? "BATTERY ↓ Charge"
+    : battery < -THRESHOLD ? "BATTERY ↑ Discharge"
+      : "BATTERY";
 
   const colors = {
-    pv:      "border-[#ff9800] text-[#ff9800]",
-    grid:    "border-[#488fc2] text-[#488fc2]",
+    pv: "border-[#ff9800] text-[#ff9800]",
+    grid: "border-[#488fc2] text-[#488fc2]",
     battery: "border-[#a280db] text-[#a280db]",
-    load:    "border-[#4db6ac] text-[#4db6ac]",
+    load: "border-[#4db6ac] text-[#4db6ac]",
   };
 
   return (
@@ -104,38 +104,44 @@ export default function EnergyFlowCard({ pv, grid, battery, load }: EnergyFlowPr
           viewBox="0 0 314 314"
           fill="none"
         >
-          {/* Solar → Home */}
+          {/* Solar → Home (แสดงเฉพาะตอน Home ใช้ไฟจริง) */}
           <FlowLine
-            active={pv >= THRESHOLD}
+            active={pv >= THRESHOLD && load >= THRESHOLD}
             d="M157 90 L157 224"
             stroke="#ff9800"
           />
 
-          {/* Grid ↔ Home
-              signedPowerKw > 0 = import (Grid→Home)
-              signedPowerKw < 0 = export (Home→Grid) → reverse */}
+          {/* Grid → Home (import เท่านั้น — ดึงไฟจาก Grid มาใช้)
+      ไม่มี reverse เพราะทิศทางเดียวเสมอ */}
           <FlowLine
-            active={absGrid >= THRESHOLD}
+            active={grid > THRESHOLD}
             d="M224 157 H197 Q177 157 177 177 V224"
             stroke="#488fc2"
-            reverse={grid < 0}
+            reverse={false}
           />
 
-          {/* Battery ↔ Home
-              signedPowerKw < 0 = discharge (Battery→Home)
-              signedPowerKw > 0 = charge (Home→Battery) → reverse */}
+          {/* Battery → Home (discharge) หรือ Home → Battery (charge) */}
           <FlowLine
             active={absBattery >= THRESHOLD}
             d="M90 157 H117 Q137 157 137 177 V224"
             stroke="#a280db"
-            reverse={battery > 0}
+            reverse={battery > 0}  // charge = ไฟวิ่งเข้าแบต
           />
 
-          {/* Solar → Grid (export เกิน) */}
+          {/* Solar → Grid (export — ไฟเกินจาก Solar ออกไป Grid โดยตรง) */}
           {grid < -THRESHOLD && (
             <FlowLine
               active={true}
               d="M157 120 V140 Q157 157 177 157 H224"
+              stroke="#ff9800"
+            />
+          )}
+
+          {/* Solar → Battery (charge จาก Solar โดยตรง) */}
+          {battery > THRESHOLD && pv >= THRESHOLD && (
+            <FlowLine
+              active={true}
+              d="M157 120 V140 Q157 157 137 157 H90"
               stroke="#ff9800"
             />
           )}
